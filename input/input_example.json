@@ -1,0 +1,312 @@
+{
+    "company_name": {
+        "languages": "English"
+    },
+    "department": {
+        "languages": "English"
+    },
+    "industry": {
+        "languages": "English"
+    },
+    "ip_address": {
+        "ip_address_type": "IPv4"
+    },
+    "mac_address": {},
+    "file_path": {
+        "operating_systems": "Windows",
+        "extensions": [
+            "jpg",
+            "png",
+            "txt",
+            "rtf",
+            "pdf",
+            "docx",
+            "xlsx",
+            "csv",
+            "html",
+            "zip"
+        ]
+    },
+    "file_directory": {
+        "operating_systems": "Windows"
+    },
+    "file_name": {
+        "extensions": [
+            "jpg",
+            "png",
+            "txt",
+            "rtf",
+            "pdf",
+            "docx",
+            "xlsx",
+            "csv",
+            "html",
+            "zip"
+        ]
+    },
+    "file_extension": {
+        "extensions": [
+            "jpg",
+            "png",
+            "txt",
+            "rtf",
+            "pdf",
+            "docx",
+            "xlsx",
+            "csv",
+            "html",
+            "zip"
+        ]
+    },
+    "url": {
+        "subdomains": [
+            "www",
+            "api"
+        ],
+        "tlds": [
+            "com",
+            "net",
+            "org"
+        ]
+    },
+    "hostname": {
+        "subdomains": [
+            "www",
+            "api"
+        ],
+        "tlds": [
+            "com",
+            "net",
+            "org"
+        ]
+    },
+    "date": {
+        "start_date": "2023-01-01",
+        "end_date": "2023-12-31",
+        "days_of_week": [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+        ]
+    },
+    "time": {
+        "start_time": "08:00:00",
+        "end_time": "17:00:00"
+    },
+    "datetime": {
+        "start_date": "2023-01-01",
+        "end_date": "2023-12-31",
+        "start_time": "08:00:00",
+        "end_time": "17:00:00",
+        "days_of_week": [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+        ]
+    },
+    "address_line1": {
+        "regions": "UnitedStates"
+    },
+    "address_line2": {
+        "regions": "UnitedStates"
+    },
+    "postcode": {
+        "regions": "UnitedStates"
+    },
+    "full_address": {
+        "regions": "UnitedStates"
+    },
+    "city": {
+        "regions": "UnitedStates"
+    },
+    "region": {
+        "country_codes_standard": "None",
+        "languages": "English"
+    },
+    "integer": {
+        "start": 1,
+        "end": 100
+    },
+    "unsigned_integer": {
+        "start": 1,
+        "end": 100
+    },
+    "decimal": {
+        "start": 1.0,
+        "end": 100.0,
+        "decimal_places": 2
+    },
+    "decimal_string": {
+        "start": 1.0,
+        "end": 100.0,
+        "decimal_places": 2
+    },
+    "payment_method": {
+        "payment_methods": [
+            "Credit Card",
+            "PayPal",
+            "Apple Pay"
+        ]
+    },
+    "card_type": {
+        "languages": "English",
+        "card_types": [
+            "AmericanExpress",
+            "JCB",
+            "MasterCard",
+            "UnionPay",
+            "Visa"
+        ]
+    },
+    "card_number": {
+        "card_types": [
+            "AmericanExpress",
+            "JCB",
+            "MasterCard",
+            "UnionPay",
+            "Visa"
+        ]
+    },
+    "card_date": {
+        "start": "01/23",
+        "end": "12/30"
+    },
+    "first_name": {
+        "languages": "English",
+        "genders": [
+            "M",
+            "F"
+        ]
+    },
+    "last_name": {
+        "languages": "English"
+    },
+    "full_name": {
+        "languages": "English",
+        "genders": [
+            "M",
+            "F"
+        ]
+    },
+    "gender": {
+        "languages": "English"
+    },
+    "title": {
+        "languages": "English",
+        "genders": [
+            "M",
+            "F"
+        ]
+    },
+    "marital_status": {
+        "languages": "English"
+    },
+    "phone_number": {
+        "is_international": false,
+        "include_delimiters": true,
+        "regions": "UnitedStates"
+    },
+    "email": {
+        "languages": "English",
+        "domains": [
+            "gmail.com",
+            "outlook.com"
+        ]
+    },
+    "job_title": {
+        "languages": "English"
+    },
+    "social_network_id": {
+        "languages": "English"
+    },
+    "product_name": {
+        "languages": "English",
+        "keywords": [
+            "Cherry",
+            "Orange",
+            "Pluots",
+            "Grape",
+            "Kiwi",
+            "Mango",
+            "Raspberry",
+            "Strawberry"
+        ]
+    },
+    "product_category": {
+        "languages": "English"
+    },
+    "color": {
+        "languages": "English"
+    },
+    "size": {},
+    "barcode": {
+        "barcode_types": "EAN13"
+    },
+    "enum_item": {
+        "enums": [
+            "First",
+            "Second",
+            "Third"
+        ]
+    },
+    "text": {
+        "number_of_chars_start": 100,
+        "number_of_chars_end": 1000
+    },
+    "uuid": {
+        "include_hyphens": true
+    },
+    "Company": {
+        "languages": "English"
+    },
+    "File": {
+        "operating_systems": "Windows",
+        "extensions": [
+            "jpg",
+            "png",
+            "txt",
+            "rtf",
+            "pdf",
+            "docx",
+            "xlsx",
+            "csv",
+            "html",
+            "zip"
+        ]
+    },
+    "Location": {
+        "regions": "UnitedStates"
+    },
+    "Card": {
+        "languages": "English",
+        "card_types": [
+            "AmericanExpress",
+            "JCB",
+            "MasterCard",
+            "UnionPay",
+            "Visa"
+        ],
+        "start": "01/23",
+        "end": "12/30"
+    },
+    "Person": {
+        "genders": [
+            "M",
+            "F"
+        ],
+        "languages": "English",
+        "regions": "UnitedStates",
+        "domains": [
+            "gmail.com",
+            "outlook.com"
+        ]
+    }
+}
