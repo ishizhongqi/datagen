@@ -2,15 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 project(data_generator CXX)
 
-include(FetchContent)
-
-FetchContent_Declare(
-        faker
-        GIT_REPOSITORY https://github.com/ishizhongqi/faker.git
-        GIT_TAG develop
-)
-
-FetchContent_MakeAvailable(faker)
+add_subdirectory(third_party/faker)
 
 add_executable(data_generator main.cpp)
 

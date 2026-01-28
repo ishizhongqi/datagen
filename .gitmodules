@@ -1,0 +1,4 @@
+[submodule "third_party/faker"]
+	path = third_party/faker
+	url = https://github.com/ishizhongqi/faker.git
+	branch = develop

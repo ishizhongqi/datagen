@@ -30,12 +30,17 @@ int main() {
     // You can use a class to create an entity
     // where the generated data has stronger correlations between its fields.
     // Of course, you can choose to call it with or without parameters.
-    const faker::person::Person person;
-    // At this point, the fake data has been fully generated, and you just need to call the getters to get data.
-    std::cout << "Person::First name : " << person.first_name().original() << std::endl;
-    std::cout << "Person::Full name  : " << person.full_name().original() << std::endl;
-    std::cout << "Person::Gender     : " << person.gender() << std::endl;
-    std::cout << "Person::Email      : " << person.email() << std::endl;
+    for (int i = 0; i < 1000; i++) {
+        const faker::person::Person person(
+            faker::Genders::F | faker::Genders::M,
+            faker::Languages::SimplifiedChinese,
+            faker::Regions::China,
+            std::to_array<std::string_view>({"qq.com", "163.com"}),
+            true
+        );
+        // At this point, the fake data has been fully generated, and you just need to call the getters to get data.
+        std::cout << person.full_name().original() << "  \t" << person.gender() << "  \t" << person.email() << std::endl;
+    }
 
     // For the other functions and classes, see the source code comments or the documentation.
 
