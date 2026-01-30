@@ -4,7 +4,7 @@
 .vscode
 .vs
 dist/
-dev/
+draft/
 
 # CMake
 out/
