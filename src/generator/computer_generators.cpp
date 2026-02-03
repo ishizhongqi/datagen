@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -68,13 +69,11 @@ private:
 /// ===============================
 class FileContext {
 public:
-    explicit FileContext(const Json& config) {
-        const auto                    extensions = parse_string_array("extensions", config);
+    FileContext(const faker::OperatingSystems operating_systems, const std::vector<std::string>& extensions) {
         std::vector<std::string_view> extension_views;
         extension_views.reserve(extensions.size());
         for (const auto& extension : extensions) { extension_views.emplace_back(extension); }
-        const faker::OperatingSystems operating_systems = parse_operating_systems(config);
-        file_                                           = faker::computer::File(operating_systems, extension_views);
+        file_        = faker::computer::File(operating_systems, extension_views);
         next_called_                                    = false;
     }
 
@@ -98,13 +97,60 @@ private:
     bool                  next_called_;
 };
 
+class SharedFileContext {
+public:
+    void merge_config(const Json& config, const std::string& generator_name) {
+        if (config.contains("operating_systems")) {
+            const auto parsed = parse_operating_systems(config);
+            if (operating_systems_.has_value() && operating_systems_.value() != parsed) {
+                throw std::runtime_error(
+                    "Conflicting operating_systems in linked file generators (found in " + generator_name + ")"
+                );
+            }
+            operating_systems_ = parsed;
+        }
+
+        if (config.contains("extensions")) {
+            const auto parsed = parse_string_array("extensions", config);
+            if (extensions_.has_value() && extensions_.value() != parsed) {
+                throw std::runtime_error(
+                    "Conflicting extensions in linked file generators (found in " + generator_name + ")"
+                );
+            }
+            extensions_ = parsed;
+        }
+    }
+
+    FileContext& ensure_context(const std::string& generator_name) {
+        if (!context_) {
+            if (!operating_systems_.has_value() || !extensions_.has_value()) {
+                throw std::runtime_error(
+                    "Linked file generators require both operating_systems and extensions before use (missing in " +
+                    generator_name + ")"
+                );
+            }
+            context_ = std::make_shared<FileContext>(operating_systems_.value(), extensions_.value());
+        }
+        return *context_;
+    }
+
+    void reset() {
+        if (context_) { context_->reset(); }
+    }
+
+private:
+    std::optional<faker::OperatingSystems> operating_systems_;
+    std::optional<std::vector<std::string>> extensions_;
+    std::shared_ptr<FileContext> context_;
+};
+
 /// ===============================
 /// file_path generator
 /// ===============================
 class FilePathGenerator : public IGenerator {
 public:
     FilePathGenerator(
-        std::shared_ptr<FileContext>  context,
+        std::shared_ptr<SharedFileContext> context,
         const faker::OperatingSystems operating_systems,
         std::vector<std::string>      extensions,
         const bool                    linkage
@@ -116,8 +162,9 @@ public:
 
     std::string generate() override {
         if (linkage_) {
-            context_->next();
-            return context_->file().path();
+            auto& context = context_->ensure_context("file_path");
+            context.next();
+            return context.file().path();
         }
 
         std::vector<std::string_view> extension_views;
@@ -128,11 +175,11 @@ public:
     }
 
     void next() override {
-        context_->reset();
+        if (linkage_ && context_) { context_->reset(); }
     }
 
 private:
-    std::shared_ptr<FileContext> context_;
+    std::shared_ptr<SharedFileContext> context_;
     faker::OperatingSystems      operating_systems_;
     std::vector<std::string>     extensions_;
     bool                         linkage_;
@@ -144,7 +191,7 @@ private:
 class FileDirectoryGenerator : public IGenerator {
 public:
     FileDirectoryGenerator(
-        std::shared_ptr<FileContext>  context,
+        std::shared_ptr<SharedFileContext> context,
         const faker::OperatingSystems operating_systems,
         const bool                    linkage
     ) :
@@ -152,18 +199,19 @@ public:
 
     std::string generate() override {
         if (linkage_) {
-            context_->next();
-            return context_->file().directory();
+            auto& context = context_->ensure_context("file_directory");
+            context.next();
+            return context.file().directory();
         }
         return faker::computer::file_directory(operating_systems_);
     }
 
     void next() override {
-        context_->reset();
+        if (linkage_ && context_) { context_->reset(); }
     }
 
 private:
-    std::shared_ptr<FileContext> context_;
+    std::shared_ptr<SharedFileContext> context_;
     faker::OperatingSystems      operating_systems_;
     bool                         linkage_;
 };
@@ -173,13 +221,18 @@ private:
 /// ===============================
 class FileNameGenerator : public IGenerator {
 public:
-    FileNameGenerator(std::shared_ptr<FileContext> context, std::vector<std::string> extensions, const bool linkage) :
+    FileNameGenerator(
+        std::shared_ptr<SharedFileContext> context,
+        std::vector<std::string>           extensions,
+        const bool                         linkage
+    ) :
         context_(std::move(context)), extensions_(std::move(extensions)), linkage_(linkage) {}
 
     std::string generate() override {
         if (linkage_) {
-            context_->next();
-            return context_->file().name();
+            auto& context = context_->ensure_context("file_name");
+            context.next();
+            return context.file().name();
         }
         std::vector<std::string_view> extension_views;
         extension_views.reserve(extensions_.size());
@@ -188,11 +241,11 @@ public:
     }
 
     void next() override {
-        context_->reset();
+        if (linkage_ && context_) { context_->reset(); }
     }
 
 private:
-    std::shared_ptr<FileContext> context_;
+    std::shared_ptr<SharedFileContext> context_;
     std::vector<std::string>     extensions_;
     bool                         linkage_;
 };
@@ -203,7 +256,7 @@ private:
 class FileExtensionGenerator : public IGenerator {
 public:
     FileExtensionGenerator(
-        std::shared_ptr<FileContext> context,
+        std::shared_ptr<SharedFileContext> context,
         std::vector<std::string>     extensions,
         const bool                   linkage
     ) :
@@ -211,8 +264,9 @@ public:
 
     std::string generate() override {
         if (linkage_) {
-            context_->next();
-            return context_->file().extension();
+            auto& context = context_->ensure_context("file_extension");
+            context.next();
+            return context.file().extension();
         }
         std::vector<std::string_view> extension_views;
         extension_views.reserve(extensions_.size());
@@ -221,11 +275,11 @@ public:
     }
 
     void next() override {
-        context_->reset();
+        if (linkage_ && context_) { context_->reset(); }
     }
 
 private:
-    std::shared_ptr<FileContext> context_;
+    std::shared_ptr<SharedFileContext> context_;
     std::vector<std::string>     extensions_;
     bool                         linkage_;
 };
@@ -247,64 +301,56 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<MacAddressGenerator>(unique);
     });
 
-    static std::shared_ptr<FileContext> shared_file_context = nullptr;
+    auto shared_file_context = std::make_shared<SharedFileContext>();
 
-    registry.register_generator("file_path", [](const Json& column) {
+    registry.register_generator("file_path", [shared_file_context](const Json& column) {
         const bool  linkage = column.value("data_linkage", true);
         const Json& config  = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto extensions        = parse_string_array("extensions", config);
 
-        std::shared_ptr<FileContext> context = nullptr;
         if (linkage) {
-            if (!shared_file_context) { shared_file_context = std::make_shared<FileContext>(config); }
-            context = shared_file_context;
+            shared_file_context->merge_config(config, "file_path");
         }
 
-        return std::make_unique<FilePathGenerator>(context, operating_systems, extensions, linkage);
+        return std::make_unique<FilePathGenerator>(shared_file_context, operating_systems, extensions, linkage);
     });
 
-    registry.register_generator("file_directory", [](const Json& column) {
+    registry.register_generator("file_directory", [shared_file_context](const Json& column) {
         const bool  linkage = column.value("data_linkage", true);
         const Json& config  = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
 
-        std::shared_ptr<FileContext> context = nullptr;
         if (linkage) {
-            if (!shared_file_context) { shared_file_context = std::make_shared<FileContext>(config); }
-            context = shared_file_context;
+            shared_file_context->merge_config(config, "file_directory");
         }
-        return std::make_unique<FileDirectoryGenerator>(context, operating_systems, linkage);
+        return std::make_unique<FileDirectoryGenerator>(shared_file_context, operating_systems, linkage);
     });
 
-    registry.register_generator("file_name", [](const Json& column) {
+    registry.register_generator("file_name", [shared_file_context](const Json& column) {
         const bool  linkage = column.value("data_linkage", true);
         const Json& config  = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
 
-        std::shared_ptr<FileContext> context = nullptr;
         if (linkage) {
-            if (!shared_file_context) { shared_file_context = std::make_shared<FileContext>(config); }
-            context = shared_file_context;
+            shared_file_context->merge_config(config, "file_name");
         }
-        return std::make_unique<FileNameGenerator>(context, extensions, linkage);
+        return std::make_unique<FileNameGenerator>(shared_file_context, extensions, linkage);
     });
 
-    registry.register_generator("file_extension", [](const Json& column) {
+    registry.register_generator("file_extension", [shared_file_context](const Json& column) {
         const bool  linkage = column.value("data_linkage", true);
         const Json& config  = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
 
-        std::shared_ptr<FileContext> context = nullptr;
         if (linkage) {
-            if (!shared_file_context) { shared_file_context = std::make_shared<FileContext>(config); }
-            context = shared_file_context;
+            shared_file_context->merge_config(config, "file_extension");
         }
-        return std::make_unique<FileExtensionGenerator>(context, extensions, linkage);
+        return std::make_unique<FileExtensionGenerator>(shared_file_context, extensions, linkage);
     });
 }
 
