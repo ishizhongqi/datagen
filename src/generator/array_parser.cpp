@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Shizhongqi
-// Licensed under the Apache License 2.0.
+// Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
 /// @file array_parser.cpp
@@ -179,6 +179,40 @@ faker::Regions parse_regions(const Json& config) {
     throw std::invalid_argument("regions must be a string or an array of strings");
 }
 
+faker::Genders parse_genders(const Json& config) {
+    if (!config.contains("genders")) { return faker::Genders::M | faker::Genders::F; }
+
+    const auto& genders_config = config["genders"];
+
+    if (genders_config.is_array()) {
+        faker::Genders genders{};
+
+        for (const auto& gender : genders_config) {
+            const std::string gender_str = gender.get<std::string>();
+
+            if (gender_str == "M" || gender_str == "Male") {
+                genders |= faker::Genders::M;
+            } else if (gender_str == "F" || gender_str == "Female") {
+                genders |= faker::Genders::F;
+            } else {
+                throw std::invalid_argument("Invalid gender: " + gender_str);
+            }
+        }
+
+        if (genders == faker::Genders{}) { throw std::invalid_argument("genders array must not be empty"); }
+
+        return genders;
+    }
+    if (genders_config.is_string()) {
+        const std::string gender_str = genders_config.get<std::string>();
+        if (gender_str == "M" || gender_str == "Male") { return faker::Genders::M; }
+        if (gender_str == "F" || gender_str == "Female") { return faker::Genders::F; }
+        throw std::invalid_argument("Invalid gender: " + gender_str);
+    }
+
+    throw std::invalid_argument("genders must be a string or an array of strings");
+}
+
 faker::CardTypes parse_card_types(const Json& config) {
     if (!config.contains("card_types") && !config.contains("card_type")) { return faker::CardTypes::Visa; }
 
@@ -304,6 +338,29 @@ faker::OperatingSystems parse_operating_systems(const Json& config) {
     }
 
     throw std::invalid_argument("operating_systems must be a string or an array of strings");
+}
+
+faker::CountryCodesStandard parse_country_codes_standard(const Json& config) {
+    if (!config.contains("country_codes_standard")) { return faker::CountryCodesStandard::None; }
+
+    const auto& value = config["country_codes_standard"];
+    if (!value.is_string()) {
+        throw std::invalid_argument("country_codes_standard must be a string");
+    }
+
+    const std::string standard = value.get<std::string>();
+    if (standard == "None") { return faker::CountryCodesStandard::None; }
+    if (standard == "ISO_3166_1_alpha_2" || standard == "ISO3166Alpha2") {
+        return faker::CountryCodesStandard::ISO_3166_1_alpha_2;
+    }
+    if (standard == "ISO_3166_1_alpha_3" || standard == "ISO3166Alpha3") {
+        return faker::CountryCodesStandard::ISO_3166_1_alpha_3;
+    }
+    throw std::invalid_argument("Invalid country codes standard: " + standard);
+}
+
+bool parse_use_translation(const Json& config) {
+    return config.value("use_translation", false);
 }
 
 }  // namespace data_generator::generator

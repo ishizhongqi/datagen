@@ -1,7 +1,7 @@
 {
     "rows": 100,
-    "output_format": "csv",
-    "null_value_string": null,
+    "output_format": "json",
+    "null_value_string": "null",
     "columns": [
         {
             "name": "company_name",
@@ -51,7 +51,7 @@
             },
             "null_value": {
                 "enabled": true,
-                "percent": 10
+                "percent": 1
             }
         },
         {
@@ -363,8 +363,7 @@
                 "genders": [
                     "M",
                     "F"
-                ],
-                "use_translation": false
+                ]
             },
             "data_linkage": true
         },
@@ -566,8 +565,7 @@
             "config": {
                 "start": 1000,
                 "end": 1010,
-                "step": 1,
-                "circle": true
+                "step": 1
             }
         },
         {
