@@ -30,11 +30,13 @@ public:
         return std::to_string(faker::number::integer<int64_t>(start_, end_));
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
-    int64_t      start_;
-    int64_t      end_;
+    int64_t       start_;
+    int64_t       end_;
     OverrideState overrides_;
 };
 
@@ -48,11 +50,13 @@ public:
         return std::to_string(faker::number::unsigned_integer<uint64_t>(start_, end_));
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
-    uint64_t     start_;
-    uint64_t     end_;
+    uint64_t      start_;
+    uint64_t      end_;
     OverrideState overrides_;
 };
 
@@ -63,18 +67,20 @@ public:
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
-        const double value = faker::number::decimal<double>(start_, end_, decimal_places_);
+        const double       value = faker::number::decimal<double>(start_, end_, decimal_places_);
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(decimal_places_) << value;
         return oss.str();
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
-    double       start_;
-    double       end_;
-    int          decimal_places_;
+    double        start_;
+    double        end_;
+    int           decimal_places_;
     OverrideState overrides_;
 };
 
@@ -88,12 +94,14 @@ public:
         return faker::number::decimal_string<double>(start_, end_, decimal_places_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
-    double       start_;
-    double       end_;
-    int          decimal_places_;
+    double        start_;
+    double        end_;
+    int           decimal_places_;
     OverrideState overrides_;
 };
 
@@ -101,36 +109,36 @@ private:
 
 void register_number_generators(GeneratorRegistry& registry) {
     registry.register_generator("integer", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const int64_t start = config.value("start", 0);
-        const int64_t end   = config.value("end", 100);
+        const Json&   config    = column.at("config");
+        const auto    overrides = parse_overrides(column);
+        const int64_t start     = config.value("start", 0);
+        const int64_t end       = config.value("end", 100);
         return std::make_unique<IntegerGenerator>(start, end, overrides);
     });
 
     registry.register_generator("unsigned_integer", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const uint64_t start = config.value("start", 0);
-        const uint64_t end   = config.value("end", 100);
+        const Json&    config    = column.at("config");
+        const auto     overrides = parse_overrides(column);
+        const uint64_t start     = config.value("start", 0ull);
+        const uint64_t end       = config.value("end", 100ull);
         return std::make_unique<UnsignedIntegerGenerator>(start, end, overrides);
     });
 
     registry.register_generator("decimal", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const double start = config.value("start", 0.0);
-        const double end   = config.value("end", 100.0);
-        const int decimal_places = config.value("decimal_places", 2);
+        const Json&  config         = column.at("config");
+        const auto   overrides      = parse_overrides(column);
+        const double start          = config.value("start", 0.0);
+        const double end            = config.value("end", 100.0);
+        const int    decimal_places = config.value("decimal_places", 2);
         return std::make_unique<DecimalGenerator>(start, end, decimal_places, overrides);
     });
 
     registry.register_generator("decimal_string", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const double start = config.value("start", 0.0);
-        const double end   = config.value("end", 100.0);
-        const int decimal_places = config.value("decimal_places", 2);
+        const Json&  config         = column.at("config");
+        const auto   overrides      = parse_overrides(column);
+        const double start          = config.value("start", 0.0);
+        const double end            = config.value("end", 100.0);
+        const int    decimal_places = config.value("decimal_places", 2);
         return std::make_unique<DecimalStringGenerator>(start, end, decimal_places, overrides);
     });
 }

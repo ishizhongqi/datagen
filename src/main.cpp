@@ -69,10 +69,8 @@ void run(const std::string& input_path) {
     register_string_generators(registry);
     register_utility_generators(registry);
 
-    std::ifstream     input_stream(input_path);
-    if (!input_stream) {
-        throw std::runtime_error("Failed to open input json: " + input_path);
-    }
+    std::ifstream input_stream(input_path);
+    if (!input_stream) { throw std::runtime_error("Failed to open input json: " + input_path); }
     Json root;
     input_stream >> root;
 
@@ -82,11 +80,9 @@ void run(const std::string& input_path) {
         const std::string name      = col.at("name").get<std::string>();
         const std::string generator = col.at("generator").get<std::string>();
 
-        Json col_with_rows = col;
+        Json col_with_rows    = col;
         col_with_rows["rows"] = root["rows"];
-        if (root.contains("null_value_string")) {
-            col_with_rows["null_value_string"] = root["null_value_string"];
-        }
+        if (root.contains("null_value_string")) { col_with_rows["null_value_string"] = root["null_value_string"]; }
 
         try {
             auto gen = registry.create(generator, col_with_rows);
@@ -110,9 +106,7 @@ void run(const std::string& input_path) {
     }
 
     std::ofstream output_stream(output_path, std::ios::trunc);
-    if (!output_stream) {
-        throw std::runtime_error("Failed to open output file: " + output_path);
-    }
+    if (!output_stream) { throw std::runtime_error("Failed to open output file: " + output_path); }
 
     if (output_format == "csv") {
         for (size_t i = 0; i < columns.size(); ++i) {
@@ -133,9 +127,7 @@ void run(const std::string& input_path) {
         output_stream << "[\n";
         for (int row = 0; row < root["rows"].get<int>(); ++row) {
             Json row_obj = Json::object();
-            for (auto& [name, gen] : columns) {
-                row_obj[name] = gen->generate();
-            }
+            for (auto& [name, gen] : columns) { row_obj[name] = gen->generate(); }
             output_stream << "  " << row_obj.dump();
             if (row + 1 < root["rows"].get<int>()) { output_stream << ","; }
             output_stream << "\n";
@@ -143,8 +135,8 @@ void run(const std::string& input_path) {
         }
         output_stream << "]\n";
     } else if (output_format == "sql") {
-        const std::string table_name = root.value("table_name", "generated_data");
-        const bool include_create_table = root.value("include_create_table", true);
+        const std::string table_name           = root.value("table_name", "generated_data");
+        const bool        include_create_table = root.value("include_create_table", true);
         if (include_create_table) {
             output_stream << "CREATE TABLE " << table_name << " (\n";
             for (size_t i = 0; i < columns.size(); ++i) {
@@ -173,149 +165,13 @@ void run(const std::string& input_path) {
     } else {
         throw std::runtime_error("output_format not implemented yet: " + output_format);
     }
-
-    // // You need to use a Bilingual object to store the return values from functions that provide bilingual output.
-    //  const faker::Bilingual first_name_bilingual   = faker::person::first_name(faker::Languages::SimplifiedChinese);
-    //  const std::string      first_name_original    = first_name_bilingual.original();
-    //  const std::string      first_name_translation = first_name_bilingual.translation();
-    //  std::cout << "First name: " << first_name_original << " (" << first_name_translation << ")" << std::endl;
-    //
-    //  // Most function parameters have default values, so you can just call the functions without providing any
-    //  arguments. const std::string industry = faker::business::industry(); std::cout << "Industry: " << industry <<
-    //  std::endl;
-    //
-    //  // Some functions allow bitwise OR (|) in their parameters,
-    //  // which you can use when you want to generate multiple enum members at once.
-    //  const std::string date =
-    //      faker::datetime::date("2023-01-01", "2023-12-31", faker::DaysOfWeek::Monday | faker::DaysOfWeek::Thursday);
-    //  std::cout << "Date: " << date << std::endl;
-    //
-    //  // You can use a class to create an entity
-    //  // where the generated data has stronger correlations between its fields.
-    //  // Of course, you can choose to call it with or without parameters.
-    //  const faker::person::Person person;
-    //  // At this point, the fake data has been fully generated, and you just need to call the getters to get data.
-    //  std::cout << "Person.First name : " << person.first_name().original() << std::endl;
-    //  std::cout << "Person.Full name  : " << person.full_name().original() << std::endl;
-    //  std::cout << "Person.Gender     : " << person.gender() << std::endl;
-    //  std::cout << "Person.Email      : " << person.email() << std::endl;
-    //
-    //  // File
-    //  std::cout << "File path       : " << faker::computer::file_path() << std::endl;
-    //  std::cout << "File directory  : " << faker::computer::file_directory() << std::endl;
-    //  std::cout << "File name       : " << faker::computer::file_name() << std::endl;
-    //  std::cout << "File extension  : " << faker::computer::file_extension() << std::endl;
-    //
-    //  faker::computer::File file(
-    //      faker::OperatingSystems::Windows,
-    //      std::to_array<std::string_view>({"jpg", "png", "txt", "pdf"})
-    //  );
-    //  std::cout << "File.Path       : " << file.path() << std::endl;
-    //  std::cout << "File.Directory  : " << file.directory() << std::endl;
-    //  std::cout << "File.Name       : " << file.name() << std::endl;
-    //  std::cout << "File.Extension  : " << file.extension() << std::endl;
-    //  file.reroll();
-    //  std::cout << "File.Path       : " << file.path() << std::endl;
-    //  std::cout << "File.Directory  : " << file.directory() << std::endl;
-    //  std::cout << "File.Name       : " << file.name() << std::endl;
-    //  std::cout << "File.Extension  : " << file.extension() << std::endl;
-    //
-    //  // For the other functions and classes, see the source code comments or the documentation.
-    //
-    //  // 测试生成器 - 根据JSON配置文件生成数据
-    //  // -----------------------------------
-    //  // 1. 初始化 registry（程序启动一次）
-    //  // -----------------------------------
-    //  GeneratorRegistry registry;
-    //  register_computer_generators(registry);
-    //
-    //  // -----------------------------------
-    //  // 2. 根据JSON配置文件创建生成器
-    //  // -----------------------------------
-    //  // 模拟从input_example.json解析的配置
-    //  Json ip_config = {{"ip_address_type", "IPv4"}, {"unique", true}};
-    //
-    //  // file_path配置（包含data_linkage）
-    //  Json file_path_config = {
-    //      {"operating_systems", {"Windows"}},
-    //      {"extensions", {"jpg", "png", "txt", "pdf"}},
-    //      {"data_linkage", true}
-    //  };
-    //
-    //  // file_directory配置（包含data_linkage）
-    //  Json file_directory_config = {{"operating_systems", {"Windows"}}, {"data_linkage", true}};
-    //
-    //  // file_name配置（包含data_linkage）
-    //  Json file_name_config = {{"extensions", {"jpg", "png", "txt", "pdf"}}, {"data_linkage", true}};
-    //
-    //  // file_extension配置（包含data_linkage）
-    //  Json file_extension_config = {{"extensions", {"jpg", "png", "txt", "pdf"}}, {"data_linkage", true}};
-    //
-    //  // -----------------------------------
-    //  // 3. 创建列生成器（一列一个）
-    //  // -----------------------------------
-    //  std::unique_ptr<IGenerator> ip_generator             = registry.create("ip_address", ip_config);
-    //  std::unique_ptr<IGenerator> file_path_generator      = registry.create("file_path", file_path_config);
-    //  std::unique_ptr<IGenerator> file_directory_generator = registry.create("file_directory", file_directory_config);
-    //  std::unique_ptr<IGenerator> file_name_generator      = registry.create("file_name", file_name_config);
-    //  std::unique_ptr<IGenerator> file_extension_generator = registry.create("file_extension", file_extension_config);
-    //
-    //  // -----------------------------------
-    //  // 4. 模拟一张表的列
-    //  // -----------------------------------
-    //  std::vector<std::pair<std::string, IGenerator*>> columns = {
-    //      {"ip_address", ip_generator.get()},
-    //      {"file_path", file_path_generator.get()},
-    //      {"file_directory", file_directory_generator.get()},
-    //      {"file_name", file_name_generator.get()},
-    //      {"file_extension", file_extension_generator.get()}
-    //  };
-    //
-    //  // -----------------------------------
-    //  // 5. 生成数据（核心逻辑）
-    //  // -----------------------------------
-    //  std::cout << "\n=== 数据生成示例（带数据关联） ===\n";
-    //  constexpr int kRowCount = 3;
-    //  for (int row = 0; row < kRowCount; ++row) {
-    //      std::cout << "\nRow " << row + 1 << ":\n";
-    //      std::cout << "----------------------------------------\n";
-    //      for (const auto& [column_name, generator] : columns) {
-    //          std::string value = generator->generate();
-    //          std::cout << std::setw(15) << std::left << column_name << " = " << value << "\n";
-    //      }
-    //      // 行结束：所有 generator 进入下一行
-    //      for (const auto& generator : columns) { generator.second->next(); }
-    //  }
-    //
-    //  // 测试无数据关联的情况
-    //  std::cout << "\n=== 数据生成示例（无数据关联） ===\n";
-    //  Json file_path_no_linkage = {
-    //      {"operating_systems", {"Windows"}},
-    //      {"extensions", {"jpg", "png"}},
-    //      {"data_linkage", false}
-    //  };
-    //
-    //  Json file_directory_no_linkage = {{"operating_systems", {"Windows"}}, {"data_linkage", false}};
-    //
-    //  auto file_path_no_linkage_gen      = registry.create("file_path", file_path_no_linkage);
-    //  auto file_directory_no_linkage_gen = registry.create("file_directory", file_directory_no_linkage);
-    //
-    //  std::cout << "\n无数据关联示例（文件路径和目录不相关）：\n";
-    //  for (int i = 0; i < 2; ++i) {
-    //      std::cout << "文件路径: " << file_path_no_linkage_gen->generate() << std::endl;
-    //      std::cout << "文件目录: " << file_directory_no_linkage_gen->generate() << std::endl;
-    //      std::cout << "---\n";
-    //      file_path_no_linkage_gen->next();
-    //      file_directory_no_linkage_gen->next();
-    //  }
-
 }
 
 }  // namespace data_generator
 
 int main(int argc, char** argv) {
     const std::string default_input = R"(D:\Projects\data_generator\dev\input_example.json)";
-    const std::string input_path = argc > 1 ? argv[1] : default_input;
+    const std::string input_path    = argc > 1 ? argv[1] : default_input;
     data_generator::run(input_path);
     return 0;
 }
