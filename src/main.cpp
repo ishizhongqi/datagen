@@ -96,11 +96,11 @@ void run(const std::string& input_path) {
     const std::string output_format = root.value("output_format", "csv");
     std::string       output_path;
     if (output_format == "csv") {
-        output_path = R"(D:\Projects\data_generator\dev\output.csv)";
+        output_path = R"(D:\Projects\data_generator\draft\output.csv)";
     } else if (output_format == "sql") {
-        output_path = R"(D:\Projects\data_generator\dev\output.sql)";
+        output_path = R"(D:\Projects\data_generator\draft\output.sql)";
     } else if (output_format == "json") {
-        output_path = R"(D:\Projects\data_generator\dev\output.json)";
+        output_path = R"(D:\Projects\data_generator\draft\output.json)";
     } else {
         throw std::runtime_error("Unsupported output_format: " + output_format);
     }
@@ -170,7 +170,7 @@ void run(const std::string& input_path) {
 }  // namespace data_generator
 
 int main(int argc, char** argv) {
-    const std::string default_input = R"(D:\Projects\data_generator\dev\input_example.json)";
+    const std::string default_input = R"(D:\Projects\data_generator\draft\input_example.json)";
     const std::string input_path    = argc > 1 ? argv[1] : default_input;
     data_generator::run(input_path);
     return 0;

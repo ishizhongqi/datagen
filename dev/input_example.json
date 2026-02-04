@@ -8,7 +8,7 @@
             "generator": "company_name",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -18,13 +18,8 @@
             "generator": "department",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
-            },
-            "default_value": {
-                "enabled": true,
-                "percent": 5,
-                "value": "Unknown"
             }
         },
         {
@@ -32,7 +27,7 @@
             "generator": "industry",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -44,11 +39,18 @@
                 "ip_address_type": "IPv4"
             },
             "unique": true,
-            "default_value": {
+            "null_value": {
                 "enabled": true,
-                "percent": 2,
-                "value": "0.0.0.0"
+                "percent": 10
+            }
+        },
+        {
+            "name": "ip_address",
+            "generator": "ip_address",
+            "config": {
+                "ip_address_type": "IPv6"
             },
+            "unique": true,
             "null_value": {
                 "enabled": true,
                 "percent": 10
@@ -211,7 +213,7 @@
             "generator": "address_line1",
             "config": {
                 "regions": [
-                    "UnitedStates"
+                    "China"
                 ]
             },
             "data_linkage": true
@@ -221,7 +223,7 @@
             "generator": "address_line2",
             "config": {
                 "regions": [
-                    "UnitedStates"
+                    "China"
                 ]
             },
             "data_linkage": true
@@ -231,7 +233,7 @@
             "generator": "postcode",
             "config": {
                 "regions": [
-                    "UnitedStates"
+                    "China"
                 ]
             },
             "data_linkage": true
@@ -241,7 +243,7 @@
             "generator": "full_address",
             "config": {
                 "regions": [
-                    "UnitedStates"
+                    "China"
                 ]
             },
             "data_linkage": true
@@ -251,7 +253,7 @@
             "generator": "city",
             "config": {
                 "regions": [
-                    "UnitedStates"
+                    "China"
                 ]
             },
             "data_linkage": true
@@ -262,7 +264,7 @@
             "config": {
                 "country_codes_standard": "None",
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -317,7 +319,7 @@
             "generator": "card_type",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "card_types": [
                     "AmericanExpress",
@@ -358,7 +360,7 @@
             "generator": "first_name",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "genders": [
                     "M",
@@ -373,7 +375,7 @@
             "generator": "last_name",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -383,7 +385,7 @@
             "generator": "full_name",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "genders": [
                     "M",
@@ -397,7 +399,7 @@
             "generator": "gender",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -407,7 +409,7 @@
             "generator": "title",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "genders": [
                     "M",
@@ -421,7 +423,7 @@
             "generator": "marital_status",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -431,22 +433,18 @@
             "generator": "phone_number",
             "config": {
                 "is_international": false,
-                "include_delimiters": true,
-                "regions": "UnitedStates"
+                "include_delimiters": false,
+                "regions": "China"
             },
             "unique": true,
-            "data_linkage": true,
-            "null_value": {
-                "enabled": true,
-                "percent": 2
-            }
+            "data_linkage": true
         },
         {
             "name": "email",
             "generator": "email",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "domains": [
                     "gmail.com",
@@ -454,19 +452,14 @@
                 ]
             },
             "unique": true,
-            "data_linkage": true,
-            "default_value": {
-                "enabled": true,
-                "percent": 3,
-                "value": "user@example.com"
-            }
+            "data_linkage": true
         },
         {
             "name": "job_title",
             "generator": "job_title",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "data_linkage": true
@@ -476,7 +469,7 @@
             "generator": "social_network_id",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             },
             "unique": true,
@@ -487,7 +480,7 @@
             "generator": "product_name",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ],
                 "keywords": [
                     "Cherry",
@@ -506,7 +499,7 @@
             "generator": "product_category",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             }
         },
@@ -515,7 +508,7 @@
             "generator": "color",
             "config": {
                 "languages": [
-                    "English"
+                    "Simplified Chinese"
                 ]
             }
         },

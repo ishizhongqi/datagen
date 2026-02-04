@@ -23,8 +23,13 @@ namespace {
 
 class SequenceGenerator : public IGenerator {
 public:
-    SequenceGenerator(int64_t start, int64_t end, int64_t step, OverrideState overrides) :
-        current_(start), start_(start), end_(end), step_(step), overrides_(std::move(overrides)) {
+    SequenceGenerator(int64_t start, int64_t end, int64_t step, bool circle, OverrideState overrides) :
+        current_(start),
+        start_(start),
+        end_(end),
+        step_(step),
+        circle_(circle),
+        overrides_(std::move(overrides)) {
         if (step_ == 0) { throw std::invalid_argument("sequence step must not be 0"); }
     }
 
@@ -37,7 +42,11 @@ public:
         next_row(overrides_);
         const int64_t next_value = current_ + step_;
         if ((step_ > 0 && next_value > end_) || (step_ < 0 && next_value < end_)) {
-            current_ = start_;
+            if (circle_) {
+                current_ = start_;
+            } else {
+                current_ = end_;
+            }
         } else {
             current_ = next_value;
         }
@@ -48,6 +57,7 @@ private:
     int64_t      start_;
     int64_t      end_;
     int64_t      step_;
+    bool         circle_;
     OverrideState overrides_;
 };
 
@@ -244,7 +254,6 @@ private:
         }
     }
 
-private:
     std::string             pattern_;
     std::vector<RegexToken> tokens_;
     size_t                  pos_ = 0;
@@ -261,7 +270,8 @@ void register_utility_generators(GeneratorRegistry& registry) {
         const int64_t start = config.value("start", 1);
         const int64_t end   = config.value("end", 100);
         const int64_t step  = config.value("step", 1);
-        return std::make_unique<SequenceGenerator>(start, end, step, overrides);
+        const bool circle = config.value("circle", true);
+        return std::make_unique<SequenceGenerator>(start, end, step, circle, overrides);
     });
 
     registry.register_generator("regular_expression", [](const Json& column) {
