@@ -6,6 +6,27 @@ set(CLI_DIRECTORY cli)
 
 set(GENERATOR_DIRECTORY generators)
 
+set(CLI_SOURCE
+        ${CLI_DIRECTORY}/cli_dispatcher.cpp
+        ${CLI_DIRECTORY}/cli_dispatcher.h
+        ${CLI_DIRECTORY}/cli_shared.cpp
+        ${CLI_DIRECTORY}/cli_shared.h
+        ${CLI_DIRECTORY}/generator_catalog.cpp
+        ${CLI_DIRECTORY}/generator_catalog.h
+        ${CLI_DIRECTORY}/command_init.cpp
+        ${CLI_DIRECTORY}/command_init.h
+        ${CLI_DIRECTORY}/command_preview.cpp
+        ${CLI_DIRECTORY}/command_preview.h
+        ${CLI_DIRECTORY}/command_generate.cpp
+        ${CLI_DIRECTORY}/command_generate.h
+        ${CLI_DIRECTORY}/command_describe.cpp
+        ${CLI_DIRECTORY}/command_describe.h
+        ${CLI_DIRECTORY}/command_validate.cpp
+        ${CLI_DIRECTORY}/command_validate.h
+        ${CLI_DIRECTORY}/command_help.cpp
+        ${CLI_DIRECTORY}/command_help.h
+)
+
 set(GENERATOR_SOURCE
         ${GENERATOR_DIRECTORY}/generator_base.h
         ${GENERATOR_DIRECTORY}/generator_registry.cpp
@@ -38,9 +59,9 @@ set(GENERATOR_SOURCE
         ${GENERATOR_DIRECTORY}/override_rules.h
 )
 
-add_executable(data-generator ${MAIN_SOURCE} ${GENERATOR_SOURCE})
+add_executable(data-generator ${MAIN_SOURCE} ${CLI_SOURCE} ${GENERATOR_SOURCE})
 
 target_include_directories(data-generator
         PRIVATE
-        generator
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
