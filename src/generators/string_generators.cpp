@@ -37,7 +37,9 @@ public:
         return faker::string::enum_item(std::span<const std::string_view>(enum_views_));
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     std::vector<std::string>      enums_;
@@ -55,11 +57,13 @@ public:
         return faker::string::text(start_, end_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
-    unsigned int start_;
-    unsigned int end_;
+    unsigned int  start_;
+    unsigned int  end_;
     OverrideState overrides_;
 };
 
@@ -73,7 +77,9 @@ public:
         return faker::string::uuid(include_hyphens_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     bool          include_hyphens_;
@@ -84,24 +90,24 @@ private:
 
 void register_string_generators(GeneratorRegistry& registry) {
     registry.register_generator("enum_item", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto enums = parse_string_array("enums", config);
+        const Json& config    = column.at("config");
+        const auto  overrides = parse_overrides(column);
+        const auto  enums     = parse_string_array("enums", config);
         return std::make_unique<EnumItemGenerator>(enums, overrides);
     });
 
     registry.register_generator("text", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const unsigned int start = config.value("number_of_chars_start", 100U);
-        const unsigned int end   = config.value("number_of_chars_end", 10000U);
+        const Json&        config    = column.at("config");
+        const auto         overrides = parse_overrides(column);
+        const unsigned int start     = config.value("number_of_chars_start", 100U);
+        const unsigned int end       = config.value("number_of_chars_end", 10000U);
         return std::make_unique<TextGenerator>(start, end, overrides);
     });
 
     registry.register_generator("uuid", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const bool include_hyphens = config.value("include_hyphens", true);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const bool  include_hyphens = config.value("include_hyphens", true);
         return std::make_unique<UuidGenerator>(include_hyphens, overrides);
     });
 }

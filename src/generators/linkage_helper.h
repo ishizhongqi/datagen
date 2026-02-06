@@ -8,7 +8,6 @@
 #define DATA_GENERATOR_LINKAGE_HELPER_H
 
 #include <nlohmann/json.hpp>
-
 #include <optional>
 #include <string>
 

@@ -23,7 +23,7 @@ bool roll_remaining(int& remaining, const int rows_left) {
         --remaining;
         return true;
     }
-    thread_local std::mt19937_64 rng{std::random_device{}()};
+    thread_local std::mt19937_64       rng{std::random_device{}()};
     std::uniform_int_distribution<int> dist(1, rows_left);
     if (dist(rng) <= remaining) {
         --remaining;
@@ -35,7 +35,7 @@ bool roll_remaining(int& remaining, const int rows_left) {
 bool roll_percent(const int percent) {
     if (percent <= 0) { return false; }
     if (percent >= 100) { return true; }
-    thread_local std::mt19937_64 rng{std::random_device{}()};
+    thread_local std::mt19937_64       rng{std::random_device{}()};
     std::uniform_int_distribution<int> dist(1, 100);
     return dist(rng) <= percent;
 }
@@ -46,7 +46,7 @@ OverrideState parse_overrides(const Json& column) {
     OverrideState overrides;
 
     if (column.contains("default_value")) {
-        const auto& cfg                 = column.at("default_value");
+        const auto& cfg                = column.at("default_value");
         overrides.default_rule.enabled = cfg.value("enabled", false);
         overrides.default_rule.percent = cfg.value("percent", 100);
         validate_percent(overrides.default_rule.percent, "default_value");
@@ -54,7 +54,7 @@ OverrideState parse_overrides(const Json& column) {
     }
 
     if (column.contains("null_value")) {
-        const auto& cfg              = column.at("null_value");
+        const auto& cfg             = column.at("null_value");
         overrides.null_rule.enabled = cfg.value("enabled", false);
         overrides.null_rule.percent = cfg.value("percent", 100);
         validate_percent(overrides.null_rule.percent, "null_value");
@@ -74,8 +74,10 @@ OverrideState parse_overrides(const Json& column) {
     }
 
     if (overrides.total_rows > 0) {
-        if (overrides.default_rule.enabled && overrides.null_rule.enabled &&
-            overrides.default_rule.percent + overrides.null_rule.percent > 100) {
+        if (overrides.default_rule.enabled &&
+            overrides.null_rule.enabled &&
+            overrides.default_rule.percent +
+            overrides.null_rule.percent > 100) {
             throw std::invalid_argument("default_value percent + null_value percent must be <= 100");
         }
         overrides.null_remaining =

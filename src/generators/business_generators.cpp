@@ -70,7 +70,7 @@ public:
         return *context_;
     }
 
-    void reset() {
+    void reset() const {
         if (context_) { context_->reset(); }
     }
 

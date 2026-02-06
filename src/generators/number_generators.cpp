@@ -67,7 +67,7 @@ public:
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
-        const double       value = faker::number::decimal<double>(start_, end_, decimal_places_);
+        const auto         value = faker::number::decimal<double>(start_, end_, decimal_places_);
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(decimal_places_) << value;
         return oss.str();

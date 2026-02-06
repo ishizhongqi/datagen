@@ -145,7 +145,7 @@ public:
         return *context_;
     }
 
-    void reset() {
+    void reset() const {
         if (context_) { context_->reset(); }
     }
 
@@ -342,12 +342,8 @@ private:
 class UrlGenerator : public IGenerator {
 public:
     UrlGenerator(const Json& config, const bool unique, OverrideState overrides) :
-        subdomains_(parse_string_array("subdomains", config)),
-        unique_(unique),
-        overrides_(std::move(overrides)) {
-        if (!config.contains("tlds")) {
-            throw std::invalid_argument("url generator requires tlds");
-        }
+        subdomains_(parse_string_array("subdomains", config)), unique_(unique), overrides_(std::move(overrides)) {
+        if (!config.contains("tlds")) { throw std::invalid_argument("url generator requires tlds"); }
         tlds_ = parse_string_array("tlds", config);
     }
 
@@ -391,12 +387,8 @@ private:
 class HostnameGenerator : public IGenerator {
 public:
     HostnameGenerator(const Json& config, const bool unique, OverrideState overrides) :
-        subdomains_(parse_string_array("subdomains", config)),
-        unique_(unique),
-        overrides_(std::move(overrides)) {
-        if (!config.contains("tlds")) {
-            throw std::invalid_argument("hostname generator requires tlds");
-        }
+        subdomains_(parse_string_array("subdomains", config)), unique_(unique), overrides_(std::move(overrides)) {
+        if (!config.contains("tlds")) { throw std::invalid_argument("hostname generator requires tlds"); }
         tlds_ = parse_string_array("tlds", config);
     }
 
@@ -453,18 +445,17 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<MacAddressGenerator>(unique, overrides);
     });
 
-    auto shared_file_contexts =
-        std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedFileContext>>>();
+    auto shared_file_contexts = std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedFileContext>>>();
 
     registry.register_generator("file_path", [shared_file_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto extensions        = parse_string_array("extensions", config);
         const auto overrides         = parse_overrides(column);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -477,13 +468,13 @@ void register_computer_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("file_directory", [shared_file_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto overrides         = parse_overrides(column);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -496,13 +487,13 @@ void register_computer_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("file_name", [shared_file_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
         const auto overrides  = parse_overrides(column);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -515,13 +506,13 @@ void register_computer_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("file_extension", [shared_file_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
         const auto overrides  = parse_overrides(column);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }

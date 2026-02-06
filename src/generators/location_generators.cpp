@@ -45,7 +45,7 @@ public:
 
 private:
     faker::location::Location location_;
-    bool                       next_called_ = false;
+    bool                      next_called_ = false;
 };
 
 class SharedLocationContext {
@@ -70,12 +70,12 @@ public:
         return *context_;
     }
 
-    void reset() {
+    void reset() const {
         if (context_) { context_->reset(); }
     }
 
 private:
-    std::optional<faker::Regions>  regions_;
+    std::optional<faker::Regions>    regions_;
     std::shared_ptr<LocationContext> context_;
 };
 
@@ -83,10 +83,10 @@ class AddressLine1Generator : public IGenerator {
 public:
     AddressLine1Generator(
         std::shared_ptr<SharedLocationContext> context,
-        faker::Regions regions,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Regions                         regions,
+        bool                                   linkage,
+        bool                                   use_translation,
+        OverrideState                          overrides
     ) :
         context_(std::move(context)),
         regions_(regions),
@@ -123,10 +123,10 @@ class AddressLine2Generator : public IGenerator {
 public:
     AddressLine2Generator(
         std::shared_ptr<SharedLocationContext> context,
-        faker::Regions regions,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Regions                         regions,
+        bool                                   linkage,
+        bool                                   use_translation,
+        OverrideState                          overrides
     ) :
         context_(std::move(context)),
         regions_(regions),
@@ -161,7 +161,12 @@ private:
 
 class PostcodeGenerator : public IGenerator {
 public:
-    PostcodeGenerator(std::shared_ptr<SharedLocationContext> context, faker::Regions regions, bool linkage, OverrideState overrides) :
+    PostcodeGenerator(
+        std::shared_ptr<SharedLocationContext> context,
+        faker::Regions                         regions,
+        bool                                   linkage,
+        OverrideState                          overrides
+    ) :
         context_(std::move(context)), regions_(regions), linkage_(linkage), overrides_(std::move(overrides)) {}
 
     std::string generate() override {
@@ -190,10 +195,10 @@ class FullAddressGenerator : public IGenerator {
 public:
     FullAddressGenerator(
         std::shared_ptr<SharedLocationContext> context,
-        faker::Regions regions,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Regions                         regions,
+        bool                                   linkage,
+        bool                                   use_translation,
+        OverrideState                          overrides
     ) :
         context_(std::move(context)),
         regions_(regions),
@@ -230,10 +235,10 @@ class CityGenerator : public IGenerator {
 public:
     CityGenerator(
         std::shared_ptr<SharedLocationContext> context,
-        faker::Regions regions,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Regions                         regions,
+        bool                                   linkage,
+        bool                                   use_translation,
+        OverrideState                          overrides
     ) :
         context_(std::move(context)),
         regions_(regions),
@@ -275,7 +280,9 @@ public:
         return faker::location::region(standard_, languages_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     faker::CountryCodesStandard standard_;
@@ -290,13 +297,13 @@ void register_location_generators(GeneratorRegistry& registry) {
         std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedLocationContext>>>();
 
     registry.register_generator("address_line1", [shared_location_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  regions         = parse_regions(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedLocationContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                             linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_location_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
@@ -308,13 +315,13 @@ void register_location_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("address_line2", [shared_location_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  regions         = parse_regions(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedLocationContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                             linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_location_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
@@ -326,12 +333,12 @@ void register_location_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("postcode", [shared_location_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
+        const auto  regions   = parse_regions(config);
 
         std::shared_ptr<SharedLocationContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                             linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_location_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
@@ -343,13 +350,13 @@ void register_location_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("full_address", [shared_location_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  regions         = parse_regions(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedLocationContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                             linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_location_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
@@ -361,13 +368,13 @@ void register_location_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("city", [shared_location_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  regions         = parse_regions(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedLocationContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                             linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_location_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
@@ -379,9 +386,9 @@ void register_location_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("region", [](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
-        const auto  standard = parse_country_codes_standard(config);
+        const auto  standard  = parse_country_codes_standard(config);
         const auto  languages = parse_languages(config);
         return std::make_unique<RegionGenerator>(standard, languages, overrides);
     });

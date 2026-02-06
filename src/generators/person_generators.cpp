@@ -28,11 +28,11 @@ namespace {
 class PersonContext {
 public:
     PersonContext(
-        const faker::Genders genders,
-        const faker::Languages languages,
-        const faker::Regions regions,
-        std::optional<std::span<const std::string_view>> domains,
-        const bool unique
+        const faker::Genders                                    genders,
+        const faker::Languages                                  languages,
+        const faker::Regions                                    regions,
+        const std::optional<std::span<const std::string_view>>& domains,
+        const bool                                              unique
     ) :
         person_(genders, languages, regions, domains, unique) {}
 
@@ -108,10 +108,10 @@ public:
 
     PersonContext& ensure_context([[maybe_unused]] const std::string& generator_name) {
         if (!context_) {
-            const auto genders = genders_.value_or(faker::Genders::M | faker::Genders::F);
+            const auto genders   = genders_.value_or(faker::Genders::M | faker::Genders::F);
             const auto languages = languages_.value_or(faker::Languages::English);
-            const auto regions = regions_.value_or(faker::Regions::UnitedStates);
-            const auto unique = unique_.value_or(false);
+            const auto regions   = regions_.value_or(faker::Regions::UnitedStates);
+            const auto unique    = unique_.value_or(false);
 
             std::optional<std::span<const std::string_view>> domains = std::nullopt;
             if (domains_.has_value()) {
@@ -126,29 +126,29 @@ public:
         return *context_;
     }
 
-    void reset() {
+    void reset() const {
         if (context_) { context_->reset(); }
     }
 
 private:
-    std::optional<faker::Genders>                 genders_;
-    std::optional<faker::Languages>               languages_;
-    std::optional<faker::Regions>                 regions_;
-    std::optional<std::vector<std::string>>       domains_;
-    std::optional<bool>                           unique_;
-    std::vector<std::string_view>                 domain_views_;
-    std::shared_ptr<PersonContext>                context_;
+    std::optional<faker::Genders>           genders_;
+    std::optional<faker::Languages>         languages_;
+    std::optional<faker::Regions>           regions_;
+    std::optional<std::vector<std::string>> domains_;
+    std::optional<bool>                     unique_;
+    std::vector<std::string_view>           domain_views_;
+    std::shared_ptr<PersonContext>          context_;
 };
 
 class FirstNameGenerator : public IGenerator {
 public:
     FirstNameGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        faker::Genders genders,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Languages                     languages,
+        faker::Genders                       genders,
+        bool                                 linkage,
+        bool                                 use_translation,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -187,10 +187,10 @@ class LastNameGenerator : public IGenerator {
 public:
     LastNameGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Languages                     languages,
+        bool                                 linkage,
+        bool                                 use_translation,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -227,11 +227,11 @@ class FullNameGenerator : public IGenerator {
 public:
     FullNameGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        faker::Genders genders,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Languages                     languages,
+        faker::Genders                       genders,
+        bool                                 linkage,
+        bool                                 use_translation,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -270,14 +270,11 @@ class GenderGenerator : public IGenerator {
 public:
     GenderGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        bool linkage,
-        OverrideState overrides
+        faker::Languages                     languages,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
-        context_(std::move(context)),
-        languages_(languages),
-        linkage_(linkage),
-        overrides_(std::move(overrides)) {}
+        context_(std::move(context)), languages_(languages), linkage_(linkage), overrides_(std::move(overrides)) {}
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
@@ -305,10 +302,10 @@ class TitleGenerator : public IGenerator {
 public:
     TitleGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        faker::Genders genders,
-        bool linkage,
-        OverrideState overrides
+        faker::Languages                     languages,
+        faker::Genders                       genders,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -343,14 +340,11 @@ class MaritalStatusGenerator : public IGenerator {
 public:
     MaritalStatusGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        bool linkage,
-        OverrideState overrides
+        faker::Languages                     languages,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
-        context_(std::move(context)),
-        languages_(languages),
-        linkage_(linkage),
-        overrides_(std::move(overrides)) {}
+        context_(std::move(context)), languages_(languages), linkage_(linkage), overrides_(std::move(overrides)) {}
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
@@ -378,12 +372,12 @@ class PhoneNumberGenerator : public IGenerator {
 public:
     PhoneNumberGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Regions regions,
-        bool is_international,
-        bool include_delimiters,
-        bool unique,
-        bool linkage,
-        OverrideState overrides
+        faker::Regions                       regions,
+        bool                                 is_international,
+        bool                                 include_delimiters,
+        bool                                 unique,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         regions_(regions),
@@ -422,11 +416,11 @@ class EmailGenerator : public IGenerator {
 public:
     EmailGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        std::vector<std::string> domains,
-        bool unique,
-        bool linkage,
-        OverrideState overrides
+        faker::Languages                     languages,
+        std::vector<std::string>             domains,
+        bool                                 unique,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -448,9 +442,7 @@ public:
             context.next();
             return context.person().email();
         }
-        if (domains_.empty()) {
-            return faker::person::email(languages_, std::nullopt, unique_);
-        }
+        if (domains_.empty()) { return faker::person::email(languages_, std::nullopt, unique_); }
         init_views();
         return faker::person::email(languages_, std::span<const std::string_view>(domain_views_), unique_);
     }
@@ -474,14 +466,11 @@ class JobTitleGenerator : public IGenerator {
 public:
     JobTitleGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        bool linkage,
-        OverrideState overrides
+        faker::Languages                     languages,
+        bool                                 linkage,
+        OverrideState                        overrides
     ) :
-        context_(std::move(context)),
-        languages_(languages),
-        linkage_(linkage),
-        overrides_(std::move(overrides)) {}
+        context_(std::move(context)), languages_(languages), linkage_(linkage), overrides_(std::move(overrides)) {}
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
@@ -509,11 +498,11 @@ class SocialNetworkIdGenerator : public IGenerator {
 public:
     SocialNetworkIdGenerator(
         std::shared_ptr<SharedPersonContext> context,
-        faker::Languages languages,
-        bool unique,
-        bool linkage,
-        bool use_translation,
-        OverrideState overrides
+        faker::Languages                     languages,
+        bool                                 unique,
+        bool                                 linkage,
+        bool                                 use_translation,
+        OverrideState                        overrides
     ) :
         context_(std::move(context)),
         languages_(languages),
@@ -555,14 +544,14 @@ void register_person_generators(GeneratorRegistry& registry) {
         std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedPersonContext>>>();
 
     registry.register_generator("first_name", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  languages = parse_languages(config);
-        const auto  genders   = parse_genders(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  languages       = parse_languages(config);
+        const auto  genders         = parse_genders(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -574,13 +563,13 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("last_name", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  languages = parse_languages(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  languages       = parse_languages(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -592,14 +581,14 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("full_name", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  languages = parse_languages(config);
-        const auto  genders   = parse_genders(config);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  languages       = parse_languages(config);
+        const auto  genders         = parse_genders(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -611,12 +600,12 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("gender", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -628,13 +617,13 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("title", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  genders   = parse_genders(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -646,12 +635,12 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("marital_status", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -663,15 +652,15 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("phone_number", [shared_person_contexts](const Json& column) {
-        const bool  unique  = column.value("unique", false);
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  regions = parse_regions(config);
-        const bool is_international = config.value("is_international", false);
-        const bool include_delimiters = config.value("include_delimiters", true);
+        const bool  unique             = column.value("unique", false);
+        const Json& config             = column.at("config");
+        const auto  overrides          = parse_overrides(column);
+        const auto  regions            = parse_regions(config);
+        const bool  is_international   = config.value("is_international", false);
+        const bool  include_delimiters = config.value("include_delimiters", true);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -691,14 +680,14 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("email", [shared_person_contexts](const Json& column) {
-        const bool  unique  = column.value("unique", false);
-        const Json& config  = column.at("config");
+        const bool  unique    = column.value("unique", false);
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  domains   = parse_string_array("domains", config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -710,12 +699,12 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("job_title", [shared_person_contexts](const Json& column) {
-        const Json& config  = column.at("config");
+        const Json& config    = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
@@ -727,14 +716,14 @@ void register_person_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("social_network_id", [shared_person_contexts](const Json& column) {
-        const bool  unique  = column.value("unique", false);
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  languages = parse_languages(config);
+        const bool  unique          = column.value("unique", false);
+        const Json& config          = column.at("config");
+        const auto  overrides       = parse_overrides(column);
+        const auto  languages       = parse_languages(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedPersonContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                           linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_person_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedPersonContext>(); }

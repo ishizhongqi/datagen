@@ -38,7 +38,9 @@ public:
         return faker::product::product_name(languages_, std::span<const std::string_view>(keyword_views_));
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     faker::Languages              languages_;
@@ -57,7 +59,9 @@ public:
         return faker::product::product_category(languages_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     faker::Languages languages_;
@@ -74,7 +78,9 @@ public:
         return faker::product::color(languages_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     faker::Languages languages_;
@@ -90,7 +96,9 @@ public:
         return faker::product::size();
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     OverrideState overrides_;
@@ -106,7 +114,9 @@ public:
         return faker::product::barcode(barcode_types_, unique_);
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     faker::BarcodeTypes barcode_types_;
@@ -118,24 +128,24 @@ private:
 
 void register_product_generators(GeneratorRegistry& registry) {
     registry.register_generator("product_name", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto languages = parse_languages(config);
-        const auto keywords = parse_string_array("keywords", config);
+        const Json& config    = column.at("config");
+        const auto  overrides = parse_overrides(column);
+        const auto  languages = parse_languages(config);
+        const auto  keywords  = parse_string_array("keywords", config);
         return std::make_unique<ProductNameGenerator>(languages, keywords, overrides);
     });
 
     registry.register_generator("product_category", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto languages = parse_languages(config);
+        const Json& config    = column.at("config");
+        const auto  overrides = parse_overrides(column);
+        const auto  languages = parse_languages(config);
         return std::make_unique<ProductCategoryGenerator>(languages, overrides);
     });
 
     registry.register_generator("color", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto languages = parse_languages(config);
+        const Json& config    = column.at("config");
+        const auto  overrides = parse_overrides(column);
+        const auto  languages = parse_languages(config);
         return std::make_unique<ColorGenerator>(languages, overrides);
     });
 
@@ -145,10 +155,10 @@ void register_product_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("barcode", [](const Json& column) {
-        const bool unique = column.value("unique", false);
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto barcode_types = parse_barcode_type(config);
+        const bool  unique        = column.value("unique", false);
+        const Json& config        = column.at("config");
+        const auto  overrides     = parse_overrides(column);
+        const auto  barcode_types = parse_barcode_type(config);
         return std::make_unique<BarcodeGenerator>(barcode_types, unique, overrides);
     });
 }

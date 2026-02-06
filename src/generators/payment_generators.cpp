@@ -30,9 +30,9 @@ public:
     CardContext(
         const faker::Languages languages,
         const faker::CardTypes card_types,
-        std::string start,
-        std::string end,
-        const bool unique
+        const std::string&     start,
+        const std::string&     end,
+        const bool             unique
     ) :
         card_(languages, card_types, start, end, unique) {}
 
@@ -108,22 +108,23 @@ public:
 
     CardContext& ensure_context([[maybe_unused]] const std::string& generator_name) {
         if (!context_) {
-            const auto languages = languages_.value_or(faker::Languages::English);
-            const auto card_types =
-                card_types_.value_or(faker::CardTypes::AmericanExpress |
-                                     faker::CardTypes::JCB |
-                                     faker::CardTypes::MasterCard |
-                                     faker::CardTypes::UnionPay |
-                                     faker::CardTypes::Visa);
-            const auto start = start_.value_or("01/00");
-            const auto end   = end_.value_or("12/50");
+            const auto languages  = languages_.value_or(faker::Languages::English);
+            const auto card_types = card_types_.value_or(
+                faker::CardTypes::AmericanExpress |
+                faker::CardTypes::JCB |
+                faker::CardTypes::MasterCard |
+                faker::CardTypes::UnionPay |
+                faker::CardTypes::Visa
+            );
+            const auto start  = start_.value_or("01/00");
+            const auto end    = end_.value_or("12/50");
             const auto unique = unique_.value_or(false);
-            context_ = std::make_shared<CardContext>(languages, card_types, start, end, unique);
+            context_          = std::make_shared<CardContext>(languages, card_types, start, end, unique);
         }
         return *context_;
     }
 
-    void reset() {
+    void reset() const {
         if (context_) { context_->reset(); }
     }
 
@@ -140,9 +141,9 @@ class PaymentMethodGenerator : public IGenerator {
 public:
     PaymentMethodGenerator(
         std::shared_ptr<SharedCardContext> context,
-        std::vector<std::string> methods,
-        bool linkage,
-        OverrideState overrides
+        std::vector<std::string>           methods,
+        bool                               linkage,
+        OverrideState                      overrides
     ) :
         context_(std::move(context)),
         methods_(std::move(methods)),
@@ -174,15 +175,21 @@ public:
 
 private:
     std::shared_ptr<SharedCardContext> context_;
-    std::vector<std::string>      methods_;
-    std::vector<std::string_view> method_views_;
-    bool                          linkage_;
-    OverrideState                 overrides_;
+    std::vector<std::string>           methods_;
+    std::vector<std::string_view>      method_views_;
+    bool                               linkage_;
+    OverrideState                      overrides_;
 };
 
 class CardTypeGenerator : public IGenerator {
 public:
-    CardTypeGenerator(std::shared_ptr<SharedCardContext> context, faker::Languages languages, faker::CardTypes card_types, bool linkage, OverrideState overrides) :
+    CardTypeGenerator(
+        std::shared_ptr<SharedCardContext> context,
+        faker::Languages                   languages,
+        faker::CardTypes                   card_types,
+        bool                               linkage,
+        OverrideState                      overrides
+    ) :
         context_(std::move(context)),
         languages_(languages),
         card_types_(card_types),
@@ -214,7 +221,13 @@ private:
 
 class CardNumberGenerator : public IGenerator {
 public:
-    CardNumberGenerator(std::shared_ptr<SharedCardContext> context, faker::CardTypes card_types, bool unique, bool linkage, OverrideState overrides) :
+    CardNumberGenerator(
+        std::shared_ptr<SharedCardContext> context,
+        faker::CardTypes                   card_types,
+        bool                               unique,
+        bool                               linkage,
+        OverrideState                      overrides
+    ) :
         context_(std::move(context)),
         card_types_(card_types),
         unique_(unique),
@@ -246,7 +259,13 @@ private:
 
 class CardDateGenerator : public IGenerator {
 public:
-    CardDateGenerator(std::shared_ptr<SharedCardContext> context, std::string start, std::string end, bool linkage, OverrideState overrides) :
+    CardDateGenerator(
+        std::shared_ptr<SharedCardContext> context,
+        std::string                        start,
+        std::string                        end,
+        bool                               linkage,
+        OverrideState                      overrides
+    ) :
         context_(std::move(context)),
         start_(std::move(start)),
         end_(std::move(end)),
@@ -279,15 +298,14 @@ private:
 }  // namespace
 
 void register_payment_generators(GeneratorRegistry& registry) {
-    auto shared_card_contexts =
-        std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedCardContext>>>();
+    auto shared_card_contexts = std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedCardContext>>>();
 
     registry.register_generator("payment_method", [shared_card_contexts](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const auto methods = parse_string_array("payment_methods", config);
+        const Json&                        config    = column.at("config");
+        const auto                         overrides = parse_overrides(column);
+        const auto                         methods   = parse_string_array("payment_methods", config);
         std::shared_ptr<SharedCardContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_card_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCardContext>(); }
@@ -299,13 +317,13 @@ void register_payment_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("card_type", [shared_card_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const auto  languages = parse_languages(config);
+        const Json& config     = column.at("config");
+        const auto  overrides  = parse_overrides(column);
+        const auto  languages  = parse_languages(config);
         const auto  card_types = parse_card_types(config);
 
         std::shared_ptr<SharedCardContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_card_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCardContext>(); }
@@ -317,13 +335,13 @@ void register_payment_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("card_number", [shared_card_contexts](const Json& column) {
-        const bool  unique  = column.value("unique", false);
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
+        const bool  unique     = column.value("unique", false);
+        const Json& config     = column.at("config");
+        const auto  overrides  = parse_overrides(column);
         const auto  card_types = parse_card_types(config);
 
         std::shared_ptr<SharedCardContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_card_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCardContext>(); }
@@ -335,13 +353,13 @@ void register_payment_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("card_date", [shared_card_contexts](const Json& column) {
-        const Json& config  = column.at("config");
-        const auto  overrides = parse_overrides(column);
-        const std::string start = config.value("start", "01/00");
-        const std::string end   = config.value("end", "12/50");
+        const Json&       config    = column.at("config");
+        const auto        overrides = parse_overrides(column);
+        const std::string start     = config.value("start", "01/00");
+        const std::string end       = config.value("end", "12/50");
 
         std::shared_ptr<SharedCardContext> context;
-        const auto linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(column);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_card_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCardContext>(); }

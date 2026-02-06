@@ -24,12 +24,7 @@ namespace {
 class SequenceGenerator : public IGenerator {
 public:
     SequenceGenerator(int64_t start, int64_t end, int64_t step, bool circle, OverrideState overrides) :
-        current_(start),
-        start_(start),
-        end_(end),
-        step_(step),
-        circle_(circle),
-        overrides_(std::move(overrides)) {
+        current_(start), start_(start), end_(end), step_(step), circle_(circle), overrides_(std::move(overrides)) {
         if (step_ == 0) { throw std::invalid_argument("sequence step must not be 0"); }
     }
 
@@ -53,11 +48,11 @@ public:
     }
 
 private:
-    int64_t      current_;
-    int64_t      start_;
-    int64_t      end_;
-    int64_t      step_;
-    bool         circle_;
+    int64_t       current_;
+    int64_t       start_;
+    int64_t       end_;
+    int64_t       step_;
+    bool          circle_;
     OverrideState overrides_;
 };
 
@@ -85,7 +80,9 @@ public:
         return result;
     }
 
-    void next() override { next_row(overrides_); }
+    void next() override {
+        next_row(overrides_);
+    }
 
 private:
     int pick_repeat(const int min_repeat, const int max_repeat) {
@@ -104,13 +101,13 @@ private:
         return ch == '{' || ch == '?' || ch == '*' || ch == '+';
     }
 
-    void add_literal_token(const char ch) {
+    [[maybe_unused]] void add_literal_token(const char ch) {
         RegexToken token;
         token.charset = {ch};
         tokens_.push_back(std::move(token));
     }
 
-    void add_charset_token(std::vector<char> charset) {
+    [[maybe_unused]] void add_charset_token(std::vector<char> charset) {
         RegexToken token;
         token.charset = std::move(charset);
         tokens_.push_back(std::move(token));
@@ -206,7 +203,7 @@ private:
         return charset;
     }
 
-    std::vector<char> escape_charset(const char ch) {
+    static std::vector<char> escape_charset(const char ch) {
         if (ch == 'd') {
             std::vector<char> digits;
             for (char c = '0'; c <= '9'; ++c) { digits.push_back(c); }
@@ -243,9 +240,7 @@ private:
                 tokens_.push_back(std::move(token));
                 continue;
             }
-            if (is_quantifier_start(ch)) {
-                throw std::invalid_argument("Dangling quantifier in regular_expression");
-            }
+            if (is_quantifier_start(ch)) { throw std::invalid_argument("Dangling quantifier in regular_expression"); }
             ++pos_;
             RegexToken token;
             token.charset = {ch};
@@ -265,18 +260,18 @@ private:
 
 void register_utility_generators(GeneratorRegistry& registry) {
     registry.register_generator("sequence", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
-        const int64_t start = config.value("start", 1);
-        const int64_t end   = config.value("end", 100);
-        const int64_t step  = config.value("step", 1);
-        const bool circle = config.value("circle", true);
+        const Json&   config    = column.at("config");
+        const auto    overrides = parse_overrides(column);
+        const int64_t start     = config.value("start", 1);
+        const int64_t end       = config.value("end", 100);
+        const int64_t step      = config.value("step", 1);
+        const bool    circle    = config.value("circle", true);
         return std::make_unique<SequenceGenerator>(start, end, step, circle, overrides);
     });
 
     registry.register_generator("regular_expression", [](const Json& column) {
-        const Json& config = column.at("config");
-        const auto overrides = parse_overrides(column);
+        const Json& config    = column.at("config");
+        const auto  overrides = parse_overrides(column);
         if (!config.contains("pattern")) { throw std::invalid_argument("regular_expression requires pattern"); }
         const std::string pattern = config.at("pattern").get<std::string>();
         return std::make_unique<RegexGenerator>(pattern, overrides);
