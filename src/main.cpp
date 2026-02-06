@@ -1,11 +1,8 @@
-// Copyright (c) 2025 Shizhongqi
+// Copyright (c) 2026 Shizhongqi
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
 /// @file main.cpp
-
-// You can include the full header <faker/faker.h>, or include individual module headers like <faker/number.h>.
-#include <faker/faker.h>
 
 #include <fstream>
 #include <iomanip>
@@ -96,11 +93,11 @@ void run(const std::string& input_path) {
     const std::string output_format = root.value("output_format", "csv");
     std::string       output_path;
     if (output_format == "csv") {
-        output_path = R"(D:\Projects\data_generator\draft\output.csv)";
+        output_path = R"(D:\Projects\data_generator_bak\draft\output.csv)";
     } else if (output_format == "sql") {
-        output_path = R"(D:\Projects\data_generator\draft\output.sql)";
+        output_path = R"(D:\Projects\data_generator_bak\draft\output.sql)";
     } else if (output_format == "json") {
-        output_path = R"(D:\Projects\data_generator\draft\output.json)";
+        output_path = R"(D:\Projects\data_generator_bak\draft\output.json)";
     } else {
         throw std::runtime_error("Unsupported output_format: " + output_format);
     }
@@ -170,7 +167,7 @@ void run(const std::string& input_path) {
 }  // namespace data_generator
 
 int main(int argc, char** argv) {
-    const std::string default_input = R"(D:\Projects\data_generator\draft\input_example.json)";
+    const std::string default_input = R"(D:\Projects\data_generator_bak\draft\input_example.json)";
     const std::string input_path    = argc > 1 ? argv[1] : default_input;
     data_generator::run(input_path);
     return 0;

@@ -28,6 +28,8 @@ add_executable(data_generator src/main.cpp
         src/generator/string_generators.h
         src/generator/utility_generators.cpp
         src/generator/utility_generators.h
+        src/generator/linkage_helper.cpp
+        src/generator/linkage_helper.h
         src/generator/array_parser.cpp
         src/generator/array_parser.h
         src/generator/override_rules.cpp

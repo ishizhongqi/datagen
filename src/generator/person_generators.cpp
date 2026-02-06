@@ -12,11 +12,13 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "array_parser.h"
 #include "generator_base.h"
 #include "generator_registry.h"
+#include "linkage_helper.h"
 #include "override_rules.h"
 
 namespace data_generator::generator {
@@ -549,96 +551,118 @@ private:
 }  // namespace
 
 void register_person_generators(GeneratorRegistry& registry) {
-    auto shared_person_context = std::make_shared<SharedPersonContext>();
+    auto shared_person_contexts =
+        std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedPersonContext>>>();
 
-    registry.register_generator("first_name", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("first_name", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  genders   = parse_genders(config);
         const bool  use_translation = parse_use_translation(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "first_name"); }
-        return std::make_unique<FirstNameGenerator>(
-            shared_person_context,
-            languages,
-            genders,
-            linkage,
-            use_translation,
-            overrides
-        );
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "first_name");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FirstNameGenerator>(context, languages, genders, linkage, use_translation, overrides);
     });
 
-    registry.register_generator("last_name", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("last_name", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const bool  use_translation = parse_use_translation(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "last_name"); }
-        return std::make_unique<LastNameGenerator>(
-            shared_person_context,
-            languages,
-            linkage,
-            use_translation,
-            overrides
-        );
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "last_name");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<LastNameGenerator>(context, languages, linkage, use_translation, overrides);
     });
 
-    registry.register_generator("full_name", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("full_name", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  genders   = parse_genders(config);
         const bool  use_translation = parse_use_translation(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "full_name"); }
-        return std::make_unique<FullNameGenerator>(
-            shared_person_context,
-            languages,
-            genders,
-            linkage,
-            use_translation,
-            overrides
-        );
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "full_name");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FullNameGenerator>(context, languages, genders, linkage, use_translation, overrides);
     });
 
-    registry.register_generator("gender", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("gender", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "gender"); }
-        return std::make_unique<GenderGenerator>(shared_person_context, languages, linkage, overrides);
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "gender");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<GenderGenerator>(context, languages, linkage, overrides);
     });
 
-    registry.register_generator("title", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("title", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  genders   = parse_genders(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "title"); }
-        return std::make_unique<TitleGenerator>(shared_person_context, languages, genders, linkage, overrides);
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "title");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<TitleGenerator>(context, languages, genders, linkage, overrides);
     });
 
-    registry.register_generator("marital_status", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("marital_status", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "marital_status"); }
-        return std::make_unique<MaritalStatusGenerator>(shared_person_context, languages, linkage, overrides);
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "marital_status");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<MaritalStatusGenerator>(context, languages, linkage, overrides);
     });
 
-    registry.register_generator("phone_number", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("phone_number", [shared_person_contexts](const Json& column) {
         const bool  unique  = column.value("unique", false);
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
@@ -646,9 +670,17 @@ void register_person_generators(GeneratorRegistry& registry) {
         const bool is_international = config.value("is_international", false);
         const bool include_delimiters = config.value("include_delimiters", true);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "phone_number"); }
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "phone_number");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
         return std::make_unique<PhoneNumberGenerator>(
-            shared_person_context,
+            context,
             regions,
             is_international,
             include_delimiters,
@@ -658,39 +690,60 @@ void register_person_generators(GeneratorRegistry& registry) {
         );
     });
 
-    registry.register_generator("email", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("email", [shared_person_contexts](const Json& column) {
         const bool  unique  = column.value("unique", false);
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  domains   = parse_string_array("domains", config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "email"); }
-        return std::make_unique<EmailGenerator>(shared_person_context, languages, domains, unique, linkage, overrides);
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "email");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<EmailGenerator>(context, languages, domains, unique, linkage, overrides);
     });
 
-    registry.register_generator("job_title", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("job_title", [shared_person_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "job_title"); }
-        return std::make_unique<JobTitleGenerator>(shared_person_context, languages, linkage, overrides);
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "job_title");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<JobTitleGenerator>(context, languages, linkage, overrides);
     });
 
-    registry.register_generator("social_network_id", [shared_person_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("social_network_id", [shared_person_contexts](const Json& column) {
         const bool  unique  = column.value("unique", false);
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const bool  use_translation = parse_use_translation(config);
 
-        if (linkage) { shared_person_context->merge_config(config, column, "social_network_id"); }
+        std::shared_ptr<SharedPersonContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_person_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedPersonContext>(); }
+            entry->merge_config(config, column, "social_network_id");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
         return std::make_unique<SocialNetworkIdGenerator>(
-            shared_person_context,
+            context,
             languages,
             unique,
             linkage,

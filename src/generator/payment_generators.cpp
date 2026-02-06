@@ -12,11 +12,13 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "array_parser.h"
 #include "generator_base.h"
 #include "generator_registry.h"
+#include "linkage_helper.h"
 #include "override_rules.h"
 
 namespace data_generator::generator {
@@ -277,48 +279,77 @@ private:
 }  // namespace
 
 void register_payment_generators(GeneratorRegistry& registry) {
-    auto shared_card_context = std::make_shared<SharedCardContext>();
+    auto shared_card_contexts =
+        std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedCardContext>>>();
 
-    registry.register_generator("payment_method", [shared_card_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", false);
+    registry.register_generator("payment_method", [shared_card_contexts](const Json& column) {
         const Json& config = column.at("config");
         const auto overrides = parse_overrides(column);
         const auto methods = parse_string_array("payment_methods", config);
-        if (linkage) { shared_card_context->merge_config(config, column, "payment_method"); }
-        return std::make_unique<PaymentMethodGenerator>(shared_card_context, methods, linkage, overrides);
+        std::shared_ptr<SharedCardContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_card_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedCardContext>(); }
+            entry->merge_config(config, column, "payment_method");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<PaymentMethodGenerator>(context, methods, linkage, overrides);
     });
 
-    registry.register_generator("card_type", [shared_card_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("card_type", [shared_card_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  languages = parse_languages(config);
         const auto  card_types = parse_card_types(config);
 
-        if (linkage) { shared_card_context->merge_config(config, column, "card_type"); }
-        return std::make_unique<CardTypeGenerator>(shared_card_context, languages, card_types, linkage, overrides);
+        std::shared_ptr<SharedCardContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_card_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedCardContext>(); }
+            entry->merge_config(config, column, "card_type");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<CardTypeGenerator>(context, languages, card_types, linkage, overrides);
     });
 
-    registry.register_generator("card_number", [shared_card_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("card_number", [shared_card_contexts](const Json& column) {
         const bool  unique  = column.value("unique", false);
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const auto  card_types = parse_card_types(config);
 
-        if (linkage) { shared_card_context->merge_config(config, column, "card_number"); }
-        return std::make_unique<CardNumberGenerator>(shared_card_context, card_types, unique, linkage, overrides);
+        std::shared_ptr<SharedCardContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_card_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedCardContext>(); }
+            entry->merge_config(config, column, "card_number");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<CardNumberGenerator>(context, card_types, unique, linkage, overrides);
     });
 
-    registry.register_generator("card_date", [shared_card_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("card_date", [shared_card_contexts](const Json& column) {
         const Json& config  = column.at("config");
         const auto  overrides = parse_overrides(column);
         const std::string start = config.value("start", "01/00");
         const std::string end   = config.value("end", "12/50");
 
-        if (linkage) { shared_card_context->merge_config(config, column, "card_date"); }
-        return std::make_unique<CardDateGenerator>(shared_card_context, start, end, linkage, overrides);
+        std::shared_ptr<SharedCardContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_card_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedCardContext>(); }
+            entry->merge_config(config, column, "card_date");
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<CardDateGenerator>(context, start, end, linkage, overrides);
     });
 }
 

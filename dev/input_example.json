@@ -11,7 +11,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "company:group_1"
         },
         {
             "name": "department",
@@ -30,7 +30,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "company:group_1"
         },
         {
             "name": "ip_address",
@@ -82,7 +82,7 @@
                     "zip"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "file:group_1"
         },
         {
             "name": "file_directory",
@@ -92,7 +92,7 @@
                     "Windows"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "file:group_1"
         },
         {
             "name": "file_name",
@@ -111,7 +111,7 @@
                     "zip"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "file:group_1"
         },
         {
             "name": "file_extension",
@@ -130,7 +130,7 @@
                     "zip"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "file:group_1"
         },
         {
             "name": "url",
@@ -216,7 +216,7 @@
                     "China"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "address_line2",
@@ -226,7 +226,7 @@
                     "China"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "postcode",
@@ -236,7 +236,7 @@
                     "China"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "full_address",
@@ -246,7 +246,7 @@
                     "China"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "city",
@@ -256,7 +256,7 @@
                     "China"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "region",
@@ -267,7 +267,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "location:group_1"
         },
         {
             "name": "integer",
@@ -329,7 +329,7 @@
                     "Visa"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "card:group_1"
         },
         {
             "name": "card_number",
@@ -344,7 +344,7 @@
                 ]
             },
             "unique": true,
-            "data_linkage": true
+            "data_linkage": "card:group_1"
         },
         {
             "name": "card_date",
@@ -353,7 +353,7 @@
                 "start": "01/23",
                 "end": "12/30"
             },
-            "data_linkage": true
+            "data_linkage": "card:group_1"
         },
         {
             "name": "first_name",
@@ -368,7 +368,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "last_name",
@@ -378,7 +378,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "full_name",
@@ -392,7 +392,7 @@
                     "F"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "gender",
@@ -402,7 +402,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "title",
@@ -416,7 +416,7 @@
                     "F"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "marital_status",
@@ -426,7 +426,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "phone_number",
@@ -434,10 +434,12 @@
             "config": {
                 "is_international": false,
                 "include_delimiters": false,
-                "regions": "China"
+                "regions": [
+                    "China"
+                ]
             },
             "unique": true,
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "email",
@@ -452,7 +454,7 @@
                 ]
             },
             "unique": true,
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "job_title",
@@ -462,7 +464,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "social_network_id",
@@ -473,7 +475,7 @@
                 ]
             },
             "unique": true,
-            "data_linkage": true
+            "data_linkage": "person:group_1"
         },
         {
             "name": "product_name",
@@ -557,10 +559,10 @@
             "name": "sequence_id",
             "generator": "sequence",
             "config": {
-                "start": 1000,
+                "start": 0,
                 "end": 1010,
                 "step": 1,
-                "circle": true
+                "circle": false
             }
         },
         {

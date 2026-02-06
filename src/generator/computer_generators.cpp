@@ -12,11 +12,13 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "array_parser.h"
 #include "generator_base.h"
 #include "generator_registry.h"
+#include "linkage_helper.h"
 #include "override_rules.h"
 
 namespace data_generator::generator {
@@ -451,58 +453,84 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<MacAddressGenerator>(unique, overrides);
     });
 
-    auto shared_file_context = std::make_shared<SharedFileContext>();
+    auto shared_file_contexts =
+        std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedFileContext>>>();
 
-    registry.register_generator("file_path", [shared_file_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("file_path", [shared_file_contexts](const Json& column) {
         const Json& config  = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto extensions        = parse_string_array("extensions", config);
         const auto overrides         = parse_overrides(column);
 
-        if (linkage) { shared_file_context->merge_config(config, "file_path"); }
+        std::shared_ptr<SharedFileContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_file_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedFileContext>(); }
+            entry->merge_config(config, "file_path");
+            context = entry;
+        }
 
-        return std::make_unique<FilePathGenerator>(
-            shared_file_context,
-            operating_systems,
-            extensions,
-            linkage,
-            overrides
-        );
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FilePathGenerator>(context, operating_systems, extensions, linkage, overrides);
     });
 
-    registry.register_generator("file_directory", [shared_file_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("file_directory", [shared_file_contexts](const Json& column) {
         const Json& config  = column.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto overrides         = parse_overrides(column);
 
-        if (linkage) { shared_file_context->merge_config(config, "file_directory"); }
-        return std::make_unique<FileDirectoryGenerator>(shared_file_context, operating_systems, linkage, overrides);
+        std::shared_ptr<SharedFileContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_file_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedFileContext>(); }
+            entry->merge_config(config, "file_directory");
+            context = entry;
+        }
+
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FileDirectoryGenerator>(context, operating_systems, linkage, overrides);
     });
 
-    registry.register_generator("file_name", [shared_file_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("file_name", [shared_file_contexts](const Json& column) {
         const Json& config  = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
         const auto overrides  = parse_overrides(column);
 
-        if (linkage) { shared_file_context->merge_config(config, "file_name"); }
-        return std::make_unique<FileNameGenerator>(shared_file_context, extensions, linkage, overrides);
+        std::shared_ptr<SharedFileContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_file_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedFileContext>(); }
+            entry->merge_config(config, "file_name");
+            context = entry;
+        }
+
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FileNameGenerator>(context, extensions, linkage, overrides);
     });
 
-    registry.register_generator("file_extension", [shared_file_context](const Json& column) {
-        const bool  linkage = column.value("data_linkage", true);
+    registry.register_generator("file_extension", [shared_file_contexts](const Json& column) {
         const Json& config  = column.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
         const auto overrides  = parse_overrides(column);
 
-        if (linkage) { shared_file_context->merge_config(config, "file_extension"); }
-        return std::make_unique<FileExtensionGenerator>(shared_file_context, extensions, linkage, overrides);
+        std::shared_ptr<SharedFileContext> context;
+        const auto linkage_key = parse_linkage_key(column);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_file_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedFileContext>(); }
+            entry->merge_config(config, "file_extension");
+            context = entry;
+        }
+
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<FileExtensionGenerator>(context, extensions, linkage, overrides);
     });
 
     registry.register_generator("url", [](const Json& column) {
