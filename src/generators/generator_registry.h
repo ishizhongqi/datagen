@@ -29,7 +29,7 @@ public:
     void register_generator(const std::string& name, GeneratorCreator creator);
 
     /// @brief Create generator by name.
-    std::unique_ptr<IGenerator> create(const std::string& name, const Json& column) const;
+    std::unique_ptr<IGenerator> create(const std::string& name, const Json& filed) const;
 
 private:
     std::unordered_map<std::string, GeneratorCreator> creators_;

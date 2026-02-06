@@ -106,26 +106,26 @@ private:
 }  // namespace
 
 void register_datetime_generators(GeneratorRegistry& registry) {
-    registry.register_generator("date", [](const Json& column) {
-        const Json&       config       = column.at("config");
-        const auto        overrides    = parse_overrides(column);
+    registry.register_generator("date", [](const Json& filed) {
+        const Json&       config       = filed.at("config");
+        const auto        overrides    = parse_overrides(filed);
         const auto        days_of_week = parse_days_of_week(config);
         const std::string start_date   = config.value("start_date", "1970-01-01");
         const std::string end_date     = config.value("end_date", "2050-12-31");
         return std::make_unique<DateGenerator>(start_date, end_date, days_of_week, overrides);
     });
 
-    registry.register_generator("time", [](const Json& column) {
-        const Json&       config     = column.at("config");
-        const auto        overrides  = parse_overrides(column);
+    registry.register_generator("time", [](const Json& filed) {
+        const Json&       config     = filed.at("config");
+        const auto        overrides  = parse_overrides(filed);
         const std::string start_time = config.value("start_time", "00:00:00");
         const std::string end_time   = config.value("end_time", "23:59:59");
         return std::make_unique<TimeGenerator>(start_time, end_time, overrides);
     });
 
-    registry.register_generator("datetime", [](const Json& column) {
-        const Json&       config       = column.at("config");
-        const auto        overrides    = parse_overrides(column);
+    registry.register_generator("datetime", [](const Json& filed) {
+        const Json&       config       = filed.at("config");
+        const auto        overrides    = parse_overrides(filed);
         const auto        days_of_week = parse_days_of_week(config);
         const std::string start_date   = config.value("start_date", "1970-01-01");
         const std::string end_date     = config.value("end_date", "2050-12-31");

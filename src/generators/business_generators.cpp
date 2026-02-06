@@ -175,14 +175,14 @@ void register_business_generators(GeneratorRegistry& registry) {
     auto shared_company_contexts =
         std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedCompanyContext>>>();
 
-    registry.register_generator("company_name", [shared_company_contexts](const Json& column) {
-        const Json& config          = column.at("config");
-        const auto  overrides       = parse_overrides(column);
+    registry.register_generator("company_name", [shared_company_contexts](const Json& filed) {
+        const Json& config          = filed.at("config");
+        const auto  overrides       = parse_overrides(filed);
         const auto  languages       = parse_languages(config);
         const bool  use_translation = parse_use_translation(config);
 
         std::shared_ptr<SharedCompanyContext> context;
-        const auto                            linkage_key = parse_linkage_key(column);
+        const auto                            linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_company_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCompanyContext>(); }
@@ -194,19 +194,19 @@ void register_business_generators(GeneratorRegistry& registry) {
         return std::make_unique<CompanyNameGenerator>(context, languages, linkage, use_translation, overrides);
     });
 
-    registry.register_generator("department", [](const Json& column) {
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("department", [](const Json& filed) {
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         const auto  languages = parse_languages(config);
         return std::make_unique<DepartmentGenerator>(languages, overrides);
     });
 
-    registry.register_generator("industry", [shared_company_contexts](const Json& column) {
-        const Json&                           config    = column.at("config");
-        const auto                            overrides = parse_overrides(column);
+    registry.register_generator("industry", [shared_company_contexts](const Json& filed) {
+        const Json&                           config    = filed.at("config");
+        const auto                            overrides = parse_overrides(filed);
         const auto                            languages = parse_languages(config);
         std::shared_ptr<SharedCompanyContext> context;
-        const auto                            linkage_key = parse_linkage_key(column);
+        const auto                            linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_company_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedCompanyContext>(); }

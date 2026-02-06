@@ -12,7 +12,7 @@
 namespace data_generator::generator {
 
 /// @brief Base interface for all generators.
-///        One generator instance corresponds to one column behavior.
+///        One generator instance corresponds to one filed behavior.
 class IGenerator {
 public:
     virtual ~IGenerator() = default;

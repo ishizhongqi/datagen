@@ -10,9 +10,9 @@
 
 namespace data_generator::generator {
 
-std::optional<std::string> parse_linkage_key(const Json& column) {
-    if (!column.contains("data_linkage")) { return std::nullopt; }
-    const auto& value = column.at("data_linkage");
+std::optional<std::string> parse_linkage_key(const Json& filed) {
+    if (!filed.contains("data_linkage")) { return std::nullopt; }
+    const auto& value = filed.at("data_linkage");
     if (value.is_boolean()) { return value.get<bool>() ? std::optional<std::string>("default") : std::nullopt; }
     if (value.is_string()) {
         auto key = value.get<std::string>();

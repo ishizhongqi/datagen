@@ -432,30 +432,30 @@ private:
 /// register
 /// ===============================
 void register_computer_generators(GeneratorRegistry& registry) {
-    registry.register_generator("ip_address", [](const Json& column) {
-        const bool  unique    = column.value("unique", true);
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("ip_address", [](const Json& filed) {
+        const bool  unique    = filed.value("unique", true);
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         return std::make_unique<IpAddressGenerator>(config, unique, overrides);
     });
 
-    registry.register_generator("mac_address", [](const Json& column) {
-        const bool unique    = column.value("unique", true);
-        const auto overrides = parse_overrides(column);
+    registry.register_generator("mac_address", [](const Json& filed) {
+        const bool unique    = filed.value("unique", true);
+        const auto overrides = parse_overrides(filed);
         return std::make_unique<MacAddressGenerator>(unique, overrides);
     });
 
     auto shared_file_contexts = std::make_shared<std::unordered_map<std::string, std::shared_ptr<SharedFileContext>>>();
 
-    registry.register_generator("file_path", [shared_file_contexts](const Json& column) {
-        const Json& config = column.at("config");
+    registry.register_generator("file_path", [shared_file_contexts](const Json& filed) {
+        const Json& config = filed.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
         const auto extensions        = parse_string_array("extensions", config);
-        const auto overrides         = parse_overrides(column);
+        const auto overrides         = parse_overrides(filed);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto                         linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -467,14 +467,14 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<FilePathGenerator>(context, operating_systems, extensions, linkage, overrides);
     });
 
-    registry.register_generator("file_directory", [shared_file_contexts](const Json& column) {
-        const Json& config = column.at("config");
+    registry.register_generator("file_directory", [shared_file_contexts](const Json& filed) {
+        const Json& config = filed.at("config");
 
         const auto operating_systems = parse_operating_systems(config);
-        const auto overrides         = parse_overrides(column);
+        const auto overrides         = parse_overrides(filed);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto                         linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -486,14 +486,14 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<FileDirectoryGenerator>(context, operating_systems, linkage, overrides);
     });
 
-    registry.register_generator("file_name", [shared_file_contexts](const Json& column) {
-        const Json& config = column.at("config");
+    registry.register_generator("file_name", [shared_file_contexts](const Json& filed) {
+        const Json& config = filed.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
-        const auto overrides  = parse_overrides(column);
+        const auto overrides  = parse_overrides(filed);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto                         linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -505,14 +505,14 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<FileNameGenerator>(context, extensions, linkage, overrides);
     });
 
-    registry.register_generator("file_extension", [shared_file_contexts](const Json& column) {
-        const Json& config = column.at("config");
+    registry.register_generator("file_extension", [shared_file_contexts](const Json& filed) {
+        const Json& config = filed.at("config");
 
         const auto extensions = parse_string_array("extensions", config);
-        const auto overrides  = parse_overrides(column);
+        const auto overrides  = parse_overrides(filed);
 
         std::shared_ptr<SharedFileContext> context;
-        const auto                         linkage_key = parse_linkage_key(column);
+        const auto                         linkage_key = parse_linkage_key(filed);
         if (linkage_key.has_value()) {
             auto& entry = (*shared_file_contexts)[*linkage_key];
             if (!entry) { entry = std::make_shared<SharedFileContext>(); }
@@ -524,17 +524,17 @@ void register_computer_generators(GeneratorRegistry& registry) {
         return std::make_unique<FileExtensionGenerator>(context, extensions, linkage, overrides);
     });
 
-    registry.register_generator("url", [](const Json& column) {
-        const bool  unique    = column.value("unique", false);
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("url", [](const Json& filed) {
+        const bool  unique    = filed.value("unique", false);
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         return std::make_unique<UrlGenerator>(config, unique, overrides);
     });
 
-    registry.register_generator("hostname", [](const Json& column) {
-        const bool  unique    = column.value("unique", false);
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("hostname", [](const Json& filed) {
+        const bool  unique    = filed.value("unique", false);
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         return std::make_unique<HostnameGenerator>(config, unique, overrides);
     });
 }

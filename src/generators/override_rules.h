@@ -31,7 +31,7 @@ struct OverrideState {
     std::string  null_literal;
 };
 
-OverrideState parse_overrides(const Json& column);
+OverrideState parse_overrides(const Json& filed);
 
 std::optional<std::string> apply_override(OverrideState& state);
 

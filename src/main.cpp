@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cxxopts.hpp>
 
 #include "generators/business_generators.h"
 #include "generators/computer_generators.h"
@@ -71,9 +72,9 @@ void run(const std::string& input_path) {
     Json root;
     input_stream >> root;
 
-    std::vector<std::pair<std::string, std::unique_ptr<IGenerator>>> columns;
+    std::vector<std::pair<std::string, std::unique_ptr<IGenerator>>> fields;
 
-    for (const auto& col : root["columns"]) {
+    for (const auto& col : root["fields"]) {
         const std::string name      = col.at("name").get<std::string>();
         const std::string generator = col.at("generator").get<std::string>();
 
@@ -83,9 +84,9 @@ void run(const std::string& input_path) {
 
         try {
             auto gen = registry.create(generator, col_with_rows);
-            columns.emplace_back(name, std::move(gen));
+            fields.emplace_back(name, std::move(gen));
         } catch (const std::exception& ex) {
-            std::cerr << "Skip unknown generator '" << generator << "' for column '" << name << "': " << ex.what()
+            std::cerr << "Skip unknown generator '" << generator << "' for field '" << name << "': " << ex.what()
                       << "\n";
         }
     }
@@ -106,29 +107,29 @@ void run(const std::string& input_path) {
     if (!output_stream) { throw std::runtime_error("Failed to open output file: " + output_path); }
 
     if (output_format == "csv") {
-        for (size_t i = 0; i < columns.size(); ++i) {
+        for (size_t i = 0; i < fields.size(); ++i) {
             if (i > 0) { output_stream << ","; }
-            output_stream << csv_escape(columns[i].first);
+            output_stream << csv_escape(fields[i].first);
         }
         output_stream << "\n";
 
         for (int row = 0; row < root["rows"].get<int>(); ++row) {
-            for (size_t i = 0; i < columns.size(); ++i) {
+            for (size_t i = 0; i < fields.size(); ++i) {
                 if (i > 0) { output_stream << ","; }
-                output_stream << csv_escape(columns[i].second->generate());
+                output_stream << csv_escape(fields[i].second->generate());
             }
             output_stream << "\n";
-            for (auto& [_, gen] : columns) { gen->next(); }
+            for (auto& [_, gen] : fields) { gen->next(); }
         }
     } else if (output_format == "json") {
         output_stream << "[\n";
         for (int row = 0; row < root["rows"].get<int>(); ++row) {
             Json row_obj = Json::object();
-            for (auto& [name, gen] : columns) { row_obj[name] = gen->generate(); }
+            for (auto& [name, gen] : fields) { row_obj[name] = gen->generate(); }
             output_stream << "  " << row_obj.dump();
             if (row + 1 < root["rows"].get<int>()) { output_stream << ","; }
             output_stream << "\n";
-            for (auto& [_, gen] : columns) { gen->next(); }
+            for (auto& [_, gen] : fields) { gen->next(); }
         }
         output_stream << "]\n";
     } else if (output_format == "sql") {
@@ -136,9 +137,9 @@ void run(const std::string& input_path) {
         const bool        include_create_table = root.value("include_create_table", true);
         if (include_create_table) {
             output_stream << "CREATE TABLE " << table_name << " (\n";
-            for (size_t i = 0; i < columns.size(); ++i) {
-                output_stream << "  " << columns[i].first << " TEXT";
-                if (i + 1 < columns.size()) { output_stream << ","; }
+            for (size_t i = 0; i < fields.size(); ++i) {
+                output_stream << "  " << fields[i].first << " TEXT";
+                if (i + 1 < fields.size()) { output_stream << ","; }
                 output_stream << "\n";
             }
             output_stream << ");\n";
@@ -146,18 +147,18 @@ void run(const std::string& input_path) {
 
         for (int row = 0; row < root["rows"].get<int>(); ++row) {
             output_stream << "INSERT INTO " << table_name << " (";
-            for (size_t i = 0; i < columns.size(); ++i) {
+            for (size_t i = 0; i < fields.size(); ++i) {
                 if (i > 0) { output_stream << ", "; }
-                output_stream << columns[i].first;
+                output_stream << fields[i].first;
             }
             output_stream << ") VALUES (";
-            for (size_t i = 0; i < columns.size(); ++i) {
+            for (size_t i = 0; i < fields.size(); ++i) {
                 if (i > 0) { output_stream << ", "; }
-                const std::string value = columns[i].second->generate();
+                const std::string value = fields[i].second->generate();
                 output_stream << "'" << sql_escape(value) << "'";
             }
             output_stream << ");\n";
-            for (auto& [_, gen] : columns) { gen->next(); }
+            for (auto& [_, gen] : fields) { gen->next(); }
         }
     } else {
         throw std::runtime_error("output_format not implemented yet: " + output_format);

@@ -127,37 +127,37 @@ private:
 }  // namespace
 
 void register_product_generators(GeneratorRegistry& registry) {
-    registry.register_generator("product_name", [](const Json& column) {
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("product_name", [](const Json& filed) {
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         const auto  languages = parse_languages(config);
         const auto  keywords  = parse_string_array("keywords", config);
         return std::make_unique<ProductNameGenerator>(languages, keywords, overrides);
     });
 
-    registry.register_generator("product_category", [](const Json& column) {
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("product_category", [](const Json& filed) {
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         const auto  languages = parse_languages(config);
         return std::make_unique<ProductCategoryGenerator>(languages, overrides);
     });
 
-    registry.register_generator("color", [](const Json& column) {
-        const Json& config    = column.at("config");
-        const auto  overrides = parse_overrides(column);
+    registry.register_generator("color", [](const Json& filed) {
+        const Json& config    = filed.at("config");
+        const auto  overrides = parse_overrides(filed);
         const auto  languages = parse_languages(config);
         return std::make_unique<ColorGenerator>(languages, overrides);
     });
 
-    registry.register_generator("size", [](const Json& column) {
-        const auto overrides = parse_overrides(column);
+    registry.register_generator("size", [](const Json& filed) {
+        const auto overrides = parse_overrides(filed);
         return std::make_unique<SizeGenerator>(overrides);
     });
 
-    registry.register_generator("barcode", [](const Json& column) {
-        const bool  unique        = column.value("unique", false);
-        const Json& config        = column.at("config");
-        const auto  overrides     = parse_overrides(column);
+    registry.register_generator("barcode", [](const Json& filed) {
+        const bool  unique        = filed.value("unique", false);
+        const Json& config        = filed.at("config");
+        const auto  overrides     = parse_overrides(filed);
         const auto  barcode_types = parse_barcode_type(config);
         return std::make_unique<BarcodeGenerator>(barcode_types, unique, overrides);
     });

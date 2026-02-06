@@ -17,10 +17,10 @@ void GeneratorRegistry::register_generator(const std::string& name, GeneratorCre
     creators_[name] = std::move(creator);
 }
 
-std::unique_ptr<IGenerator> GeneratorRegistry::create(const std::string& name, const Json& column) const {
+std::unique_ptr<IGenerator> GeneratorRegistry::create(const std::string& name, const Json& filed) const {
     const auto it = creators_.find(name);
     if (it == creators_.end()) { throw std::runtime_error("Unknown generator: " + name); }
-    return it->second(column);
+    return it->second(filed);
 }
 
 }  // namespace data_generator::generator

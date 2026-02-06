@@ -108,34 +108,34 @@ private:
 }  // namespace
 
 void register_number_generators(GeneratorRegistry& registry) {
-    registry.register_generator("integer", [](const Json& column) {
-        const Json&   config    = column.at("config");
-        const auto    overrides = parse_overrides(column);
+    registry.register_generator("integer", [](const Json& filed) {
+        const Json&   config    = filed.at("config");
+        const auto    overrides = parse_overrides(filed);
         const int64_t start     = config.value("start", 0);
         const int64_t end       = config.value("end", 100);
         return std::make_unique<IntegerGenerator>(start, end, overrides);
     });
 
-    registry.register_generator("unsigned_integer", [](const Json& column) {
-        const Json&    config    = column.at("config");
-        const auto     overrides = parse_overrides(column);
+    registry.register_generator("unsigned_integer", [](const Json& filed) {
+        const Json&    config    = filed.at("config");
+        const auto     overrides = parse_overrides(filed);
         const uint64_t start     = config.value("start", 0ull);
         const uint64_t end       = config.value("end", 100ull);
         return std::make_unique<UnsignedIntegerGenerator>(start, end, overrides);
     });
 
-    registry.register_generator("decimal", [](const Json& column) {
-        const Json&  config         = column.at("config");
-        const auto   overrides      = parse_overrides(column);
+    registry.register_generator("decimal", [](const Json& filed) {
+        const Json&  config         = filed.at("config");
+        const auto   overrides      = parse_overrides(filed);
         const double start          = config.value("start", 0.0);
         const double end            = config.value("end", 100.0);
         const int    decimal_places = config.value("decimal_places", 2);
         return std::make_unique<DecimalGenerator>(start, end, decimal_places, overrides);
     });
 
-    registry.register_generator("decimal_string", [](const Json& column) {
-        const Json&  config         = column.at("config");
-        const auto   overrides      = parse_overrides(column);
+    registry.register_generator("decimal_string", [](const Json& filed) {
+        const Json&  config         = filed.at("config");
+        const auto   overrides      = parse_overrides(filed);
         const double start          = config.value("start", 0.0);
         const double end            = config.value("end", 100.0);
         const int    decimal_places = config.value("decimal_places", 2);

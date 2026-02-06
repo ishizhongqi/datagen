@@ -15,7 +15,7 @@ namespace data_generator::generator {
 
 using Json = nlohmann::json;
 
-std::optional<std::string> parse_linkage_key(const Json& column);
+std::optional<std::string> parse_linkage_key(const Json& filed);
 
 }  // namespace data_generator::generator
 

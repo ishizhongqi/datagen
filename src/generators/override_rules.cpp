@@ -42,28 +42,28 @@ bool roll_percent(const int percent) {
 
 }  // namespace
 
-OverrideState parse_overrides(const Json& column) {
+OverrideState parse_overrides(const Json& filed) {
     OverrideState overrides;
 
-    if (column.contains("default_value")) {
-        const auto& cfg                = column.at("default_value");
+    if (filed.contains("default_value")) {
+        const auto& cfg                = filed.at("default_value");
         overrides.default_rule.enabled = cfg.value("enabled", false);
         overrides.default_rule.percent = cfg.value("percent", 100);
         validate_percent(overrides.default_rule.percent, "default_value");
         if (cfg.contains("value")) { overrides.default_rule.value = cfg.at("value").get<std::string>(); }
     }
 
-    if (column.contains("null_value")) {
-        const auto& cfg             = column.at("null_value");
+    if (filed.contains("null_value")) {
+        const auto& cfg             = filed.at("null_value");
         overrides.null_rule.enabled = cfg.value("enabled", false);
         overrides.null_rule.percent = cfg.value("percent", 100);
         validate_percent(overrides.null_rule.percent, "null_value");
     }
 
-    overrides.total_rows = column.value("rows", 0);
+    overrides.total_rows = filed.value("rows", 0);
     if (overrides.total_rows < 0) { overrides.total_rows = 0; }
-    if (column.contains("null_value_string")) {
-        const auto& null_value = column.at("null_value_string");
+    if (filed.contains("null_value_string")) {
+        const auto& null_value = filed.at("null_value_string");
         if (null_value.is_null()) {
             overrides.null_literal.clear();
         } else if (null_value.is_string()) {
