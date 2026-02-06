@@ -1,51 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(data_generator CXX)
+project(data-generator CXX)
 
 add_subdirectory(third_party/faker)
 
-add_executable(data_generator src/main.cpp
-        src/generator/generator_base.h
-        src/generator/generator_registry.cpp
-        src/generator/generator_registry.h
-        src/generator/computer_generators.cpp
-        src/generator/computer_generators.h
-        src/generator/business_generators.cpp
-        src/generator/business_generators.h
-        src/generator/datetime_generators.cpp
-        src/generator/datetime_generators.h
-        src/generator/location_generators.cpp
-        src/generator/location_generators.h
-        src/generator/number_generators.cpp
-        src/generator/number_generators.h
-        src/generator/payment_generators.cpp
-        src/generator/payment_generators.h
-        src/generator/person_generators.cpp
-        src/generator/person_generators.h
-        src/generator/product_generators.cpp
-        src/generator/product_generators.h
-        src/generator/string_generators.cpp
-        src/generator/string_generators.h
-        src/generator/utility_generators.cpp
-        src/generator/utility_generators.h
-        src/generator/linkage_helper.cpp
-        src/generator/linkage_helper.h
-        src/generator/array_parser.cpp
-        src/generator/array_parser.h
-        src/generator/override_rules.cpp
-        src/generator/override_rules.h)
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nlohmann/include
+)
 
-set(TEST_COMPILE_FEATURES cxx_std_20)
+add_subdirectory(src)
 
-target_link_libraries(data_generator
+target_link_libraries(data-generator
         PRIVATE
         faker
+        nlohmann_json
 )
 
-target_compile_features(data_generator PRIVATE ${TEST_COMPILE_FEATURES})
-
-target_include_directories(data_generator
-        PRIVATE
-        src/third_party
-        src/generator
-)
+target_compile_features(data-generator PRIVATE cxx_std_20)

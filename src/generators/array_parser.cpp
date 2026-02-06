@@ -168,9 +168,7 @@ faker::Regions parse_regions(const Json& config) {
     if (regions_config.is_string()) {
         const std::string region_str = regions_config.get<std::string>();
         if (region_str == "United States" || region_str == "UnitedStates") { return faker::Regions::UnitedStates; }
-        if (region_str == "United Kingdom" || region_str == "UnitedKingdom") {
-            return faker::Regions::UnitedKingdom;
-        }
+        if (region_str == "United Kingdom" || region_str == "UnitedKingdom") { return faker::Regions::UnitedKingdom; }
         if (region_str == "China") { return faker::Regions::China; }
         if (region_str == "Japan") { return faker::Regions::Japan; }
         throw std::invalid_argument("Invalid region: " + region_str);
@@ -261,7 +259,8 @@ faker::CardTypes parse_card_types(const Json& config) {
 
 faker::BarcodeTypes parse_barcode_type(const Json& config) {
     if (!config.contains("barcode_types") && !config.contains("barcode_type")) { return faker::BarcodeTypes::EAN13; }
-    const auto& barcode_types_config = config.contains("barcode_types") ? config["barcode_types"] : config["barcode_type"];
+    const auto& barcode_types_config =
+        config.contains("barcode_types") ? config["barcode_types"] : config["barcode_type"];
     if (barcode_types_config.is_array()) {
         faker::BarcodeTypes barcode_types{};
         for (const auto& barcode_type : barcode_types_config) {
@@ -344,9 +343,7 @@ faker::CountryCodesStandard parse_country_codes_standard(const Json& config) {
     if (!config.contains("country_codes_standard")) { return faker::CountryCodesStandard::None; }
 
     const auto& value = config["country_codes_standard"];
-    if (!value.is_string()) {
-        throw std::invalid_argument("country_codes_standard must be a string");
-    }
+    if (!value.is_string()) { throw std::invalid_argument("country_codes_standard must be a string"); }
 
     const std::string standard = value.get<std::string>();
     if (standard == "None") { return faker::CountryCodesStandard::None; }

@@ -12,17 +12,17 @@
 #include <string>
 #include <vector>
 
-#include "generator/business_generators.h"
-#include "generator/computer_generators.h"
-#include "generator/datetime_generators.h"
-#include "generator/generator_registry.h"
-#include "generator/location_generators.h"
-#include "generator/number_generators.h"
-#include "generator/payment_generators.h"
-#include "generator/person_generators.h"
-#include "generator/product_generators.h"
-#include "generator/string_generators.h"
-#include "generator/utility_generators.h"
+#include "generators/business_generators.h"
+#include "generators/computer_generators.h"
+#include "generators/datetime_generators.h"
+#include "generators/generator_registry.h"
+#include "generators/location_generators.h"
+#include "generators/number_generators.h"
+#include "generators/payment_generators.h"
+#include "generators/person_generators.h"
+#include "generators/product_generators.h"
+#include "generators/string_generators.h"
+#include "generators/utility_generators.h"
 
 namespace data_generator {
 
