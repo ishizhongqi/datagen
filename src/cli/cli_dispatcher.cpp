@@ -13,6 +13,7 @@
 #include "cli/command_generate.h"
 #include "cli/command_help.h"
 #include "cli/command_init.h"
+#include "cli/command_list.h"
 #include "cli/command_preview.h"
 #include "cli/command_validate.h"
 
@@ -24,6 +25,7 @@ int CliDispatcher::dispatch(const std::string& command, const std::vector<std::s
         if (command == "preview") { return CommandPreview::run(args); }
         if (command == "generate") { return CommandGenerate::run(args); }
         if (command == "describe") { return CommandDescribe::run(args); }
+        if (command == "list") { return CommandList::run(args); }
         if (command == "validate") { return CommandValidate::run(args); }
         if (command.empty() || command == "help") { return CommandHelp::run(args); }
 

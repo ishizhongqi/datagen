@@ -23,6 +23,7 @@ GeneratorMetadata make_metadata(
 ) {
     GeneratorMetadata meta;
     meta.name                  = std::move(name);
+    meta.module                = "";
     meta.config_params         = std::move(params);
     meta.supports_unique       = supports_unique;
     meta.supports_data_linkage = supports_data_linkage;
@@ -31,13 +32,93 @@ GeneratorMetadata make_metadata(
     return meta;
 }
 
-const std::vector<GeneratorMetadata>& build_catalog() {
-    static const std::vector catalog = {
+std::string module_for_generator(const std::string& name) {
+    if (name == "company_name" || name == "department" || name == "industry") { return "business"; }
+    if (name ==
+        "ip_address" ||
+        name ==
+        "mac_address" ||
+        name ==
+        "file_path" ||
+        name ==
+        "file_directory" ||
+        name ==
+        "file_name" ||
+        name ==
+        "file_extension" ||
+        name ==
+        "url" ||
+        name == "hostname") {
+        return "computer";
+    }
+    if (name == "date" || name == "time" || name == "datetime") { return "datetime"; }
+    if (name ==
+        "address_line1" ||
+        name ==
+        "address_line2" ||
+        name ==
+        "postcode" ||
+        name ==
+        "full_address" ||
+        name ==
+        "city" ||
+        name == "region") {
+        return "location";
+    }
+    if (name == "integer" || name == "unsigned_integer" || name == "decimal" || name == "decimal_string") {
+        return "number";
+    }
+    if (name == "payment_method" || name == "card_type" || name == "card_number" || name == "card_date") {
+        return "payment";
+    }
+    if (name ==
+        "first_name" ||
+        name ==
+        "last_name" ||
+        name ==
+        "full_name" ||
+        name ==
+        "gender" ||
+        name ==
+        "title" ||
+        name ==
+        "marital_status" ||
+        name ==
+        "phone_number" ||
+        name ==
+        "email" ||
+        name ==
+        "job_title" ||
+        name == "social_network_id") {
+        return "person";
+    }
+    if (name ==
+        "product_name" ||
+        name ==
+        "product_category" ||
+        name ==
+        "color" ||
+        name ==
+        "size" ||
+        name == "barcode") {
+        return "product";
+    }
+    if (name == "enum_item" || name == "text" || name == "uuid") { return "string"; }
+    if (name == "sequence" || name == "regular_expression") { return "utility"; }
+    return "";
+}
+
+std::vector<GeneratorMetadata> build_catalog() {
+    std::vector catalog = {
         make_metadata(
             "company_name",
             {
-                {"languages", "Language names (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -47,17 +128,25 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "department",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             false,
-            "",
+            "location",
             Json{{"languages", Json::array({"English"})}}
         ),
         make_metadata(
             "industry",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             true,
@@ -67,7 +156,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "ip_address",
             {
-                {"ip_address_type", "IPv4 or IPv6."},
+                {"ip_address_type", "string", "IPv4 or IPv6.", false, {"IPv4", "IPv6"}},
             },
             true,
             false,
@@ -78,8 +167,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "file_path",
             {
-                {"operating_systems", "Operating systems (string or array)."},
-                {"extensions", "File extensions (string or array)."},
+                {"operating_systems",
+                 "array<string>",
+                 "Operating systems (string or array).",
+                 false,
+                 {"Windows", "macOS", "Linux"}},
+                {"extensions", "array<string>", "File extensions (string or array).", false},
             },
             false,
             true,
@@ -92,7 +185,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "file_directory",
             {
-                {"operating_systems", "Operating systems (string or array)."},
+                {"operating_systems",
+                 "array<string>",
+                 "Operating systems (string or array).",
+                 false,
+                 {"Windows", "macOS", "Linux"}},
             },
             false,
             true,
@@ -102,7 +199,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "file_name",
             {
-                {"extensions", "File extensions (string or array)."},
+                {"extensions", "array<string>", "File extensions (string or array).", false},
             },
             false,
             true,
@@ -112,7 +209,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "file_extension",
             {
-                {"extensions", "File extensions (string or array)."},
+                {"extensions", "array<string>", "File extensions (string or array).", false},
             },
             false,
             true,
@@ -122,8 +219,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "url",
             {
-                {"subdomains", "Subdomains (string or array)."},
-                {"tlds", "Top-level domains (string or array)."},
+                {"subdomains", "array<string>", "Subdomains (string or array).", false},
+                {"tlds", "array<string>", "Top-level domains (string or array).", true},
             },
             true,
             false,
@@ -133,8 +230,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "hostname",
             {
-                {"subdomains", "Subdomains (string or array)."},
-                {"tlds", "Top-level domains (string or array)."},
+                {"subdomains", "array<string>", "Subdomains (string or array).", false},
+                {"tlds", "array<string>", "Top-level domains (string or array).", true},
             },
             true,
             false,
@@ -144,9 +241,13 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "date",
             {
-                {"start_date", "Start date in YYYY-MM-DD."},
-                {"end_date", "End date in YYYY-MM-DD."},
-                {"days_of_week", "Days to include (string or array)."},
+                {"start_date", "string", "Start date in YYYY-MM-DD.", false},
+                {"end_date", "string", "End date in YYYY-MM-DD.", false},
+                {"days_of_week",
+                 "array<string>",
+                 "Days to include (string or array).",
+                 false,
+                 {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}},
             },
             false,
             false,
@@ -160,8 +261,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "time",
             {
-                {"start_time", "Start time in HH:MM:SS."},
-                {"end_time", "End time in HH:MM:SS."},
+                {"start_time", "string", "Start time in HH:MM:SS.", false},
+                {"end_time", "string", "End time in HH:MM:SS.", false},
             },
             false,
             false,
@@ -171,11 +272,15 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "datetime",
             {
-                {"start_date", "Start date in YYYY-MM-DD."},
-                {"end_date", "End date in YYYY-MM-DD."},
-                {"start_time", "Start time in HH:MM:SS."},
-                {"end_time", "End time in HH:MM:SS."},
-                {"days_of_week", "Days to include (string or array)."},
+                {"start_date", "string", "Start date in YYYY-MM-DD.", false},
+                {"end_date", "string", "End date in YYYY-MM-DD.", false},
+                {"start_time", "string", "Start time in HH:MM:SS.", false},
+                {"end_time", "string", "End time in HH:MM:SS.", false},
+                {"days_of_week",
+                 "array<string>",
+                 "Days to include (string or array).",
+                 false,
+                 {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}},
             },
             false,
             false,
@@ -191,8 +296,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "address_line1",
             {
-                {"regions", "Regions (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -202,8 +311,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "address_line2",
             {
-                {"regions", "Regions (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -213,7 +326,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "postcode",
             {
-                {"regions", "Regions (string or array)."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
             },
             false,
             true,
@@ -223,8 +340,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "full_address",
             {
-                {"regions", "Regions (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -234,8 +355,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "city",
             {
-                {"regions", "Regions (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -245,19 +370,27 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "region",
             {
-                {"country_codes_standard", "Country code standard string."},
-                {"languages", "Language names (string or array)."},
+                {"country_codes_standard",
+                 "string",
+                 "Country code standard string.",
+                 false,
+                 {"None", "ISO_3166_1_alpha_2", "ISO_3166_1_alpha_3"}},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
-            false,
-            "",
+            true,
+            "location",
             Json{{"country_codes_standard", "None"}, {"languages", Json::array({"English"})}}
         ),
         make_metadata(
             "integer",
             {
-                {"start", "Start value."},
-                {"end", "End value."},
+                {"start", "number", "Start value."},
+                {"end", "number", "End value."},
             },
             false,
             false,
@@ -267,8 +400,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "unsigned_integer",
             {
-                {"start", "Start value."},
-                {"end", "End value."},
+                {"start", "number", "Start value."},
+                {"end", "number", "End value."},
             },
             false,
             false,
@@ -278,9 +411,9 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "decimal",
             {
-                {"start", "Start value."},
-                {"end", "End value."},
-                {"decimal_places", "Number of decimal places."},
+                {"start", "number", "Start value."},
+                {"end", "number", "End value."},
+                {"decimal_places", "number", "Number of decimal places."},
             },
             false,
             false,
@@ -290,9 +423,9 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "decimal_string",
             {
-                {"start", "Start value."},
-                {"end", "End value."},
-                {"decimal_places", "Number of decimal places."},
+                {"start", "number", "Start value."},
+                {"end", "number", "End value."},
+                {"decimal_places", "number", "Number of decimal places."},
             },
             false,
             false,
@@ -302,7 +435,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "payment_method",
             {
-                {"payment_methods", "Payment methods (string or array)."},
+                {"payment_methods", "array<string>", "Payment methods (string or array).", false},
             },
             false,
             true,
@@ -312,9 +445,16 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "card_type",
             {
-                {"languages", "Language names (string or array)."},
-                {"card_types", "Card types (string or array)."},
-                {"card_type", "Single card type (string)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"card_types",
+                 "array<string>",
+                 "Card types (string or array).",
+                 false,
+                 {"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"}},
             },
             false,
             true,
@@ -324,8 +464,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "card_number",
             {
-                {"card_types", "Card types (string or array)."},
-                {"card_type", "Single card type (string)."},
+                {"card_types",
+                 "array<string>",
+                 "Card types (string or array).",
+                 false,
+                 {"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"}},
             },
             true,
             true,
@@ -335,8 +478,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "card_date",
             {
-                {"start", "Start date in MM/YY."},
-                {"end", "End date in MM/YY."},
+                {"start", "string", "Start date in MM/YY.", false},
+                {"end", "string", "End date in MM/YY.", false},
             },
             false,
             true,
@@ -346,9 +489,13 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "first_name",
             {
-                {"languages", "Language names (string or array)."},
-                {"genders", "Genders (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -362,8 +509,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "last_name",
             {
-                {"languages", "Language names (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -373,9 +524,13 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "full_name",
             {
-                {"languages", "Language names (string or array)."},
-                {"genders", "Genders (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             false,
             true,
@@ -389,7 +544,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "gender",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             true,
@@ -399,8 +558,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "title",
             {
-                {"languages", "Language names (string or array)."},
-                {"genders", "Genders (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
             },
             false,
             true,
@@ -410,7 +573,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "marital_status",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             true,
@@ -420,9 +587,13 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "phone_number",
             {
-                {"regions", "Regions (string or array)."},
-                {"is_international", "Whether to generate international numbers."},
-                {"include_delimiters", "Whether to include delimiters."},
+                {"regions",
+                 "array<string>",
+                 "Regions (string or array).",
+                 false,
+                 {"United States", "United Kingdom", "China", "Japan"}},
+                {"is_international", "boolean", "Whether to generate international numbers."},
+                {"include_delimiters", "boolean", "Whether to include delimiters."},
             },
             true,
             true,
@@ -432,8 +603,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "email",
             {
-                {"languages", "Language names (string or array)."},
-                {"domains", "Email domains (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"domains", "array<string>", "Email domains (string or array).", false},
             },
             true,
             true,
@@ -443,7 +618,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "job_title",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             true,
@@ -453,8 +632,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "social_network_id",
             {
-                {"languages", "Language names (string or array)."},
-                {"use_translation", "Whether to use translated output."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"use_translation", "boolean", "Whether to use translated output."},
             },
             true,
             true,
@@ -464,8 +647,12 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "product_name",
             {
-                {"languages", "Language names (string or array)."},
-                {"keywords", "Keyword list (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
+                {"keywords", "array<string>", "Keyword list (string or array).", false},
             },
             false,
             false,
@@ -475,7 +662,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "product_category",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             false,
@@ -485,7 +676,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "color",
             {
-                {"languages", "Language names (string or array)."},
+                {"languages",
+                 "array<string>",
+                 "Language names (string or array).",
+                 false,
+                 {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
             false,
@@ -496,8 +691,11 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "barcode",
             {
-                {"barcode_types", "Barcode types (string or array)."},
-                {"barcode_type", "Single barcode type (string)."},
+                {"barcode_types",
+                 "array<string>",
+                 "Barcode types (string or array).",
+                 false,
+                 {"EAN8", "EAN13", "UPCA", "UPCE", "ISBN"}},
             },
             true,
             false,
@@ -507,7 +705,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "enum_item",
             {
-                {"enums", "Enum values (string or array)."},
+                {"enums", "array<string>", "Enum values (string or array).", true},
             },
             false,
             false,
@@ -517,8 +715,8 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "text",
             {
-                {"number_of_chars_start", "Minimum number of characters."},
-                {"number_of_chars_end", "Maximum number of characters."},
+                {"number_of_chars_start", "number", "Minimum number of characters."},
+                {"number_of_chars_end", "number", "Maximum number of characters."},
             },
             false,
             false,
@@ -528,7 +726,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "uuid",
             {
-                {"include_hyphens", "Whether to include hyphens."},
+                {"include_hyphens", "boolean", "Whether to include hyphens."},
             },
             false,
             false,
@@ -538,10 +736,10 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "sequence",
             {
-                {"start", "Start value."},
-                {"end", "End value."},
-                {"step", "Step increment (non-zero)."},
-                {"circle", "Whether to wrap when reaching end."},
+                {"start", "number", "Start value."},
+                {"end", "number", "End value."},
+                {"step", "number", "Step increment (non-zero)."},
+                {"circle", "boolean", "Whether to wrap when reaching end."},
             },
             false,
             false,
@@ -551,7 +749,7 @@ const std::vector<GeneratorMetadata>& build_catalog() {
         make_metadata(
             "regular_expression",
             {
-                {"pattern", "Regular expression pattern."},
+                {"pattern", "string", "Regular expression pattern.", true},
             },
             false,
             false,
@@ -559,13 +757,15 @@ const std::vector<GeneratorMetadata>& build_catalog() {
             Json{{"pattern", "ORD-[A-Z]{3}-\\d{4}"}}
         ),
     };
+    for (auto& meta : catalog) { meta.module = module_for_generator(meta.name); }
     return catalog;
 }
 
 }  // namespace
 
 const std::vector<GeneratorMetadata>& get_generator_catalog() {
-    return build_catalog();
+    static const std::vector<GeneratorMetadata> catalog = build_catalog();
+    return catalog;
 }
 
 const GeneratorMetadata* find_generator_metadata(const std::string& name) {
@@ -577,13 +777,15 @@ const GeneratorMetadata* find_generator_metadata(const std::string& name) {
     return &(*it);
 }
 
-Json build_project_template() {
+Json build_project_template(const int rows, const std::string& output_format) {
     Json root;
-    root["rows"]                 = 100;
-    root["output_format"]        = "csv";
+    root["rows"]                 = rows;
+    root["output_format"]        = output_format;
     root["null_value_string"]    = nullptr;
-    root["table_name"]           = "generated_data";
-    root["include_create_table"] = true;
+    if (output_format == "sql") {
+        root["table_name"] = "generated_data";
+        root["include_create_table"] = true;
+    }
 
     Json fields = Json::array();
     fields.push_back(

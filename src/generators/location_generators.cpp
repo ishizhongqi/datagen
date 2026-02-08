@@ -272,21 +272,39 @@ private:
 
 class RegionGenerator : public IGenerator {
 public:
-    RegionGenerator(faker::CountryCodesStandard standard, faker::Languages languages, OverrideState overrides) :
-        standard_(standard), languages_(languages), overrides_(std::move(overrides)) {}
+    RegionGenerator(
+        std::shared_ptr<SharedLocationContext> context,
+        faker::CountryCodesStandard            standard,
+        faker::Languages                       languages,
+        bool                                   linkage,
+        OverrideState                          overrides
+    ) :
+        context_(std::move(context)),
+        standard_(standard),
+        languages_(languages),
+        linkage_(linkage),
+        overrides_(std::move(overrides)) {}
 
     std::string generate() override {
         if (auto overridden = apply_override(overrides_)) { return *overridden; }
+        if (linkage_) {
+            auto& context = context_->ensure_context("region");
+            context.next();
+            return context.location().region(standard_, languages_);
+        }
         return faker::location::region(standard_, languages_);
     }
 
     void next() override {
+        if (linkage_ && context_) { context_->reset(); }
         next_row(overrides_);
     }
 
 private:
+    std::shared_ptr<SharedLocationContext> context_;
     faker::CountryCodesStandard standard_;
     faker::Languages            languages_;
+    bool                        linkage_;
     OverrideState               overrides_;
 };
 
@@ -385,12 +403,21 @@ void register_location_generators(GeneratorRegistry& registry) {
         return std::make_unique<CityGenerator>(context, regions, linkage, use_translation, overrides);
     });
 
-    registry.register_generator("region", [](const Json& filed) {
+    registry.register_generator("region", [shared_location_contexts](const Json& filed) {
         const Json& config    = filed.at("config");
         const auto  overrides = parse_overrides(filed);
         const auto  standard  = parse_country_codes_standard(config);
         const auto  languages = parse_languages(config);
-        return std::make_unique<RegionGenerator>(standard, languages, overrides);
+
+        std::shared_ptr<SharedLocationContext> context;
+        const auto                             linkage_key = parse_linkage_key(filed);
+        if (linkage_key.has_value()) {
+            auto& entry = (*shared_location_contexts)[*linkage_key];
+            if (!entry) { entry = std::make_shared<SharedLocationContext>(); }
+            context = entry;
+        }
+        const bool linkage = static_cast<bool>(context);
+        return std::make_unique<RegionGenerator>(context, standard, languages, linkage, overrides);
     });
 }
 

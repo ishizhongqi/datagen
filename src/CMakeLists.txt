@@ -21,6 +21,8 @@ set(CLI_SOURCE
         ${CLI_DIRECTORY}/command_generate.h
         ${CLI_DIRECTORY}/command_describe.cpp
         ${CLI_DIRECTORY}/command_describe.h
+        ${CLI_DIRECTORY}/command_list.cpp
+        ${CLI_DIRECTORY}/command_list.h
         ${CLI_DIRECTORY}/command_validate.cpp
         ${CLI_DIRECTORY}/command_validate.h
         ${CLI_DIRECTORY}/command_help.cpp

@@ -15,14 +15,19 @@ namespace data_generator::cli {
 
 using Json = nlohmann::json;
 
+/// @brief Metadata for a generator configuration field.
 struct ConfigParam {
     std::string name;
+    std::string type;
     std::string description;
     bool        required = false;
+    std::vector<std::string> supported_values;
 };
 
+/// @brief Metadata describing a generator.
 struct GeneratorMetadata {
     std::string              name;
+    std::string              module;
     std::vector<ConfigParam> config_params;
     bool                     supports_unique       = false;
     bool                     supports_data_linkage = false;
@@ -30,11 +35,14 @@ struct GeneratorMetadata {
     Json                     config_template;
 };
 
+/// @brief Return catalog of all generators.
 const std::vector<GeneratorMetadata>& get_generator_catalog();
 
+/// @brief Find generator metadata by name.
 const GeneratorMetadata* find_generator_metadata(const std::string& name);
 
-Json build_project_template();
+/// @brief Build a default project template.
+Json build_project_template(int rows, const std::string& output_format);
 
 }  // namespace data_generator::cli
 

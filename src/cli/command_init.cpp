@@ -25,11 +25,12 @@ constexpr int kExitUsage = 2;
 
 int CommandInit::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator init", "Generate JSON configuration template.");
-    options
-        .add_options()("generator", "Generator name", cxxopts::value<std::string>())("output", "Output file path", cxxopts::value<std::string>())(
-            "h,help",
-            "Show help"
-        );
+    options.add_options()
+        ("generator", "Generator name", cxxopts::value<std::string>())
+        ("rows", "Number of rows", cxxopts::value<int>())
+        ("format", "Output format (json|csv|sql)", cxxopts::value<std::string>())
+        ("output", "Output file path", cxxopts::value<std::string>())
+        ("h,help", "Show help");
 
     cxxopts::ParseResult result;
     try {
@@ -45,6 +46,25 @@ int CommandInit::run(const std::vector<std::string>& args) {
         return kExitOk;
     }
 
+    int rows = 100;
+    std::string output_format = "csv";
+    const bool rows_specified = result.count("rows") > 0;
+    const bool format_specified = result.count("format") > 0;
+    if (rows_specified) {
+        rows = result["rows"].as<int>();
+        if (rows <= 0) {
+            std::cerr << "rows must be a positive integer.\n";
+            return kExitUsage;
+        }
+    }
+    if (format_specified) {
+        output_format = result["format"].as<std::string>();
+        if (output_format != "csv" && output_format != "json" && output_format != "sql") {
+            std::cerr << "Unsupported format: " << output_format << "\n";
+            return kExitUsage;
+        }
+    }
+
     Json output;
     if (result.count("generator")) {
         const std::string        generator_name = result["generator"].as<std::string>();
@@ -57,6 +77,14 @@ int CommandInit::run(const std::vector<std::string>& args) {
         output["config"]                = meta->config_template;
         output["supports_unique"]       = meta->supports_unique;
         output["supports_data_linkage"] = meta->supports_data_linkage;
+        if (rows_specified) { output["rows"] = rows; }
+        if (format_specified) {
+            output["output_format"] = output_format;
+            if (output_format == "sql") {
+                output["table_name"] = "generated_data";
+                output["include_create_table"] = true;
+            }
+        }
         if (meta->supports_unique) { output["unique"] = false; }
         if (meta->supports_data_linkage) {
             if (!meta->linkage_module.empty()) {
@@ -66,7 +94,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
             }
         }
     } else {
-        output = build_project_template();
+        output = build_project_template(rows, output_format);
     }
 
     const std::string payload = output.dump(2);

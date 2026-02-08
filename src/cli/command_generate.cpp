@@ -27,9 +27,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator generate", "Generate dataset from JSON config.");
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
-        ("rows", "Number of rows", cxxopts::value<int>())
         ("output", "Output file path", cxxopts::value<std::string>())
-        ("format", "Output format (json|csv|sql)", cxxopts::value<std::string>())
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -54,23 +52,16 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
 
     try {
         const std::string input_path = result["input"].as<std::string>();
-        const Json        root       = load_json_from_file(input_path);
-        const int         cli_rows   = result.count("rows") ? result["rows"].as<int>() : 0;
-        const int         rows       = resolve_row_count(root, cli_rows, 100);
-
-        std::string format = "csv";
-        if (result.count("format")) {
-            format = result["format"].as<std::string>();
-        } else if (root.contains("output_format") && root.at("output_format").is_string()) {
-            format = root.at("output_format").get<std::string>();
+        const Json root = load_json_from_file(input_path);
+        std::vector<std::string> errors;
+        if (!validate_config(root, true, &errors)) {
+            print_validation_errors(errors, std::cerr);
+            return kExitFailed;
         }
 
-        if (format != "csv" && format != "json" && format != "sql") {
-            std::cerr << "Unsupported format: " << format << "\n";
-            return kExitUsage;
-        }
-
-        auto fields = build_field_generators(root, rows);
+        const int         rows   = root.at("rows").get<int>();
+        const std::string format = root.at("output_format").get<std::string>();
+        auto              fields = build_field_generators(root, rows);
 
         std::ostream* output = &std::cout;
         std::ofstream output_stream;
