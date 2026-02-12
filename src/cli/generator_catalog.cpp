@@ -478,8 +478,8 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "card_date",
             {
-                {"start", "string", "Start date in MM/YY.", false},
-                {"end", "string", "End date in MM/YY.", false},
+                {"start_month", "string", "Start date in MM/YY.", false},
+                {"end_month", "string", "End date in MM/YY.", false},
             },
             false,
             true,

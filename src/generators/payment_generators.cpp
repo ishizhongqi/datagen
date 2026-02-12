@@ -30,11 +30,11 @@ public:
     CardContext(
         const faker::Languages languages,
         const faker::CardTypes card_types,
-        const std::string&     start,
-        const std::string&     end,
+        const std::string&     start_month,
+        const std::string&     end_month,
         const bool             unique
     ) :
-        card_(languages, card_types, start, end, unique) {}
+        card_(languages, card_types, start_month, end_month, unique) {}
 
     void next() {
         if (!next_called_) {
@@ -77,23 +77,23 @@ public:
             }
             card_types_ = parsed;
         }
-        if (config.contains("start")) {
-            const auto parsed = config.at("start").get<std::string>();
-            if (start_.has_value() && start_.value() != parsed) {
+        if (config.contains("start_month")) {
+            const auto parsed = config.at("start_month").get<std::string>();
+            if (start_month_.has_value() && start_month_.value() != parsed) {
                 throw std::runtime_error(
-                    "Conflicting start in linked payment generators (found in " + generator_name + ")"
+                    "Conflicting start_month in linked payment generators (found in " + generator_name + ")"
                 );
             }
-            start_ = parsed;
+            start_month_ = parsed;
         }
-        if (config.contains("end")) {
-            const auto parsed = config.at("end").get<std::string>();
-            if (end_.has_value() && end_.value() != parsed) {
+        if (config.contains("end_month")) {
+            const auto parsed = config.at("end_month").get<std::string>();
+            if (end_month_.has_value() && end_month_.value() != parsed) {
                 throw std::runtime_error(
-                    "Conflicting end in linked payment generators (found in " + generator_name + ")"
+                    "Conflicting end_month in linked payment generators (found in " + generator_name + ")"
                 );
             }
-            end_ = parsed;
+            end_month_ = parsed;
         }
         if (filed.contains("unique")) {
             const auto parsed = filed.at("unique").get<bool>();
@@ -116,10 +116,10 @@ public:
                 faker::CardTypes::UnionPay |
                 faker::CardTypes::Visa
             );
-            const auto start  = start_.value_or("01/00");
-            const auto end    = end_.value_or("12/50");
+            const auto start_month  = start_month_.value_or("01/00");
+            const auto end_month    = end_month_.value_or("12/50");
             const auto unique = unique_.value_or(false);
-            context_          = std::make_shared<CardContext>(languages, card_types, start, end, unique);
+            context_          = std::make_shared<CardContext>(languages, card_types, start_month, end_month, unique);
         }
         return *context_;
     }
@@ -131,8 +131,8 @@ public:
 private:
     std::optional<faker::Languages> languages_;
     std::optional<faker::CardTypes> card_types_;
-    std::optional<std::string>      start_;
-    std::optional<std::string>      end_;
+    std::optional<std::string>      start_month_;
+    std::optional<std::string>      end_month_;
     std::optional<bool>             unique_;
     std::shared_ptr<CardContext>    context_;
 };
@@ -261,14 +261,14 @@ class CardDateGenerator : public IGenerator {
 public:
     CardDateGenerator(
         std::shared_ptr<SharedCardContext> context,
-        std::string                        start,
-        std::string                        end,
+        std::string                        start_month,
+        std::string                        end_month,
         bool                               linkage,
         OverrideState                      overrides
     ) :
         context_(std::move(context)),
-        start_(std::move(start)),
-        end_(std::move(end)),
+        start_month_(std::move(start_month)),
+        end_month_(std::move(end_month)),
         linkage_(linkage),
         overrides_(std::move(overrides)) {}
 
@@ -279,7 +279,7 @@ public:
             context.next();
             return context.card().date();
         }
-        return faker::payment::card_date(start_, end_);
+        return faker::payment::card_date(start_month_, end_month_);
     }
 
     void next() override {
@@ -289,8 +289,8 @@ public:
 
 private:
     std::shared_ptr<SharedCardContext> context_;
-    std::string                        start_;
-    std::string                        end_;
+    std::string                        start_month_;
+    std::string                        end_month_;
     bool                               linkage_;
     OverrideState                      overrides_;
 };
@@ -355,8 +355,8 @@ void register_payment_generators(GeneratorRegistry& registry) {
     registry.register_generator("card_date", [shared_card_contexts](const Json& filed) {
         const Json&       config    = filed.at("config");
         const auto        overrides = parse_overrides(filed);
-        const std::string start     = config.value("start", "01/00");
-        const std::string end       = config.value("end", "12/50");
+        const std::string start_month     = config.value("start_month", "01/00");
+        const std::string end_month       = config.value("end_month", "12/50");
 
         std::shared_ptr<SharedCardContext> context;
         const auto                         linkage_key = parse_linkage_key(filed);
@@ -367,7 +367,7 @@ void register_payment_generators(GeneratorRegistry& registry) {
             context = entry;
         }
         const bool linkage = static_cast<bool>(context);
-        return std::make_unique<CardDateGenerator>(context, start, end, linkage, overrides);
+        return std::make_unique<CardDateGenerator>(context, start_month, end_month, linkage, overrides);
     });
 }
 

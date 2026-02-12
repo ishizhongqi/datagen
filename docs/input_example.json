@@ -1,0 +1,576 @@
+{
+    "rows": 100,
+    "output_format": "csv",
+    "null_value_string": null,
+    "fields": [
+        {
+            "name": "company_name",
+            "generator": "company_name",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "company:group_1"
+        },
+        {
+            "name": "department",
+            "generator": "department",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            }
+        },
+        {
+            "name": "industry",
+            "generator": "industry",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "company:group_1"
+        },
+        {
+            "name": "ip_address",
+            "generator": "ip_address",
+            "config": {
+                "ip_address_type": "IPv4"
+            },
+            "unique": true,
+            "null_value": {
+                "enabled": true,
+                "percent": 10
+            }
+        },
+        {
+            "name": "ip_address",
+            "generator": "ip_address",
+            "config": {
+                "ip_address_type": "IPv6"
+            },
+            "unique": true,
+            "null_value": {
+                "enabled": true,
+                "percent": 10
+            }
+        },
+        {
+            "name": "mac_address",
+            "generator": "mac_address",
+            "config": {},
+            "unique": true
+        },
+        {
+            "name": "file_path",
+            "generator": "file_path",
+            "config": {
+                "operating_systems": [
+                    "Windows"
+                ],
+                "extensions": [
+                    "jpg",
+                    "png",
+                    "txt",
+                    "rtf",
+                    "pdf",
+                    "docx",
+                    "xlsx",
+                    "csv",
+                    "html",
+                    "zip"
+                ]
+            },
+            "data_linkage": "file:group_1"
+        },
+        {
+            "name": "file_directory",
+            "generator": "file_directory",
+            "config": {
+                "operating_systems": [
+                    "Windows"
+                ]
+            },
+            "data_linkage": "file:group_1"
+        },
+        {
+            "name": "file_name",
+            "generator": "file_name",
+            "config": {
+                "extensions": [
+                    "jpg",
+                    "png",
+                    "txt",
+                    "rtf",
+                    "pdf",
+                    "docx",
+                    "xlsx",
+                    "csv",
+                    "html",
+                    "zip"
+                ]
+            },
+            "data_linkage": "file:group_1"
+        },
+        {
+            "name": "file_extension",
+            "generator": "file_extension",
+            "config": {
+                "extensions": [
+                    "jpg",
+                    "png",
+                    "txt",
+                    "rtf",
+                    "pdf",
+                    "docx",
+                    "xlsx",
+                    "csv",
+                    "html",
+                    "zip"
+                ]
+            },
+            "data_linkage": "file:group_1"
+        },
+        {
+            "name": "url",
+            "generator": "url",
+            "config": {
+                "subdomains": [
+                    "www",
+                    "api"
+                ],
+                "tlds": [
+                    "com",
+                    "net",
+                    "org"
+                ]
+            },
+            "unique": true
+        },
+        {
+            "name": "hostname",
+            "generator": "hostname",
+            "config": {
+                "subdomains": [
+                    "www",
+                    "api"
+                ],
+                "tlds": [
+                    "com",
+                    "net",
+                    "org"
+                ]
+            },
+            "unique": true
+        },
+        {
+            "name": "date",
+            "generator": "date",
+            "config": {
+                "start_date": "2023-01-01",
+                "end_date": "2023-12-31",
+                "days_of_week": [
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ]
+            }
+        },
+        {
+            "name": "time",
+            "generator": "time",
+            "config": {
+                "start_time": "08:00:00",
+                "end_time": "17:00:00"
+            }
+        },
+        {
+            "name": "datetime",
+            "generator": "datetime",
+            "config": {
+                "start_date": "2023-01-01",
+                "end_date": "2023-12-31",
+                "start_time": "08:00:00",
+                "end_time": "17:00:00",
+                "days_of_week": [
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ]
+            }
+        },
+        {
+            "name": "address_line1",
+            "generator": "address_line1",
+            "config": {
+                "regions": [
+                    "China"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "address_line2",
+            "generator": "address_line2",
+            "config": {
+                "regions": [
+                    "China"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "postcode",
+            "generator": "postcode",
+            "config": {
+                "regions": [
+                    "China"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "full_address",
+            "generator": "full_address",
+            "config": {
+                "regions": [
+                    "China"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "city",
+            "generator": "city",
+            "config": {
+                "regions": [
+                    "China"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "region",
+            "generator": "region",
+            "config": {
+                "country_codes_standard": "None",
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "location:group_1"
+        },
+        {
+            "name": "integer",
+            "generator": "integer",
+            "config": {
+                "start": 1,
+                "end": 100
+            }
+        },
+        {
+            "name": "unsigned_integer",
+            "generator": "unsigned_integer",
+            "config": {
+                "start": 1,
+                "end": 100
+            }
+        },
+        {
+            "name": "decimal",
+            "generator": "decimal",
+            "config": {
+                "start": 1.0,
+                "end": 100.0,
+                "decimal_places": 2
+            }
+        },
+        {
+            "name": "decimal_string",
+            "generator": "decimal_string",
+            "config": {
+                "start": 1.0,
+                "end": 100.0,
+                "decimal_places": 2
+            }
+        },
+        {
+            "name": "payment_method",
+            "generator": "payment_method",
+            "config": {
+                "payment_methods": [
+                    "Credit Card",
+                    "PayPal",
+                    "Apple Pay"
+                ]
+            }
+        },
+        {
+            "name": "card_type",
+            "generator": "card_type",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "card_types": [
+                    "AmericanExpress",
+                    "JCB",
+                    "MasterCard",
+                    "UnionPay",
+                    "Visa"
+                ]
+            },
+            "data_linkage": "card:group_1"
+        },
+        {
+            "name": "card_number",
+            "generator": "card_number",
+            "config": {
+                "card_types": [
+                    "AmericanExpress",
+                    "JCB",
+                    "MasterCard",
+                    "UnionPay",
+                    "Visa"
+                ]
+            },
+            "unique": true,
+            "data_linkage": "card:group_1"
+        },
+        {
+            "name": "card_date",
+            "generator": "card_date",
+            "config": {
+                "start_month": "01/23",
+                "end_month": "12/30"
+            },
+            "data_linkage": "card:group_1"
+        },
+        {
+            "name": "first_name",
+            "generator": "first_name",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "genders": [
+                    "M",
+                    "F"
+                ],
+                "use_translation": false
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "last_name",
+            "generator": "last_name",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "full_name",
+            "generator": "full_name",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "genders": [
+                    "M",
+                    "F"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "gender",
+            "generator": "gender",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "title",
+            "generator": "title",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "genders": [
+                    "M",
+                    "F"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "marital_status",
+            "generator": "marital_status",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "phone_number",
+            "generator": "phone_number",
+            "config": {
+                "is_international": false,
+                "include_delimiters": false,
+                "regions": [
+                    "China"
+                ]
+            },
+            "unique": true,
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "email",
+            "generator": "email",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "domains": [
+                    "gmail.com",
+                    "outlook.com"
+                ]
+            },
+            "unique": true,
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "job_title",
+            "generator": "job_title",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "social_network_id",
+            "generator": "social_network_id",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            },
+            "unique": true,
+            "data_linkage": "person:group_1"
+        },
+        {
+            "name": "product_name",
+            "generator": "product_name",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ],
+                "keywords": [
+                    "Cherry",
+                    "Orange",
+                    "Pluots",
+                    "Grape",
+                    "Kiwi",
+                    "Mango",
+                    "Raspberry",
+                    "Strawberry"
+                ]
+            }
+        },
+        {
+            "name": "product_category",
+            "generator": "product_category",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            }
+        },
+        {
+            "name": "color",
+            "generator": "color",
+            "config": {
+                "languages": [
+                    "Simplified Chinese"
+                ]
+            }
+        },
+        {
+            "name": "size",
+            "generator": "size",
+            "config": {}
+        },
+        {
+            "name": "barcode",
+            "generator": "barcode",
+            "config": {
+                "barcode_types": [
+                    "EAN13"
+                ]
+            },
+            "unique": true
+        },
+        {
+            "name": "enum_item",
+            "generator": "enum_item",
+            "config": {
+                "enums": [
+                    "First",
+                    "Second",
+                    "Third"
+                ]
+            }
+        },
+        {
+            "name": "text",
+            "generator": "text",
+            "config": {
+                "number_of_chars_start": 100,
+                "number_of_chars_end": 1000
+            }
+        },
+        {
+            "name": "uuid",
+            "generator": "uuid",
+            "config": {
+                "include_hyphens": true
+            }
+        },
+        {
+            "name": "sequence_id",
+            "generator": "sequence",
+            "config": {
+                "start": 0,
+                "end": 1010,
+                "step": 1,
+                "circle": false
+            }
+        },
+        {
+            "name": "order_code",
+            "generator": "regular_expression",
+            "config": {
+                "pattern": "ORD-[A-Z]{3}-\\d{4}"
+            }
+        }
+    ]
+}
