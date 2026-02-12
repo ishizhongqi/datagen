@@ -1,0 +1,22 @@
+{
+  "rows": 8,
+  "output_format": "csv",
+  "null_value_string": "N/A",
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 1000
+      }
+    },
+    {
+      "name": "address_line2",
+      "generator": "regular_expression",
+      "config": {
+        "pattern": ""
+      }
+    }
+  ]
+}

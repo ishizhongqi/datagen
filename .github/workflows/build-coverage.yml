@@ -1,0 +1,73 @@
+name: coverage
+
+on:
+  push:
+    branches:
+      - "develop"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  pull_request:
+    branches:
+      - "develop"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    name: ci_ubuntu-24.04_clang-18_coverage
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            clang-18 \
+            llvm-18
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_C_COMPILER=clang-18 \
+            -DCMAKE_CXX_COMPILER=clang++-18 \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DDATA_GENERATOR_ENABLE_COVERAGE=ON
+
+      - name: Build tests
+        run: cmake --build build --target data-generator-tests
+
+      - name: Run tests
+        run: |
+          LLVM_PROFILE_FILE=build/coverage-%p.profraw ctest --test-dir build --output-on-failure
+
+      - name: Export LCOV
+        run: |
+          llvm-profdata-18 merge -sparse build/coverage-*.profraw -o build/coverage.profdata
+          llvm-cov-18 export \
+            -format=lcov \
+            -instr-profile=build/coverage.profdata \
+            build/tests/data-generator-tests \
+            -ignore-filename-regex='.*(third_party|_deps|/usr/).*' \
+            > coverage.info
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage.info
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.info
+          fail_ci_if_error: false

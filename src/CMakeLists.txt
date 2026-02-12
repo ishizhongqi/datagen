@@ -2,11 +2,18 @@ cmake_minimum_required(VERSION 3.22)
 
 set(MAIN_SOURCE main.cpp)
 
+set(APP_DIRECTORY app)
+
 set(CORE_DIRECTORY core)
 
 set(CLI_DIRECTORY cli)
 
 set(GENERATOR_DIRECTORY generators)
+
+set(APP_SOURCE
+        ${APP_DIRECTORY}/run.cpp
+        ${APP_DIRECTORY}/run.h
+)
 
 set(CORE_SOURCE
         ${CORE_DIRECTORY}/configuration.cpp
@@ -72,9 +79,18 @@ set(GENERATOR_SOURCE
         ${GENERATOR_DIRECTORY}/override_rules.h
 )
 
-add_executable(data-generator ${MAIN_SOURCE} ${CLI_SOURCE} ${GENERATOR_SOURCE} ${CORE_SOURCE})
+add_library(data-generator-lib
+        ${APP_SOURCE}
+        ${CLI_SOURCE}
+        ${GENERATOR_SOURCE}
+        ${CORE_SOURCE}
+)
 
-target_include_directories(data-generator
-        PRIVATE
+add_executable(data-generator ${MAIN_SOURCE})
+
+target_link_libraries(data-generator PRIVATE data-generator-lib)
+
+target_include_directories(data-generator-lib
+        PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )

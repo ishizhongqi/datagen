@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.22)
 
 project(data-generator CXX)
 
+option(DATA_GENERATOR_ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
+
+set(FAKER_BUILD_SHARED OFF CACHE BOOL "faker shared build" FORCE)
+set(FAKER_BUILD_EXAMPLE OFF CACHE BOOL "faker example build" FORCE)
+set(FAKER_BUILD_TESTS OFF CACHE BOOL "faker test build" FORCE)
+set(FAKER_CODE_COVERAGE OFF CACHE BOOL "faker coverage build" FORCE)
+
 # faker
 add_subdirectory(third_party/faker)
 
@@ -19,11 +26,20 @@ target_include_directories(cxxopts INTERFACE
 
 add_subdirectory(src)
 
-target_link_libraries(data-generator
-        PRIVATE
+target_link_libraries(data-generator-lib
+        PUBLIC
         faker
         nlohmann_json
         cxxopts
 )
 
-target_compile_features(data-generator PRIVATE cxx_std_20)
+target_compile_features(data-generator-lib PUBLIC cxx_std_20)
+
+if(DATA_GENERATOR_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-O0 -g -fprofile-instr-generate -fcoverage-mapping)
+    add_link_options(-fprofile-instr-generate -fcoverage-mapping)
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
