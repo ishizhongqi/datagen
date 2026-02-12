@@ -12,16 +12,10 @@
 #include <string>
 
 #include "cli/cli_shared.h"
+#include "cli/exit_codes.h"
 #include "cli/generator_catalog.h"
 
 namespace data_generator::cli {
-
-namespace {
-
-constexpr int kExitOk    = 0;
-constexpr int kExitUsage = 2;
-
-}  // namespace
 
 int CommandInit::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator init", "Generate JSON configuration template.");
@@ -38,30 +32,30 @@ int CommandInit::run(const std::vector<std::string>& args) {
     } catch (const std::exception& ex) {
         std::cerr << "Failed to parse arguments: " << ex.what() << "\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (result.count("help")) {
         std::cout << options.help() << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
-    int rows = 100;
-    std::string output_format = "csv";
-    const bool rows_specified = result.count("rows") > 0;
-    const bool format_specified = result.count("format") > 0;
+    int         rows             = 100;
+    std::string output_format    = "csv";
+    const bool  rows_specified   = result.count("rows") > 0;
+    const bool  format_specified = result.count("format") > 0;
     if (rows_specified) {
         rows = result["rows"].as<int>();
         if (rows <= 0) {
             std::cerr << "rows must be a positive integer.\n";
-            return kExitUsage;
+            return exit_codes::kUsage;
         }
     }
     if (format_specified) {
         output_format = result["format"].as<std::string>();
         if (output_format != "csv" && output_format != "json" && output_format != "sql") {
             std::cerr << "Unsupported format: " << output_format << "\n";
-            return kExitUsage;
+            return exit_codes::kUsage;
         }
     }
 
@@ -71,7 +65,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         const GeneratorMetadata* meta           = find_generator_metadata(generator_name);
         if (!meta) {
             std::cerr << "Unknown generator: " << generator_name << "\n";
-            return kExitUsage;
+            return exit_codes::kUsage;
         }
         output["generator"]             = meta->name;
         output["config"]                = meta->config_template;
@@ -81,7 +75,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         if (format_specified) {
             output["output_format"] = output_format;
             if (output_format == "sql") {
-                output["table_name"] = "generated_data";
+                output["table_name"]           = "generated_data";
                 output["include_create_table"] = true;
             }
         }
@@ -103,14 +97,14 @@ int CommandInit::run(const std::vector<std::string>& args) {
         std::ofstream     out(path, std::ios::trunc);
         if (!out) {
             std::cerr << "Failed to open output file: " << path << "\n";
-            return 1;
+            return exit_codes::kCliError;
         }
         out << payload << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     std::cout << payload << "\n";
-    return kExitOk;
+    return exit_codes::kOk;
 }
 
 }  // namespace data_generator::cli

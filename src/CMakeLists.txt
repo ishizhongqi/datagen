@@ -2,9 +2,20 @@ cmake_minimum_required(VERSION 3.22)
 
 set(MAIN_SOURCE main.cpp)
 
+set(CORE_DIRECTORY core)
+
 set(CLI_DIRECTORY cli)
 
 set(GENERATOR_DIRECTORY generators)
+
+set(CORE_SOURCE
+        ${CORE_DIRECTORY}/configuration.cpp
+        ${CORE_DIRECTORY}/configuration.h
+        ${CORE_DIRECTORY}/executor.cpp
+        ${CORE_DIRECTORY}/executor.h
+        ${CORE_DIRECTORY}/serialization.cpp
+        ${CORE_DIRECTORY}/serialization.h
+)
 
 set(CLI_SOURCE
         ${CLI_DIRECTORY}/cli_dispatcher.cpp
@@ -61,7 +72,7 @@ set(GENERATOR_SOURCE
         ${GENERATOR_DIRECTORY}/override_rules.h
 )
 
-add_executable(data-generator ${MAIN_SOURCE} ${CLI_SOURCE} ${GENERATOR_SOURCE})
+add_executable(data-generator ${MAIN_SOURCE} ${CLI_SOURCE} ${GENERATOR_SOURCE} ${CORE_SOURCE})
 
 target_include_directories(data-generator
         PRIVATE

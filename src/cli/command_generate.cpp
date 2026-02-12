@@ -9,25 +9,27 @@
 #include <cxxopts.hpp>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 
 #include "cli/cli_shared.h"
+#include "cli/exit_codes.h"
+#include "core/configuration.h"
+#include "core/executor.h"
 
 namespace data_generator::cli {
-
-namespace {
-
-constexpr int kExitOk     = 0;
-constexpr int kExitUsage  = 2;
-constexpr int kExitFailed = 3;
-
-}  // namespace
 
 int CommandGenerate::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator generate", "Generate dataset from JSON config.");
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
         ("output", "Output file path", cxxopts::value<std::string>())
+        ("rows", "Override rows", cxxopts::value<int>())
+        ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
+        ("threads", "Worker threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
+        ("table", "Override SQL table name", cxxopts::value<std::string>())
+        ("create-table", "Force CREATE TABLE for SQL")
+        ("no-create-table", "Disable CREATE TABLE for SQL")
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -36,105 +38,99 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
     } catch (const std::exception& ex) {
         std::cerr << "Failed to parse arguments: " << ex.what() << "\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (result.count("help")) {
         std::cout << options.help() << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     if (!result.count("input")) {
         std::cerr << "Missing required --input\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     try {
         const std::string input_path = result["input"].as<std::string>();
-        const Json root = load_json_from_file(input_path);
-        std::vector<std::string> errors;
-        if (!validate_config(root, true, &errors)) {
-            print_validation_errors(errors, std::cerr);
-            return kExitFailed;
+        const Json        root       = load_json_from_file(input_path);
+
+        core::GenerationConfig             cfg;
+        std::vector<core::ValidationIssue> issues;
+        if (!core::parse_generation_config(root, core::ParseMode::RequireOutputSettings, &cfg, &issues)) {
+            print_validation_issues(issues, std::cerr);
+            return exit_codes::kRuntimeFailure;
         }
 
-        const int         rows   = root.at("rows").get<int>();
-        const std::string format = root.at("output_format").get<std::string>();
-        auto              fields = build_field_generators(root, rows);
+        std::optional<int> rows_override;
+        if (result.count("rows")) {
+            const int rows = result["rows"].as<int>();
+            if (rows <= 0) {
+                std::cerr << "--rows must be a positive integer\n";
+                return exit_codes::kUsage;
+            }
+            rows_override = rows;
+        }
+
+        std::optional<core::OutputFormat> format_override;
+        if (result.count("format")) {
+            const auto parsed = core::parse_output_format(result["format"].as<std::string>());
+            if (!parsed.has_value()) {
+                std::cerr << "--format must be one of: csv, json, sql\n";
+                return exit_codes::kUsage;
+            }
+            format_override = parsed;
+        }
+
+        std::optional<std::string> table_override;
+        if (result.count("table")) {
+            table_override = result["table"].as<std::string>();
+            if (table_override->empty()) {
+                std::cerr << "--table must not be empty\n";
+                return exit_codes::kUsage;
+            }
+        }
+
+        std::optional<bool> create_table_override;
+        if (result.count("create-table") && result.count("no-create-table")) {
+            std::cerr << "Use either --create-table or --no-create-table, not both\n";
+            return exit_codes::kUsage;
+        }
+        if (result.count("create-table")) { create_table_override = true; }
+        if (result.count("no-create-table")) { create_table_override = false; }
+
+        core::apply_cli_overrides(&cfg, rows_override, format_override, table_override, create_table_override);
 
         std::ostream* output = &std::cout;
-        std::ofstream output_stream;
+        std::ofstream file_output;
         if (result.count("output")) {
-            const std::string output_path = result["output"].as<std::string>();
-            output_stream.open(output_path, std::ios::trunc);
-            if (!output_stream) {
-                std::cerr << "Failed to open output file: " << output_path << "\n";
-                return kExitFailed;
+            const std::string path = result["output"].as<std::string>();
+            file_output.open(path, std::ios::trunc);
+            if (!file_output) {
+                std::cerr << "Failed to open output file: " << path << "\n";
+                return exit_codes::kRuntimeFailure;
             }
-            output = &output_stream;
+            output = &file_output;
         }
 
-        if (format == "csv") {
-            for (size_t i = 0; i < fields.size(); ++i) {
-                if (i > 0) { *output << ","; }
-                *output << csv_escape(fields[i].name);
-            }
-            *output << "\n";
-
-            for (int row = 0; row < rows; ++row) {
-                for (size_t i = 0; i < fields.size(); ++i) {
-                    if (i > 0) { *output << ","; }
-                    *output << csv_escape(fields[i].generator->generate());
-                }
-                *output << "\n";
-                for (auto& field : fields) { field.generator->next(); }
-            }
-        } else if (format == "json") {
-            *output << "[\n";
-            for (int row = 0; row < rows; ++row) {
-                Json row_obj = Json::object();
-                for (auto& field : fields) { row_obj[field.name] = field.generator->generate(); }
-                *output << "  " << row_obj.dump();
-                if (row + 1 < rows) { *output << ","; }
-                *output << "\n";
-                for (auto& field : fields) { field.generator->next(); }
-            }
-            *output << "]\n";
-        } else if (format == "sql") {
-            const std::string table_name           = root.value("table_name", "generated_data");
-            const bool        include_create_table = root.value("include_create_table", true);
-            if (include_create_table) {
-                *output << "CREATE TABLE " << table_name << " (\n";
-                for (size_t i = 0; i < fields.size(); ++i) {
-                    *output << "  " << fields[i].name << " TEXT";
-                    if (i + 1 < fields.size()) { *output << ","; }
-                    *output << "\n";
-                }
-                *output << ");\n";
-            }
-
-            for (int row = 0; row < rows; ++row) {
-                *output << "INSERT INTO " << table_name << " (";
-                for (size_t i = 0; i < fields.size(); ++i) {
-                    if (i > 0) { *output << ", "; }
-                    *output << fields[i].name;
-                }
-                *output << ") VALUES (";
-                for (size_t i = 0; i < fields.size(); ++i) {
-                    if (i > 0) { *output << ", "; }
-                    const std::string value = fields[i].generator->generate();
-                    *output << "'" << sql_escape(value) << "'";
-                }
-                *output << ");\n";
-                for (auto& field : fields) { field.generator->next(); }
-            }
+        core::ExecutionOptions exec_opts;
+        exec_opts.requested_threads = result["threads"].as<std::size_t>();
+        if (exec_opts.requested_threads == 0) {
+            std::cerr << "--threads must be >= 1\n";
+            return exit_codes::kUsage;
         }
 
-        return kExitOk;
+        const auto generation_result = core::generate_to_stream(cfg, exec_opts, *output);
+        if (generation_result.info.fallback_to_single_thread) {
+            std::cerr << "Info: parallel generation fallback to single thread: "
+                      << generation_result.info.fallback_reason << "\n";
+        }
+
+        return exit_codes::kOk;
     } catch (const std::exception& ex) {
         std::cerr << "Generate failed: " << ex.what() << "\n";
-        return kExitFailed;
+        return exit_codes::kRuntimeFailure;
     }
 }
 

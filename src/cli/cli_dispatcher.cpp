@@ -16,6 +16,7 @@
 #include "cli/command_list.h"
 #include "cli/command_preview.h"
 #include "cli/command_validate.h"
+#include "cli/exit_codes.h"
 
 namespace data_generator::cli {
 
@@ -33,7 +34,7 @@ int CliDispatcher::dispatch(const std::string& command, const std::vector<std::s
         return CommandHelp::run({});
     } catch (const std::exception& ex) {
         std::cerr << "CLI error: " << ex.what() << "\n";
-        return 1;
+        return exit_codes::kCliError;
     }
 }
 

@@ -116,10 +116,10 @@ public:
                 faker::CardTypes::UnionPay |
                 faker::CardTypes::Visa
             );
-            const auto start_month  = start_month_.value_or("01/00");
-            const auto end_month    = end_month_.value_or("12/50");
-            const auto unique = unique_.value_or(false);
-            context_          = std::make_shared<CardContext>(languages, card_types, start_month, end_month, unique);
+            const auto start_month = start_month_.value_or("01/00");
+            const auto end_month   = end_month_.value_or("12/50");
+            const auto unique      = unique_.value_or(false);
+            context_ = std::make_shared<CardContext>(languages, card_types, start_month, end_month, unique);
         }
         return *context_;
     }
@@ -353,10 +353,10 @@ void register_payment_generators(GeneratorRegistry& registry) {
     });
 
     registry.register_generator("card_date", [shared_card_contexts](const Json& filed) {
-        const Json&       config    = filed.at("config");
-        const auto        overrides = parse_overrides(filed);
-        const std::string start_month     = config.value("start_month", "01/00");
-        const std::string end_month       = config.value("end_month", "12/50");
+        const Json&       config      = filed.at("config");
+        const auto        overrides   = parse_overrides(filed);
+        const std::string start_month = config.value("start_month", "01/00");
+        const std::string end_month   = config.value("end_month", "12/50");
 
         std::shared_ptr<SharedCardContext> context;
         const auto                         linkage_key = parse_linkage_key(filed);

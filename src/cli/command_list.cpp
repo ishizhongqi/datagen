@@ -14,16 +14,10 @@
 #include <vector>
 
 #include "cli/cli_shared.h"
+#include "cli/exit_codes.h"
 #include "cli/generator_catalog.h"
 
 namespace data_generator::cli {
-
-namespace {
-
-constexpr int kExitOk    = 0;
-constexpr int kExitUsage = 2;
-
-}  // namespace
 
 int CommandList::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator list", "List available generators.");
@@ -35,12 +29,12 @@ int CommandList::run(const std::vector<std::string>& args) {
     } catch (const std::exception& ex) {
         std::cerr << "Failed to parse arguments: " << ex.what() << "\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (result.count("help")) {
         std::cout << options.help() << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     const auto& catalog     = get_generator_catalog();
@@ -60,7 +54,7 @@ int CommandList::run(const std::vector<std::string>& args) {
         for (const auto& meta : catalog) { names.push_back(meta.name); }
         std::sort(names.begin(), names.end());
         for (const auto& name : names) { std::cout << "- " << name << "\n"; }
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     std::map<std::string, std::vector<std::string>> grouped;
@@ -75,7 +69,7 @@ int CommandList::run(const std::vector<std::string>& args) {
         for (const auto& name : names) { std::cout << "- " << name << "\n"; }
     }
 
-    return kExitOk;
+    return exit_codes::kOk;
 }
 
 }  // namespace data_generator::cli

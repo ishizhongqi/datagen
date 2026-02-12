@@ -8,36 +8,23 @@
 
 #include <cxxopts.hpp>
 #include <iostream>
+#include <optional>
 #include <string>
 
 #include "cli/cli_shared.h"
+#include "cli/exit_codes.h"
+#include "core/configuration.h"
+#include "core/executor.h"
+#include "core/serialization.h"
 
 namespace data_generator::cli {
-
-namespace {
-
-constexpr int kExitOk     = 0;
-constexpr int kExitUsage  = 2;
-constexpr int kExitFailed = 3;
-
-bool match_field(const std::string& filter, const std::string& name) {
-    return filter.empty() || filter == "all" || filter == name;
-}
-
-bool is_null_literal(const Json& root, const std::string& value) {
-    if (!root.contains("null_value_string")) { return false; }
-    if (root.at("null_value_string").is_null()) { return value.empty(); }
-    return false;
-}
-
-}  // namespace
 
 int CommandPreview::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator preview", "Generate a single row preview.");
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
         ("field", "Field name or 'all'", cxxopts::value<std::string>()->default_value("all"))
-        ("format", "Output format (json|csv|sql)", cxxopts::value<std::string>()->default_value("csv"))
+        ("format", "Output format (csv|json|sql)", cxxopts::value<std::string>())
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -46,94 +33,78 @@ int CommandPreview::run(const std::vector<std::string>& args) {
     } catch (const std::exception& ex) {
         std::cerr << "Failed to parse arguments: " << ex.what() << "\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (result.count("help")) {
         std::cout << options.help() << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     if (!result.count("input")) {
         std::cerr << "Missing required --input\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     try {
-        const std::string input_path   = result["input"].as<std::string>();
+        const Json root = load_json_from_file(result["input"].as<std::string>());
+
+        core::GenerationConfig             cfg;
+        std::vector<core::ValidationIssue> issues;
+        if (!core::parse_generation_config(root, core::ParseMode::AllowMissingOutputSettings, &cfg, &issues)) {
+            print_validation_issues(issues, std::cerr);
+            return exit_codes::kRuntimeFailure;
+        }
+
+        if (result.count("format")) {
+            const auto parsed = core::parse_output_format(result["format"].as<std::string>());
+            if (!parsed.has_value()) {
+                std::cerr << "Unsupported format. Use csv|json|sql\n";
+                return exit_codes::kUsage;
+            }
+            cfg.format = *parsed;
+        }
+
+        const auto        row          = core::preview_row(cfg, std::nullopt);
         const std::string field_filter = result["field"].as<std::string>();
-        const std::string format       = result["format"].as<std::string>();
-        const Json        root         = load_json_from_file(input_path);
 
-        std::vector<std::string> errors;
-        if (!validate_config(root, false, &errors)) {
-            print_validation_errors(errors, std::cerr);
-            return kExitFailed;
-        }
-
-        if (format != "csv" && format != "json" && format != "sql") {
-            std::cerr << "Unsupported format: " << format << "\n";
-            return kExitUsage;
-        }
-
-        constexpr int rows   = 1;
-        auto          fields = build_field_generators(root, rows);
-
-        if (field_filter != "all" && !field_filter.empty()) {
-            for (auto& field : fields) {
-                if (field.name == field_filter) {
-                    std::cout << field.generator->generate() << "\n";
-                    return kExitOk;
+        if (!field_filter.empty() && field_filter != "all") {
+            for (size_t i = 0; i < cfg.fields.size(); ++i) {
+                if (cfg.fields[i].name == field_filter) {
+                    if (!row[i].has_value()) {
+                        std::cout << "NULL\n";
+                    } else {
+                        std::cout << *row[i] << "\n";
+                    }
+                    return exit_codes::kOk;
                 }
             }
             std::cerr << "Field not found: " << field_filter << "\n";
-            return kExitFailed;
+            return exit_codes::kRuntimeFailure;
         }
 
-        if (format == "json") {
-            Json row = Json::object();
-            for (auto& field : fields) {
-                const std::string value = field.generator->generate();
-                if (is_null_literal(root, value)) {
-                    row[field.name] = nullptr;
-                } else {
-                    row[field.name] = value;
-                }
-            }
-            std::cout << row.dump(2) << "\n";
-            return kExitOk;
-        }
+        std::vector<std::string> columns;
+        columns.reserve(cfg.fields.size());
+        for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
-        if (format == "csv") {
-            for (size_t i = 0; i < fields.size(); ++i) {
+        std::vector<core::Row> rows = {row};
+        switch (cfg.format) {
+        case core::OutputFormat::Csv:
+            for (size_t i = 0; i < row.size(); ++i) {
                 if (i > 0) { std::cout << ","; }
-                std::cout << csv_escape(fields[i].generator->generate());
+                std::cout << core::csv_escape(row[i].value_or(""));
             }
             std::cout << "\n";
-            return kExitOk;
+            break;
+        case core::OutputFormat::Json: core::write_json(columns, rows, std::cout); break;
+        case core::OutputFormat::Sql : core::write_sql(columns, rows, "preview_table", false, std::cout); break;
         }
 
-        std::cout << "INSERT INTO preview_table (";
-        for (size_t i = 0; i < fields.size(); ++i) {
-            if (i > 0) { std::cout << ", "; }
-            std::cout << fields[i].name;
-        }
-        std::cout << ") VALUES (";
-        for (size_t i = 0; i < fields.size(); ++i) {
-            if (i > 0) { std::cout << ", "; }
-            const std::string value = fields[i].generator->generate();
-            if (is_null_literal(root, value)) {
-                std::cout << "NULL";
-            } else {
-                std::cout << "'" << sql_escape(value) << "'";
-            }
-        }
-        std::cout << ");\n";
-        return kExitOk;
+        return exit_codes::kOk;
     } catch (const std::exception& ex) {
         std::cerr << "Preview failed: " << ex.what() << "\n";
-        return kExitFailed;
+        return exit_codes::kRuntimeFailure;
     }
 }
 

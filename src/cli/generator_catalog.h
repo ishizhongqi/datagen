@@ -9,6 +9,7 @@
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace data_generator::cli {
@@ -17,11 +18,26 @@ using Json = nlohmann::json;
 
 /// @brief Metadata for a generator configuration field.
 struct ConfigParam {
-    std::string name;
-    std::string type;
-    std::string description;
-    bool        required = false;
+    std::string              name;
+    std::string              type;
+    std::string              description;
+    bool                     required = false;
     std::vector<std::string> supported_values;
+
+    ConfigParam() = default;
+
+    ConfigParam(
+        std::string              name_value,
+        std::string              type_value,
+        std::string              description_value,
+        bool                     required_value = false,
+        std::vector<std::string> supported_values_value = {}
+    ) :
+        name(std::move(name_value)),
+        type(std::move(type_value)),
+        description(std::move(description_value)),
+        required(required_value),
+        supported_values(std::move(supported_values_value)) {}
 };
 
 /// @brief Metadata describing a generator.

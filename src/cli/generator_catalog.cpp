@@ -779,11 +779,11 @@ const GeneratorMetadata* find_generator_metadata(const std::string& name) {
 
 Json build_project_template(const int rows, const std::string& output_format) {
     Json root;
-    root["rows"]                 = rows;
-    root["output_format"]        = output_format;
-    root["null_value_string"]    = nullptr;
+    root["rows"]              = rows;
+    root["output_format"]     = output_format;
+    root["null_value_string"] = nullptr;
     if (output_format == "sql") {
-        root["table_name"] = "generated_data";
+        root["table_name"]           = "generated_data";
         root["include_create_table"] = true;
     }
 

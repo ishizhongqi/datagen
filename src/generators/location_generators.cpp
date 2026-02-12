@@ -302,10 +302,10 @@ public:
 
 private:
     std::shared_ptr<SharedLocationContext> context_;
-    faker::CountryCodesStandard standard_;
-    faker::Languages            languages_;
-    bool                        linkage_;
-    OverrideState               overrides_;
+    faker::CountryCodesStandard            standard_;
+    faker::Languages                       languages_;
+    bool                                   linkage_;
+    OverrideState                          overrides_;
 };
 
 }  // namespace

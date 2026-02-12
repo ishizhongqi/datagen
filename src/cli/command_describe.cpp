@@ -12,14 +12,12 @@
 #include <vector>
 
 #include "cli/cli_shared.h"
+#include "cli/exit_codes.h"
 #include "cli/generator_catalog.h"
 
 namespace data_generator::cli {
 
 namespace {
-
-constexpr int kExitOk    = 0;
-constexpr int kExitUsage = 2;
 
 std::string infer_type(const Json& value) {
     if (value.is_string()) { return "string"; }
@@ -44,10 +42,10 @@ std::string infer_type(const Json& value) {
 
 int CommandDescribe::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator describe", "Describe generator metadata.");
-    options.add_options()
-        ("generator", "Generator name", cxxopts::value<std::string>())
-        ("json", "Output JSON")
-        ("h,help", "Show help");
+    options.add_options()("generator", "Generator name", cxxopts::value<std::string>())("json", "Output JSON")(
+        "h,help",
+        "Show help"
+    );
 
     cxxopts::ParseResult result;
     try {
@@ -55,37 +53,37 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
     } catch (const std::exception& ex) {
         std::cerr << "Failed to parse arguments: " << ex.what() << "\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (result.count("help")) {
         std::cout << options.help() << "\n";
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     if (!result.count("generator")) {
         std::cerr << "Missing required --generator\n";
         std::cerr << options.help() << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     const std::string        generator_name = result["generator"].as<std::string>();
     const GeneratorMetadata* meta           = find_generator_metadata(generator_name);
     if (!meta) {
         std::cerr << "Unknown generator: " << generator_name << "\n";
-        return kExitUsage;
+        return exit_codes::kUsage;
     }
 
     if (!result.count("json")) {
         const auto lines = build_describe_text_lines(*meta);
         for (const auto& line : lines) { std::cout << line << "\n"; }
-        return kExitOk;
+        return exit_codes::kOk;
     }
 
     Json output;
     output["generator"] = meta->name;
-    output["module"] = meta->module.empty() ? Json(nullptr) : Json(meta->module);
-    output["supports"] = Json{{"unique", meta->supports_unique}, {"data_linkage", meta->supports_data_linkage}};
+    output["module"]    = meta->module.empty() ? Json(nullptr) : Json(meta->module);
+    output["supports"]  = Json{{"unique", meta->supports_unique}, {"data_linkage", meta->supports_data_linkage}};
 
     Json fields = Json::array();
     for (const auto& param : meta->config_params) {
@@ -96,7 +94,7 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
             Json{
                 {"name", param.name},
                 {"type", type},
-                {"required", true},
+                {"required", param.required},
                 {"description", param.description},
                 {"default", default_value},
             }
@@ -106,7 +104,7 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
     output["config"] = Json{{"fields", fields}, {"template", meta->config_template}};
 
     std::cout << output.dump(2) << "\n";
-    return kExitOk;
+    return exit_codes::kOk;
 }
 
 }  // namespace data_generator::cli
