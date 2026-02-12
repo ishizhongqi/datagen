@@ -50,11 +50,12 @@ jobs:
 
       - name: Run tests
         run: |
-          LLVM_PROFILE_FILE=build/coverage-%p.profraw ctest --test-dir build --output-on-failure
+          LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/data-generator-tests
 
       - name: Export LCOV
         run: |
-          llvm-profdata-18 merge -sparse build/coverage-*.profraw -o build/coverage.profdata
+          test -f build/coverage.profraw
+          llvm-profdata-18 merge -sparse build/coverage.profraw -o build/coverage.profdata
           llvm-cov-18 export \
             -format=lcov \
             -instr-profile=build/coverage.profdata \
