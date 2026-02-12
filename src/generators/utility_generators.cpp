@@ -101,18 +101,6 @@ private:
         return ch == '{' || ch == '?' || ch == '*' || ch == '+';
     }
 
-    [[maybe_unused]] void add_literal_token(const char ch) {
-        RegexToken token;
-        token.charset = {ch};
-        tokens_.push_back(std::move(token));
-    }
-
-    [[maybe_unused]] void add_charset_token(std::vector<char> charset) {
-        RegexToken token;
-        token.charset = std::move(charset);
-        tokens_.push_back(std::move(token));
-    }
-
     void apply_quantifier(RegexToken& token) {
         if (pos_ >= pattern_.size()) { return; }
         const char ch = pattern_[pos_];

@@ -17,29 +17,6 @@
 
 namespace data_generator::cli {
 
-namespace {
-
-std::string infer_type(const Json& value) {
-    if (value.is_string()) { return "string"; }
-    if (value.is_boolean()) { return "boolean"; }
-    if (value.is_number()) { return "number"; }
-    if (value.is_object()) { return "object"; }
-    if (value.is_array()) {
-        if (value.empty()) { return "array"; }
-        bool all_string = true;
-        for (const auto& entry : value) {
-            if (!entry.is_string()) {
-                all_string = false;
-                break;
-            }
-        }
-        return all_string ? "array<string>" : "array";
-    }
-    return "null";
-}
-
-}  // namespace
-
 int CommandDescribe::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator describe", "Describe generator metadata.");
     options.add_options()("generator", "Generator name", cxxopts::value<std::string>())("json", "Output JSON")(
@@ -89,7 +66,7 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
     for (const auto& param : meta->config_params) {
         Json default_value = nullptr;
         if (meta->config_template.contains(param.name)) { default_value = meta->config_template.at(param.name); }
-        const std::string type = param.type.empty() ? infer_type(default_value) : param.type;
+        const std::string type = param.type.empty() ? "unknown" : param.type;
         fields.push_back(
             Json{
                 {"name", param.name},

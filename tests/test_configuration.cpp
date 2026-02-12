@@ -1,7 +1,3 @@
-// Copyright (c) 2026 Shizhongqi
-// Licensed under the MIT License.
-// See the LICENSE file in the project root for more information.
-
 /// @file test_configuration.cpp
 
 #include <gtest/gtest.h>
@@ -13,7 +9,8 @@
 
 #include "core/configuration.h"
 
-namespace data_generator::core {
+using namespace data_generator::core;
+
 namespace {
 
 TEST(ConfigurationTest, ParseValidConfig) {
@@ -95,4 +92,3 @@ TEST(ConfigurationTest, UnknownGeneratorReturnsError) {
 }
 
 }  // namespace
-}  // namespace data_generator::core

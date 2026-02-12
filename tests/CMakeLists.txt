@@ -15,7 +15,18 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(data-generator-tests
     test_configuration.cpp
+    test_configuration_edge.cpp
     test_executor.cpp
+    test_array_parser.cpp
+    test_override_rules.cpp
+    test_generators_smoke.cpp
+    test_linkage_and_registry.cpp
+    test_linkage_conflicts.cpp
+    test_serialization.cpp
+    test_utility_generators.cpp
+    test_executor_edge.cpp
+    test_cli_shared.cpp
+    test_cli_commands.cpp
     test_run.cpp
 )
 

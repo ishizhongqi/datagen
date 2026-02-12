@@ -1,7 +1,3 @@
-// Copyright (c) 2026 Shizhongqi
-// Licensed under the MIT License.
-// See the LICENSE file in the project root for more information.
-
 /// @file test_executor.cpp
 
 #include <gtest/gtest.h>
@@ -15,7 +11,8 @@
 #include "core/configuration.h"
 #include "core/executor.h"
 
-namespace data_generator::core {
+using namespace data_generator::core;
+
 namespace {
 
 GenerationConfig parse_or_fail(const char* json_text) {
@@ -48,7 +45,8 @@ TEST(ExecutorTest, ReplacesEmptyWithGlobalNullLiteral) {
 )json");
 
     std::ostringstream out;
-    const auto result = generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2}, out);
+    const auto result =
+        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2, .seed = std::nullopt}, out);
 
     EXPECT_EQ(result.info.threads_used, 2U);
     EXPECT_FALSE(result.info.fallback_to_single_thread);
@@ -84,7 +82,8 @@ TEST(ExecutorTest, ParallelIneligibleWorkloadFallsBackToSingleThread) {
 )json");
 
     std::ostringstream out;
-    const auto result = generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4}, out);
+    const auto result =
+        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4, .seed = std::nullopt}, out);
 
     EXPECT_EQ(result.info.threads_used, 1U);
     EXPECT_TRUE(result.info.fallback_to_single_thread);
@@ -118,4 +117,3 @@ TEST(ExecutorTest, ThrowsWhenSeedIsRequested) {
 }
 
 }  // namespace
-}  // namespace data_generator::core

@@ -63,6 +63,11 @@ jobs:
             -ignore-filename-regex='.*(third_party|_deps|/usr/).*' \
             > coverage.info
 
+      - name: Verify LCOV includes src
+        run: |
+          grep '^SF:' coverage.info | head -n 80
+          grep -Eq '^SF:.*src/' coverage.info
+
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:

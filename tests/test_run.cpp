@@ -1,7 +1,3 @@
-// Copyright (c) 2026 Shizhongqi
-// Licensed under the MIT License.
-// See the LICENSE file in the project root for more information.
-
 /// @file test_run.cpp
 
 #include <gtest/gtest.h>
@@ -14,7 +10,8 @@
 #include "app/run.h"
 #include "cli/exit_codes.h"
 
-namespace data_generator {
+using namespace data_generator;
+
 namespace {
 
 int invoke_cli(const std::vector<std::string>& args) {
@@ -89,4 +86,3 @@ TEST(RunTest, ValidateMissingFieldsReturnsRuntimeFailure) {
 }
 
 }  // namespace
-}  // namespace data_generator

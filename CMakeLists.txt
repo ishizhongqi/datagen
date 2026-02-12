@@ -36,8 +36,18 @@ target_link_libraries(data-generator-lib
 target_compile_features(data-generator-lib PUBLIC cxx_std_20)
 
 if(DATA_GENERATOR_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-O0 -g -fprofile-instr-generate -fcoverage-mapping)
-    add_link_options(-fprofile-instr-generate -fcoverage-mapping)
+    target_compile_options(data-generator-lib
+            PUBLIC
+            -O0
+            -g
+            -fprofile-instr-generate
+            -fcoverage-mapping
+    )
+    target_link_options(data-generator-lib
+            PUBLIC
+            -fprofile-instr-generate
+            -fcoverage-mapping
+    )
 endif()
 
 if(BUILD_TESTING)

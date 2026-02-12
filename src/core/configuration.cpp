@@ -193,7 +193,7 @@ void validate_and_collect_fields(
         spec.generator    = generator;
         spec.raw          = field;
         spec.data_linkage = linkage;
-        spec.unique       = field.value("unique", false);
+        spec.unique       = field.contains("unique") && field.at("unique").is_boolean() && field.at("unique").get<bool>();
         fields->emplace_back(std::move(spec));
     }
 }

@@ -37,25 +37,9 @@ int CommandList::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    const auto& catalog     = get_generator_catalog();
-    bool        has_modules = true;
-    for (const auto& meta : catalog) {
-        if (meta.module.empty()) {
-            has_modules = false;
-            break;
-        }
-    }
+    const auto& catalog = get_generator_catalog();
 
     std::cout << "Available Generators:\n";
-
-    if (!has_modules) {
-        std::vector<std::string> names;
-        names.reserve(catalog.size());
-        for (const auto& meta : catalog) { names.push_back(meta.name); }
-        std::sort(names.begin(), names.end());
-        for (const auto& name : names) { std::cout << "- " << name << "\n"; }
-        return exit_codes::kOk;
-    }
 
     std::map<std::string, std::vector<std::string>> grouped;
     for (const auto& meta : catalog) { grouped[meta.module].push_back(meta.name); }

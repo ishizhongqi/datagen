@@ -192,19 +192,6 @@ std::vector<Row> generate_rows_parallel(const GenerationConfig& cfg, const std::
     return rows;
 }
 
-void normalize_empty_values(const NullPolicy& policy, std::vector<Row>* rows) {
-    if (!rows || !policy.configured || !policy.null_literal.has_value()) {
-        return;
-    }
-    for (auto& row : *rows) {
-        for (auto& cell : row) {
-            if (cell.has_value() && cell->empty()) {
-                cell = *policy.null_literal;
-            }
-        }
-    }
-}
-
 }  // namespace
 
 bool should_render_null(const NullPolicy& policy, const std::string& value) {
@@ -241,8 +228,6 @@ GenerateResult generate_to_stream(const GenerationConfig& cfg, const ExecutionOp
         rows                     = generate_rows_sequential(cfg);
     }
 
-    normalize_empty_values(cfg.null_policy, &rows);
-
     std::vector<std::string> columns;
     columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { columns.push_back(field.name); }
@@ -267,13 +252,6 @@ std::vector<std::optional<std::string>>
 
     auto runtime_fields = build_runtime_fields(cfg, 1);
     auto row            = materialize_row(&runtime_fields, cfg.null_policy);
-    if (cfg.null_policy.configured && cfg.null_policy.null_literal.has_value()) {
-        for (auto& cell : row) {
-            if (cell.has_value() && cell->empty()) {
-                cell = *cfg.null_policy.null_literal;
-            }
-        }
-    }
     return row;
 }
 
