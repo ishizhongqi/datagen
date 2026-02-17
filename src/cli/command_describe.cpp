@@ -75,6 +75,7 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
                 {"type", type},
                 {"required", param.required},
                 {"description", param.description},
+                {"supported_values", to_ordered_json(param.supported_values)},
                 {"default", default_value},
             }
         );
