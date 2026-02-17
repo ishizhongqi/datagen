@@ -57,18 +57,20 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    Json output;
+    OrderedJson output = OrderedJson::object();
     output["generator"] = meta->name;
-    output["module"]    = meta->module.empty() ? Json(nullptr) : Json(meta->module);
-    output["supports"]  = Json{{"unique", meta->supports_unique}, {"data_linkage", meta->supports_data_linkage}};
+    output["module"]    = meta->module.empty() ? OrderedJson(nullptr) : OrderedJson(meta->module);
+    output["supports"]  = OrderedJson{{"unique", meta->supports_unique}, {"data_linkage", meta->supports_data_linkage}};
 
-    Json fields = Json::array();
+    OrderedJson fields = OrderedJson::array();
     for (const auto& param : meta->config_params) {
-        Json default_value = nullptr;
-        if (meta->config_template.contains(param.name)) { default_value = meta->config_template.at(param.name); }
+        OrderedJson default_value = nullptr;
+        if (meta->config_template.contains(param.name)) {
+            default_value = to_ordered_json(meta->config_template.at(param.name));
+        }
         const std::string type = param.type.empty() ? "unknown" : param.type;
         fields.push_back(
-            Json{
+            OrderedJson{
                 {"name", param.name},
                 {"type", type},
                 {"required", param.required},
@@ -78,7 +80,7 @@ int CommandDescribe::run(const std::vector<std::string>& args) {
         );
     }
 
-    output["config"] = Json{{"fields", fields}, {"template", meta->config_template}};
+    output["config"] = OrderedJson{{"fields", fields}, {"template", build_ordered_config_template(*meta)}};
 
     std::cout << output.dump(2) << "\n";
     return exit_codes::kOk;

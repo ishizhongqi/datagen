@@ -87,9 +87,10 @@ bool has_enabled_override(const Json& field, const std::string& key) {
 bool is_parallel_eligible_generator(const std::string& name) {
     static const std::unordered_set<std::string> kEligible = {
         "integer",
-        "unsigned_integer",
+        // Disabled from external use:
+        // "unsigned_integer",
+        // "decimal_string",
         "decimal",
-        "decimal_string",
         "date",
         "time",
         "datetime",

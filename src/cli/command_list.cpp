@@ -6,11 +6,11 @@
 
 #include "cli/command_list.h"
 
-#include <algorithm>
 #include <cxxopts.hpp>
 #include <iostream>
-#include <map>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "cli/cli_shared.h"
@@ -41,12 +41,24 @@ int CommandList::run(const std::vector<std::string>& args) {
 
     std::cout << "Available Generators:\n";
 
-    std::map<std::string, std::vector<std::string>> grouped;
-    for (const auto& meta : catalog) { grouped[meta.module].push_back(meta.name); }
+    std::vector<std::pair<std::string, std::vector<std::string>>> grouped;
+    std::unordered_map<std::string, std::size_t>                 module_to_index;
+    grouped.reserve(catalog.size());
+    module_to_index.reserve(catalog.size());
+
+    for (const auto& meta : catalog) {
+        const auto it = module_to_index.find(meta.module);
+        if (it == module_to_index.end()) {
+            const std::size_t index = grouped.size();
+            grouped.emplace_back(meta.module, std::vector<std::string>{meta.name});
+            module_to_index.emplace(meta.module, index);
+        } else {
+            grouped[it->second].second.push_back(meta.name);
+        }
+    }
 
     bool first_group = true;
-    for (auto& [module, names] : grouped) {
-        std::sort(names.begin(), names.end());
+    for (const auto& [module, names] : grouped) {
         if (!first_group) { std::cout << "\n"; }
         first_group = false;
         std::cout << "[" << module << "]\n";

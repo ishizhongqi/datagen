@@ -59,7 +59,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         }
     }
 
-    Json output;
+    OrderedJson output = OrderedJson::object();
     if (result.count("generator")) {
         const std::string        generator_name = result["generator"].as<std::string>();
         const GeneratorMetadata* meta           = find_generator_metadata(generator_name);
@@ -68,17 +68,9 @@ int CommandInit::run(const std::vector<std::string>& args) {
             return exit_codes::kUsage;
         }
         output["generator"]             = meta->name;
-        output["config"]                = meta->config_template;
+        output["config"]                = build_ordered_config_template(*meta);
         output["supports_unique"]       = meta->supports_unique;
         output["supports_data_linkage"] = meta->supports_data_linkage;
-        if (rows_specified) { output["rows"] = rows; }
-        if (format_specified) {
-            output["output_format"] = output_format;
-            if (output_format == "sql") {
-                output["table_name"]           = "generated_data";
-                output["include_create_table"] = true;
-            }
-        }
         if (meta->supports_unique) { output["unique"] = false; }
         if (meta->supports_data_linkage) {
             if (!meta->linkage_module.empty()) {
@@ -87,8 +79,35 @@ int CommandInit::run(const std::vector<std::string>& args) {
                 output["data_linkage"] = false;
             }
         }
+        if (rows_specified) { output["rows"] = rows; }
+        if (format_specified) {
+            output["output_format"] = output_format;
+            if (output_format == "sql") {
+                output["table_name"]           = "generated_data";
+                output["include_create_table"] = true;
+            }
+        }
     } else {
-        output = build_project_template(rows, output_format);
+        const Json root = build_project_template(rows, output_format);
+        output["rows"]              = root.at("rows");
+        output["output_format"]     = root.at("output_format");
+        output["null_value_string"] = to_ordered_json(root.at("null_value_string"));
+        if (root.contains("table_name")) { output["table_name"] = root.at("table_name"); }
+        if (root.contains("include_create_table")) { output["include_create_table"] = root.at("include_create_table"); }
+
+        OrderedJson fields = OrderedJson::array();
+        if (root.contains("fields") && root.at("fields").is_array()) {
+            for (const auto& field : root.at("fields")) {
+                OrderedJson ordered_field = OrderedJson::object();
+                if (field.contains("name")) { ordered_field["name"] = field.at("name"); }
+                if (field.contains("generator")) { ordered_field["generator"] = field.at("generator"); }
+                if (field.contains("config")) { ordered_field["config"] = to_ordered_json(field.at("config")); }
+                if (field.contains("unique")) { ordered_field["unique"] = field.at("unique"); }
+                if (field.contains("data_linkage")) { ordered_field["data_linkage"] = field.at("data_linkage"); }
+                fields.push_back(std::move(ordered_field));
+            }
+        }
+        output["fields"] = std::move(fields);
     }
 
     const std::string payload = output.dump(2);

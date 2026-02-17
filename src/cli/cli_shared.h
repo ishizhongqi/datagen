@@ -20,8 +20,13 @@
 namespace data_generator::cli {
 
 using Json = nlohmann::json;
+using OrderedJson = nlohmann::ordered_json;
 
 Json load_json_from_file(const std::string& path);
+
+OrderedJson to_ordered_json(const Json& value);
+
+OrderedJson build_ordered_config_template(const GeneratorMetadata& meta);
 
 cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<std::string>& args);
 

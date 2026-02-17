@@ -21,6 +21,8 @@ GeneratorMetadata make_metadata(
     std::string              linkage_module,
     Json                     config_template
 ) {
+    for (auto& param : params) { param.required = true; }
+
     GeneratorMetadata meta;
     meta.name                  = std::move(name);
     meta.module                = "";
@@ -65,9 +67,11 @@ std::string module_for_generator(const std::string& name) {
         name == "region") {
         return "location";
     }
-    if (name == "integer" || name == "unsigned_integer" || name == "decimal" || name == "decimal_string") {
-        return "number";
-    }
+    // Disabled from external use:
+    // if (name == "integer" || name == "unsigned_integer" || name == "decimal" || name == "decimal_string") {
+    //     return "number";
+    // }
+    if (name == "integer" || name == "decimal") { return "number"; }
     if (name == "payment_method" || name == "card_type" || name == "card_number" || name == "card_date") {
         return "payment";
     }
@@ -115,10 +119,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -130,8 +134,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -144,8 +148,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -156,7 +160,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "ip_address",
             {
-                {"ip_address_type", "string", "IPv4 or IPv6.", false, {"IPv4", "IPv6"}},
+                {"ip_address_type", "string", "Select an IP address type.", true, {"IPv4", "IPv6"}},
             },
             true,
             false,
@@ -169,10 +173,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"operating_systems",
                  "array<string>",
-                 "Operating systems (string or array).",
-                 false,
+                 "Select one or multiple operating systems.",
+                 true,
                  {"Windows", "macOS", "Linux"}},
-                {"extensions", "array<string>", "File extensions (string or array).", false},
+                {"extensions", "array<string>", "Enter extension or list of extensions.", true},
             },
             false,
             true,
@@ -187,8 +191,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"operating_systems",
                  "array<string>",
-                 "Operating systems (string or array).",
-                 false,
+                 "Select one or multiple operating systems.",
+                 true,
                  {"Windows", "macOS", "Linux"}},
             },
             false,
@@ -199,7 +203,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "file_name",
             {
-                {"extensions", "array<string>", "File extensions (string or array).", false},
+                {"extensions", "array<string>", "Enter extension or list of extensions.", true},
             },
             false,
             true,
@@ -209,7 +213,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "file_extension",
             {
-                {"extensions", "array<string>", "File extensions (string or array).", false},
+                {"extensions", "array<string>", "Enter extension or list of extensions.", true},
             },
             false,
             true,
@@ -219,78 +223,84 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "url",
             {
-                {"subdomains", "array<string>", "Subdomains (string or array).", false},
-                {"tlds", "array<string>", "Top-level domains (string or array).", true},
+                {"subdomains", "array<string>", "Enter subdomains or list of subdomains.", true},
+                {"tlds", "array<string>", "Enter top-level domains or list of top-level domains.", true},
             },
             true,
             false,
             "",
-            Json{{"subdomains", Json::array({"www"})}, {"tlds", Json::array({"com"})}}
+            Json{{"subdomains", Json::array({"www"})}, {"tlds", Json::array({"com", "net", "org"})}}
         ),
         make_metadata(
             "hostname",
             {
-                {"subdomains", "array<string>", "Subdomains (string or array).", false},
-                {"tlds", "array<string>", "Top-level domains (string or array).", true},
+                {"subdomains", "array<string>", "Enter subdomains or list of subdomains.", false},
+                {"tlds", "array<string>", "Enter top-level domains or list of top-level domains.", true},
             },
             true,
             false,
             "",
-            Json{{"subdomains", Json::array({"www"})}, {"tlds", Json::array({"com"})}}
+            Json{{"subdomains", Json::array({"www"})}, {"tlds", Json::array({"com", "net", "org"})}}
         ),
         make_metadata(
             "date",
             {
-                {"start_date", "string", "Start date in YYYY-MM-DD.", false},
-                {"end_date", "string", "End date in YYYY-MM-DD.", false},
+                {"start_date", "string", "Enter date in YYYY-MM-DD format.", true},
+                {"end_date", "string", "Enter date in YYYY-MM-DD format.", true},
                 {"days_of_week",
                  "array<string>",
-                 "Days to include (string or array).",
-                 false,
+                 "Select one or multiple days of week.",
+                 true,
                  {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}},
             },
             false,
             false,
             "",
             Json{
-                {"start_date", "2023-01-01"},
-                {"end_date", "2023-12-31"},
-                {"days_of_week", Json::array({"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})},
+                {"start_date", "1970-01-01"},
+                {"end_date", "2050-12-31"},
+                {"days_of_week",
+                 Json::array(
+                     {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+                 )},
             }
         ),
         make_metadata(
             "time",
             {
-                {"start_time", "string", "Start time in HH:MM:SS.", false},
-                {"end_time", "string", "End time in HH:MM:SS.", false},
+                {"start_time", "string", "Enter time in HH:MM:SS format.", true},
+                {"end_time", "string", "Enter time in HH:MM:SS format.", true},
             },
             false,
             false,
             "",
-            Json{{"start_time", "08:00:00"}, {"end_time", "17:00:00"}}
+            Json{{"start_time", "00:00:00"}, {"end_time", "23:59:59"}}
         ),
         make_metadata(
             "datetime",
             {
-                {"start_date", "string", "Start date in YYYY-MM-DD.", false},
-                {"end_date", "string", "End date in YYYY-MM-DD.", false},
-                {"start_time", "string", "Start time in HH:MM:SS.", false},
-                {"end_time", "string", "End time in HH:MM:SS.", false},
+                {"start_date", "string", "Enter date in YYYY-MM-DD format.", true},
+                {"end_date", "string", "Enter date in YYYY-MM-DD format.", true},
+                {"start_time", "string", "Enter time in HH:MM:SS format.", true},
+                {"end_time", "string", "Enter time in HH:MM:SS format.", true},
                 {"days_of_week",
                  "array<string>",
-                 "Days to include (string or array).",
-                 false,
+                 "Select one or multiple days of week.",
+                 true,
                  {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}},
             },
             false,
             false,
             "",
             Json{
-                {"start_date", "2023-01-01"},
-                {"end_date", "2023-12-31"},
-                {"start_time", "08:00:00"},
-                {"end_time", "17:00:00"},
-                {"days_of_week", Json::array({"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"})},
+                {"start_date", "1970-01-01"},
+                {"end_date", "2050-12-31"},
+                {"start_time", "00:00:00"},
+                {"end_time", "23:59:59"},
+                {"days_of_week",
+                 Json::array(
+                     {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+                 )},
             }
         ),
         make_metadata(
@@ -298,10 +308,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -313,10 +323,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -328,8 +338,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
             },
             false,
@@ -342,10 +352,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -357,10 +367,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -372,13 +382,13 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"country_codes_standard",
                  "string",
-                 "Country code standard string.",
-                 false,
+                 "Select a country code standard.",
+                 true,
                  {"None", "ISO_3166_1_alpha_2", "ISO_3166_1_alpha_3"}},
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -389,113 +399,130 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "integer",
             {
-                {"start", "number", "Start value."},
-                {"end", "number", "End value."},
+                {"start", "number", "Enter a number."},
+                {"end", "number", "Enter a number."},
             },
             false,
             false,
             "",
-            Json{{"start", 1}, {"end", 100}}
+            Json{{"start", 0}, {"end", 100}}
         ),
-        make_metadata(
-            "unsigned_integer",
-            {
-                {"start", "number", "Start value."},
-                {"end", "number", "End value."},
-            },
-            false,
-            false,
-            "",
-            Json{{"start", 1}, {"end", 100}}
-        ),
+        // Disabled from external use:
+        // make_metadata(
+        //     "unsigned_integer",
+        //     {
+        //         {"start", "number", "Start value."},
+        //         {"end", "number", "End value."},
+        //     },
+        //     false,
+        //     false,
+        //     "",
+        //     Json{{"start", 1}, {"end", 100}}
+        // ),
+        // make_metadata(
+        //     "decimal",
+        //     {
+        //         {"start", "number", "Start value."},
+        //         {"end", "number", "End value."},
+        //         {"decimal_places", "number", "Number of decimal places."},
+        //     },
+        //     false,
+        //     false,
+        //     "",
+        //     Json{{"start", 1.0}, {"end", 100.0}, {"decimal_places", 2}}
+        // ),
         make_metadata(
             "decimal",
             {
-                {"start", "number", "Start value."},
-                {"end", "number", "End value."},
-                {"decimal_places", "number", "Number of decimal places."},
+                {"start", "number", "Enter a number."},
+                {"end", "number", "Enter a number.."},
+                {"decimal_places", "number", "Enter number of decimal places."},
             },
             false,
             false,
             "",
-            Json{{"start", 1.0}, {"end", 100.0}, {"decimal_places", 2}}
+            Json{{"start", 0.0}, {"end", 100.0}, {"decimal_places", 2}}
         ),
-        make_metadata(
-            "decimal_string",
-            {
-                {"start", "number", "Start value."},
-                {"end", "number", "End value."},
-                {"decimal_places", "number", "Number of decimal places."},
-            },
-            false,
-            false,
-            "",
-            Json{{"start", 1.0}, {"end", 100.0}, {"decimal_places", 2}}
-        ),
+        // Disabled from external use (renamed to "decimal"):
+        // make_metadata(
+        //     "decimal_string",
+        //     {
+        //         {"start", "number", "Start value."},
+        //         {"end", "number", "End value."},
+        //         {"decimal_places", "number", "Number of decimal places."},
+        //     },
+        //     false,
+        //     false,
+        //     "",
+        //     Json{{"start", 1.0}, {"end", 100.0}, {"decimal_places", 2}}
+        // ),
         make_metadata(
             "payment_method",
             {
-                {"payment_methods", "array<string>", "Payment methods (string or array).", false},
+                {"payment_methods", "array<string>", "Enter a payment method or list of payment methods.", true},
             },
             false,
             true,
             "card",
-            Json{{"payment_methods", Json::array({"Credit Card", "PayPal"})}}
+            Json{{"payment_methods", Json::array({"Credit Card", "PayPal", "Apple Pay"})}}
         ),
         make_metadata(
             "card_type",
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
                 {"card_types",
                  "array<string>",
-                 "Card types (string or array).",
-                 false,
+                 "Select one or multiple card types.",
+                 true,
                  {"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"}},
             },
             false,
             true,
             "card",
-            Json{{"languages", Json::array({"English"})}, {"card_types", Json::array({"Visa", "MasterCard"})}}
+            Json{
+                {"languages", Json::array({"English"})},
+                {"card_types", Json::array({"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"})},
+            }
         ),
         make_metadata(
             "card_number",
             {
                 {"card_types",
                  "array<string>",
-                 "Card types (string or array).",
-                 false,
+                 "Select one or multiple card types.",
+                 true,
                  {"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"}},
             },
             true,
             true,
             "card",
-            Json{{"card_types", Json::array({"Visa", "MasterCard"})}}
+            Json{{"card_types", Json::array({"AmericanExpress", "JCB", "MasterCard", "UnionPay", "Visa"})}}
         ),
         make_metadata(
             "card_date",
             {
-                {"start_month", "string", "Start date in MM/YY.", false},
-                {"end_month", "string", "End date in MM/YY.", false},
+                {"start_month", "string", "Enter date in MM/YY format.", true},
+                {"end_month", "string", "Enter date in MM/YY format.", true},
             },
             false,
             true,
             "card",
-            Json{{"start", "01/23"}, {"end", "12/30"}}
+            Json{{"start_month", "01/00"}, {"end_month", "12/50"}}
         ),
         make_metadata(
             "first_name",
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"genders", "array<string>", "Select one or multiple genders.", true, {"M", "F"}},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -511,10 +538,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -526,11 +553,11 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"genders", "array<string>", "Select one or multiple genders.", true, {"M", "F"}},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             false,
             true,
@@ -546,8 +573,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -560,10 +587,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"genders", "array<string>", "Genders (string or array).", false, {"M", "F", "Male", "Female"}},
+                {"genders", "array<string>", "Select one or multiple genders.", true, {"M", "F"}},
             },
             false,
             true,
@@ -575,8 +602,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -589,11 +616,11 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"regions",
                  "array<string>",
-                 "Regions (string or array).",
-                 false,
+                 "Select one or multiple regions.",
+                 true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"is_international", "boolean", "Whether to generate international numbers."},
-                {"include_delimiters", "boolean", "Whether to include delimiters."},
+                {"is_international", "boolean", "Decide whether to generate international numbers."},
+                {"include_delimiters", "boolean", "Decide whether to include delimiters."},
             },
             true,
             true,
@@ -605,23 +632,23 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"domains", "array<string>", "Email domains (string or array).", false},
+                {"domains", "array<string>", "Enter an email domain or list of email domains.", true},
             },
             true,
             true,
             "person",
-            Json{{"languages", Json::array({"English"})}, {"domains", Json::array({"example.com"})}}
+            Json{{"languages", Json::array({"English"})}, {"domains", Json::array({"gmail.com", "outlook.com"})}}
         ),
         make_metadata(
             "job_title",
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -634,10 +661,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"use_translation", "boolean", "Whether to use translated output."},
+                {"use_translation", "boolean", "Decide whether to use translated output."},
             },
             true,
             true,
@@ -649,23 +676,27 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
-                {"keywords", "array<string>", "Keyword list (string or array).", false},
+                {"keywords", "array<string>", "Enter a keyword or list of keywords.", true},
             },
             false,
             false,
             "",
-            Json{{"languages", Json::array({"English"})}, {"keywords", Json::array({"Cherry", "Orange"})}}
+            Json{
+                {"languages", Json::array({"English"})},
+                {"keywords",
+                 Json::array({"Cherry", "Orange", "Pluots", "Grape", "Kiwi", "Mango", "Raspberry", "Strawberry"})},
+            }
         ),
         make_metadata(
             "product_category",
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -678,8 +709,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"languages",
                  "array<string>",
-                 "Language names (string or array).",
-                 false,
+                 "Select one or multiple languages.",
+                 true,
                  {"English", "Simplified Chinese", "Traditional Chinese", "Japanese"}},
             },
             false,
@@ -693,8 +724,8 @@ std::vector<GeneratorMetadata> build_catalog() {
             {
                 {"barcode_types",
                  "array<string>",
-                 "Barcode types (string or array).",
-                 false,
+                 "Select one or multiple barcode types.",
+                 true,
                  {"EAN8", "EAN13", "UPCA", "UPCE", "ISBN"}},
             },
             true,
@@ -705,7 +736,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "enum_item",
             {
-                {"enums", "array<string>", "Enum values (string or array).", true},
+                {"enums", "array<string>", "Enter an item or list of items.", true},
             },
             false,
             false,
@@ -715,18 +746,18 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "text",
             {
-                {"number_of_chars_start", "number", "Minimum number of characters."},
-                {"number_of_chars_end", "number", "Maximum number of characters."},
+                {"number_of_chars_start", "number", "Enter a number."},
+                {"number_of_chars_end", "number", "Enter a number."},
             },
             false,
             false,
             "",
-            Json{{"number_of_chars_start", 100}, {"number_of_chars_end", 1000}}
+            Json{{"number_of_chars_start", 100}, {"number_of_chars_end", 10000}}
         ),
         make_metadata(
             "uuid",
             {
-                {"include_hyphens", "boolean", "Whether to include hyphens."},
+                {"include_hyphens", "boolean", "Decide whether to include hyphens."},
             },
             false,
             false,
@@ -736,10 +767,10 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "sequence",
             {
-                {"start", "number", "Start value."},
-                {"end", "number", "End value."},
-                {"step", "number", "Step increment (non-zero)."},
-                {"circle", "boolean", "Whether to wrap when reaching end."},
+                {"start", "number", "Enter a number."},
+                {"end", "number", "Enter a number."},
+                {"step", "number", "Enter a value greater than 0."},
+                {"circle", "boolean", "Decide whether to wrap when reaching end."},
             },
             false,
             false,
@@ -749,7 +780,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "regular_expression",
             {
-                {"pattern", "string", "Regular expression pattern.", true},
+                {"pattern", "string", "Enter regular expression pattern.", true},
             },
             false,
             false,
@@ -757,7 +788,10 @@ std::vector<GeneratorMetadata> build_catalog() {
             Json{{"pattern", "ORD-[A-Z]{3}-\\d{4}"}}
         ),
     };
-    for (auto& meta : catalog) { meta.module = module_for_generator(meta.name); }
+    for (auto& meta : catalog) {
+        meta.module = module_for_generator(meta.name);
+        for (auto& param : meta.config_params) { param.required = true; }
+    }
     return catalog;
 }
 

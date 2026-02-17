@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_set>
 #include <utility>
 
 namespace data_generator::cli {
@@ -24,6 +25,37 @@ Json load_json_from_file(const std::string& path) {
         throw std::runtime_error("Failed to parse JSON in " + path + ": " + std::string(ex.what()));
     }
     return root;
+}
+
+OrderedJson to_ordered_json(const Json& value) {
+    if (value.is_object()) {
+        OrderedJson object = OrderedJson::object();
+        for (auto it = value.begin(); it != value.end(); ++it) { object[it.key()] = to_ordered_json(it.value()); }
+        return object;
+    }
+    if (value.is_array()) {
+        OrderedJson array = OrderedJson::array();
+        for (const auto& item : value) { array.push_back(to_ordered_json(item)); }
+        return array;
+    }
+    return OrderedJson(value);
+}
+
+OrderedJson build_ordered_config_template(const GeneratorMetadata& meta) {
+    OrderedJson                ordered = OrderedJson::object();
+    std::unordered_set<std::string> seen;
+    seen.reserve(meta.config_params.size());
+
+    for (const auto& param : meta.config_params) {
+        if (meta.config_template.contains(param.name)) {
+            ordered[param.name] = to_ordered_json(meta.config_template.at(param.name));
+            seen.insert(param.name);
+        }
+    }
+    for (auto it = meta.config_template.begin(); it != meta.config_template.end(); ++it) {
+        if (!seen.contains(it.key())) { ordered[it.key()] = to_ordered_json(it.value()); }
+    }
+    return ordered;
 }
 
 cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<std::string>& args) {
@@ -83,17 +115,17 @@ std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta
     }
 
     lines.emplace_back("Example:");
-    Json example         = Json::object();
+    OrderedJson example  = OrderedJson::object();
     example["name"]      = "field_1";
     example["generator"] = meta.name;
-    example["config"]    = meta.config_template;
+    example["config"]    = build_ordered_config_template(meta);
     if (meta.supports_unique) { example["unique"] = true; }
     if (meta.supports_data_linkage) {
         const std::string module_hint = meta.module.empty() ? "module" : meta.module;
         example["data_linkage"]       = module_hint + ":group_1";
     }
-    example["null_value"]    = Json{{"enabled", false}, {"percent", 0}};
-    example["default_value"] = Json{{"enabled", false}, {"percent", 0}, {"value", ""}};
+    example["null_value"]    = OrderedJson{{"enabled", false}, {"percent", 0}};
+    example["default_value"] = OrderedJson{{"enabled", false}, {"percent", 0}, {"value", ""}};
 
     std::istringstream stream(example.dump(2));
     std::string        line;

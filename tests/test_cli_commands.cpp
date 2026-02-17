@@ -45,6 +45,9 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
 
     EXPECT_EQ(invoke_cli({"describe", "--generator", "integer"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"describe", "--generator", "integer", "--json"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"describe", "--generator", "unsigned_integer"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"describe", "--generator", "decimal"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"describe", "--generator", "decimal_string"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"describe", "--generator", "not_exist"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"describe"}), cli::exit_codes::kUsage);
 
@@ -52,6 +55,9 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
     EXPECT_EQ(invoke_cli({"init", "--generator", "integer", "--rows", "5", "--format", "sql"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--rows", "5", "--format", "sql"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--generator", "company_name"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"init", "--generator", "unsigned_integer"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"init", "--generator", "decimal"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"init", "--generator", "decimal_string"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--rows", "0"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--format", "bad"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--generator", "not_exist"}), cli::exit_codes::kUsage);

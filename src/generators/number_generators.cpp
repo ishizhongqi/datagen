@@ -116,13 +116,24 @@ void register_number_generators(GeneratorRegistry& registry) {
         return std::make_unique<IntegerGenerator>(start, end, overrides);
     });
 
-    registry.register_generator("unsigned_integer", [](const Json& filed) {
-        const Json&    config    = filed.at("config");
-        const auto     overrides = parse_overrides(filed);
-        const uint64_t start     = config.value("start", 0ull);
-        const uint64_t end       = config.value("end", 100ull);
-        return std::make_unique<UnsignedIntegerGenerator>(start, end, overrides);
-    });
+    // Disabled from external use: keep implementation for potential future re-enable.
+    // registry.register_generator("unsigned_integer", [](const Json& filed) {
+    //     const Json&    config    = filed.at("config");
+    //     const auto     overrides = parse_overrides(filed);
+    //     const uint64_t start     = config.value("start", 0ull);
+    //     const uint64_t end       = config.value("end", 100ull);
+    //     return std::make_unique<UnsignedIntegerGenerator>(start, end, overrides);
+    // });
+    //
+    // Disabled from external use: keep implementation for potential future re-enable.
+    // registry.register_generator("decimal", [](const Json& filed) {
+    //     const Json&  config         = filed.at("config");
+    //     const auto   overrides      = parse_overrides(filed);
+    //     const double start          = config.value("start", 0.0);
+    //     const double end            = config.value("end", 100.0);
+    //     const int    decimal_places = config.value("decimal_places", 2);
+    //     return std::make_unique<DecimalGenerator>(start, end, decimal_places, overrides);
+    // });
 
     registry.register_generator("decimal", [](const Json& filed) {
         const Json&  config         = filed.at("config");
@@ -130,17 +141,18 @@ void register_number_generators(GeneratorRegistry& registry) {
         const double start          = config.value("start", 0.0);
         const double end            = config.value("end", 100.0);
         const int    decimal_places = config.value("decimal_places", 2);
-        return std::make_unique<DecimalGenerator>(start, end, decimal_places, overrides);
-    });
-
-    registry.register_generator("decimal_string", [](const Json& filed) {
-        const Json&  config         = filed.at("config");
-        const auto   overrides      = parse_overrides(filed);
-        const double start          = config.value("start", 0.0);
-        const double end            = config.value("end", 100.0);
-        const int    decimal_places = config.value("decimal_places", 2);
         return std::make_unique<DecimalStringGenerator>(start, end, decimal_places, overrides);
     });
+
+    // Disabled from external use (renamed to "decimal"):
+    // registry.register_generator("decimal_string", [](const Json& filed) {
+    //     const Json&  config         = filed.at("config");
+    //     const auto   overrides      = parse_overrides(filed);
+    //     const double start          = config.value("start", 0.0);
+    //     const double end            = config.value("end", 100.0);
+    //     const int    decimal_places = config.value("decimal_places", 2);
+    //     return std::make_unique<DecimalStringGenerator>(start, end, decimal_places, overrides);
+    // });
 }
 
 }  // namespace data_generator::generator
