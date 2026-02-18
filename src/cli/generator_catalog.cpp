@@ -21,8 +21,6 @@ GeneratorMetadata make_metadata(
     std::string              linkage_module,
     Json                     config_template
 ) {
-    for (auto& param : params) { param.required = true; }
-
     GeneratorMetadata meta;
     meta.name                  = std::move(name);
     meta.module                = "";
@@ -790,7 +788,6 @@ std::vector<GeneratorMetadata> build_catalog() {
     };
     for (auto& meta : catalog) {
         meta.module = module_for_generator(meta.name);
-        for (auto& param : meta.config_params) { param.required = true; }
     }
     return catalog;
 }

@@ -278,25 +278,8 @@
             }
         },
         {
-            "name": "unsigned_integer",
-            "generator": "unsigned_integer",
-            "config": {
-                "start": 1,
-                "end": 100
-            }
-        },
-        {
             "name": "decimal",
             "generator": "decimal",
-            "config": {
-                "start": 1.0,
-                "end": 100.0,
-                "decimal_places": 2
-            }
-        },
-        {
-            "name": "decimal_string",
-            "generator": "decimal_string",
             "config": {
                 "start": 1.0,
                 "end": 100.0,
