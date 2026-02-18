@@ -61,4 +61,16 @@ TEST(CliSharedTest, BuildDescribeLinesBranches) {
     EXPECT_FALSE(lines.empty());
 }
 
+TEST(CliSharedTest, RequiredFlagsOnlyUseTranslationCanBeFalse) {
+    for (const auto& meta : get_generator_catalog()) {
+        for (const auto& param : meta.config_params) {
+            if (param.name == "use_translation") {
+                EXPECT_FALSE(param.required);
+            } else {
+                EXPECT_TRUE(param.required) << "generator=" << meta.name << " param=" << param.name;
+            }
+        }
+    }
+}
+
 }  // namespace

@@ -173,7 +173,8 @@ void validate_and_collect_fields(
         }
 
         for (const auto& p : meta->config_params) {
-            if (p.required && !config.contains(p.name)) {
+            const bool has_default = meta->config_template.contains(p.name);
+            if (p.required && !config.contains(p.name) && !has_default) {
                 add_issue(issues, path + ".config." + p.name, "missing required config key");
             }
         }

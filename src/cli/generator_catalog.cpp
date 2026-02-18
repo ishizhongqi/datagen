@@ -232,7 +232,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "hostname",
             {
-                {"subdomains", "array<string>", "Enter subdomains or list of subdomains.", false},
+                {"subdomains", "array<string>", "Enter subdomains or list of subdomains.", true},
                 {"tlds", "array<string>", "Enter top-level domains or list of top-level domains.", true},
             },
             true,
@@ -397,8 +397,8 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "integer",
             {
-                {"start", "number", "Enter a number."},
-                {"end", "number", "Enter a number."},
+                {"start", "number", "Enter a number.", true},
+                {"end", "number", "Enter a number.", true},
             },
             false,
             false,
@@ -432,9 +432,9 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "decimal",
             {
-                {"start", "number", "Enter a number."},
-                {"end", "number", "Enter a number.."},
-                {"decimal_places", "number", "Enter number of decimal places."},
+                {"start", "number", "Enter a number.", true},
+                {"end", "number", "Enter a number..", true},
+                {"decimal_places", "number", "Enter number of decimal places.", true},
             },
             false,
             false,
@@ -617,8 +617,8 @@ std::vector<GeneratorMetadata> build_catalog() {
                  "Select one or multiple regions.",
                  true,
                  {"United States", "United Kingdom", "China", "Japan"}},
-                {"is_international", "boolean", "Decide whether to generate international numbers."},
-                {"include_delimiters", "boolean", "Decide whether to include delimiters."},
+                {"is_international", "boolean", "Decide whether to generate international numbers.", true},
+                {"include_delimiters", "boolean", "Decide whether to include delimiters.", true},
             },
             true,
             true,
@@ -744,8 +744,8 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "text",
             {
-                {"number_of_chars_start", "number", "Enter a number."},
-                {"number_of_chars_end", "number", "Enter a number."},
+                {"number_of_chars_start", "number", "Enter a number.", true},
+                {"number_of_chars_end", "number", "Enter a number.", true},
             },
             false,
             false,
@@ -755,7 +755,7 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "uuid",
             {
-                {"include_hyphens", "boolean", "Decide whether to include hyphens."},
+                {"include_hyphens", "boolean", "Decide whether to include hyphens.", true},
             },
             false,
             false,
@@ -765,10 +765,10 @@ std::vector<GeneratorMetadata> build_catalog() {
         make_metadata(
             "sequence",
             {
-                {"start", "number", "Enter a number."},
-                {"end", "number", "Enter a number."},
-                {"step", "number", "Enter a value greater than 0."},
-                {"circle", "boolean", "Decide whether to wrap when reaching end."},
+                {"start", "number", "Enter a number.", true},
+                {"end", "number", "Enter a number.", true},
+                {"step", "number", "Enter a value greater than 0.", true},
+                {"circle", "boolean", "Decide whether to wrap when reaching end.", true},
             },
             false,
             false,
