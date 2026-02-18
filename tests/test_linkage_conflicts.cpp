@@ -258,7 +258,7 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
   ]
 }
 )json");
-    EXPECT_FALSE(parse_generation_config(root1, ParseMode::RequireOutputSettings, &cfg, &issues));
+    EXPECT_TRUE(parse_generation_config(root1, ParseMode::RequireOutputSettings, &cfg, &issues));
 
     const auto root2 = nlohmann::json::parse(R"json(
 {
@@ -269,7 +269,45 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
   ]
 }
 )json");
-    EXPECT_FALSE(parse_generation_config(root2, ParseMode::RequireOutputSettings, &cfg, &issues));
+    EXPECT_TRUE(parse_generation_config(root2, ParseMode::RequireOutputSettings, &cfg, &issues));
+
+    const auto cfg_invalid_url = cfg_from_json(R"json(
+{
+  "rows": 1,
+  "output_format": "json",
+  "fields": [
+    {"name":"u","generator":"url","config":{"subdomains":["www"],"tlds":[]}}
+  ]
+}
+)json");
+    std::ostringstream out_invalid_url;
+    EXPECT_THROW(
+        (void)generate_to_stream(
+            cfg_invalid_url,
+            ExecutionOptions{.requested_threads = 1, .seed = std::nullopt},
+            out_invalid_url
+        ),
+        std::invalid_argument
+    );
+
+    const auto cfg_invalid_host = cfg_from_json(R"json(
+{
+  "rows": 1,
+  "output_format": "json",
+  "fields": [
+    {"name":"h","generator":"hostname","config":{"subdomains":["www"],"tlds":[]}}
+  ]
+}
+)json");
+    std::ostringstream out_invalid_host;
+    EXPECT_THROW(
+        (void)generate_to_stream(
+            cfg_invalid_host,
+            ExecutionOptions{.requested_threads = 1, .seed = std::nullopt},
+            out_invalid_host
+        ),
+        std::invalid_argument
+    );
 
     const auto cfg3 = cfg_from_json(R"json(
 {
