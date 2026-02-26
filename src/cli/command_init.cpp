@@ -89,6 +89,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         }
     } else {
         const Json root = build_project_template(rows, output_format);
+        output["$schema"]           = "./schema/data-generator.schema.json";
         output["rows"]              = root.at("rows");
         output["output_format"]     = root.at("output_format");
         output["null_value_string"] = to_ordered_json(root.at("null_value_string"));

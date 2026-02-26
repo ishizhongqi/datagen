@@ -80,6 +80,7 @@ void parse_null_policy(const Json& root, NullPolicy* policy, std::vector<Validat
 
 void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& issues) {
     static const std::unordered_set<std::string> kKnownKeys = {
+        "$schema",
         "rows",
         "output_format",
         "null_value_string",

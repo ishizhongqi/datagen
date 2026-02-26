@@ -28,6 +28,16 @@ OrderedJson to_ordered_json(const Json& value);
 
 OrderedJson build_ordered_config_template(const GeneratorMetadata& meta);
 
+/**
+ * @brief Build a JSON Schema document from generator metadata.
+ *
+ * The generated schema follows JSON Schema draft 2020-12 and describes the
+ * full project configuration shape.
+ *
+ * @return nlohmann::json JSON Schema root object.
+ */
+nlohmann::json BuildJsonSchema();
+
 cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<std::string>& args);
 
 void print_validation_issues(const std::vector<core::ValidationIssue>& issues, std::ostream& output);

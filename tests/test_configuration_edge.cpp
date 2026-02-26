@@ -43,6 +43,15 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
         &issues
     ));
 
+    EXPECT_TRUE(parse_generation_config(
+        nlohmann::json::parse(
+            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+        ),
+        ParseMode::RequireOutputSettings,
+        &cfg,
+        &issues
+    ));
+
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(R"json({"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         ParseMode::RequireOutputSettings,

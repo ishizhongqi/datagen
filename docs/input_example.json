@@ -1,25 +1,62 @@
 {
-    "rows": 10000,
+    "$schema": "../schema/data-generator.schema.json",
+    "rows": 10,
     "output_format": "csv",
     "null_value_string": null,
     "fields": [
+        {
+            "name": "default",
+            "generator": "regular_expression",
+            "config": {
+                "pattern": "Test-[A-Za-z1-9]{10}-\\d{4}"
+            },
+            "default_value": {
+                "enabled": true,
+                "value": "Hello",
+                "percent": 10
+            },
+            "null_value": {
+                "enabled": true,
+                "percent": 15
+            }
+        },
         {
             "name": "company_name",
             "generator": "company_name",
             "config": {
                 "languages": [
+                    "English",
                     "Simplified Chinese"
-                ]
+                ],
+                "use_translation": false
             },
-            "data_linkage": "company:group_1"
+            "data_linkage": "business:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "department",
             "generator": "department",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -27,40 +64,69 @@
             "generator": "industry",
             "config": {
                 "languages": [
+                    "English",
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": "company:group_1"
+            "data_linkage": "business:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
-            "name": "ip_address",
+            "name": "ipv4",
             "generator": "ip_address",
             "config": {
                 "ip_address_type": "IPv4"
             },
             "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
             "null_value": {
-                "enabled": true,
-                "percent": 10
+                "enabled": false,
+                "percent": 0
             }
         },
         {
-            "name": "ip_address",
+            "name": "ipv6",
             "generator": "ip_address",
             "config": {
                 "ip_address_type": "IPv6"
             },
             "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
             "null_value": {
-                "enabled": true,
-                "percent": 10
+                "enabled": false,
+                "percent": 0
             }
         },
         {
             "name": "mac_address",
             "generator": "mac_address",
             "config": {},
-            "unique": true
+            "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "file_path",
@@ -70,19 +136,20 @@
                     "Windows"
                 ],
                 "extensions": [
-                    "jpg",
-                    "png",
                     "txt",
-                    "rtf",
-                    "pdf",
-                    "docx",
-                    "xlsx",
-                    "csv",
-                    "html",
-                    "zip"
+                    "csv"
                 ]
             },
-            "data_linkage": "file:group_1"
+            "data_linkage": "computer:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "file_directory",
@@ -92,53 +159,63 @@
                     "Windows"
                 ]
             },
-            "data_linkage": "file:group_1"
+            "data_linkage": "computer:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "file_name",
             "generator": "file_name",
             "config": {
                 "extensions": [
-                    "jpg",
-                    "png",
                     "txt",
-                    "rtf",
-                    "pdf",
-                    "docx",
-                    "xlsx",
-                    "csv",
-                    "html",
-                    "zip"
+                    "csv"
                 ]
             },
-            "data_linkage": "file:group_1"
+            "data_linkage": "computer:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "file_extension",
             "generator": "file_extension",
             "config": {
                 "extensions": [
-                    "jpg",
-                    "png",
                     "txt",
-                    "rtf",
-                    "pdf",
-                    "docx",
-                    "xlsx",
-                    "csv",
-                    "html",
-                    "zip"
+                    "csv"
                 ]
             },
-            "data_linkage": "file:group_1"
+            "data_linkage": "computer:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "url",
             "generator": "url",
             "config": {
                 "subdomains": [
-                    "www",
-                    "api"
+                    "www"
                 ],
                 "tlds": [
                     "com",
@@ -146,15 +223,23 @@
                     "org"
                 ]
             },
-            "unique": true
+            "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "hostname",
             "generator": "hostname",
             "config": {
                 "subdomains": [
-                    "www",
-                    "api"
+                    "www"
                 ],
                 "tlds": [
                     "com",
@@ -162,14 +247,23 @@
                     "org"
                 ]
             },
-            "unique": true
+            "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "date",
             "generator": "date",
             "config": {
-                "start_date": "2023-01-01",
-                "end_date": "2023-12-31",
+                "start_date": "1970-01-01",
+                "end_date": "2050-12-31",
                 "days_of_week": [
                     "Sunday",
                     "Monday",
@@ -179,24 +273,42 @@
                     "Friday",
                     "Saturday"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
             "name": "time",
             "generator": "time",
             "config": {
-                "start_time": "08:00:00",
-                "end_time": "17:00:00"
+                "start_time": "00:00:00",
+                "end_time": "23:59:59"
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
             "name": "datetime",
             "generator": "datetime",
             "config": {
-                "start_date": "2023-01-01",
-                "end_date": "2023-12-31",
-                "start_time": "08:00:00",
-                "end_time": "17:00:00",
+                "start_date": "1970-01-01",
+                "end_date": "2050-12-31",
+                "start_time": "00:00:00",
+                "end_time": "23:59:59",
                 "days_of_week": [
                     "Sunday",
                     "Monday",
@@ -206,6 +318,15 @@
                     "Friday",
                     "Saturday"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -213,50 +334,99 @@
             "generator": "address_line1",
             "config": {
                 "regions": [
-                    "China"
-                ]
+                    "United States"
+                ],
+                "use_translation": false
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "address_line2",
             "generator": "address_line2",
             "config": {
                 "regions": [
-                    "China"
-                ]
+                    "United States"
+                ],
+                "use_translation": false
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "postcode",
             "generator": "postcode",
             "config": {
                 "regions": [
-                    "China"
+                    "United States"
                 ]
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "full_address",
             "generator": "full_address",
             "config": {
                 "regions": [
-                    "China"
-                ]
+                    "United States"
+                ],
+                "use_translation": false
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "city",
             "generator": "city",
             "config": {
                 "regions": [
-                    "China"
-                ]
+                    "United States"
+                ],
+                "use_translation": false
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "region",
@@ -264,26 +434,93 @@
             "config": {
                 "country_codes_standard": "None",
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
             },
-            "data_linkage": "location:group_1"
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
+        },
+        {
+            "name": "region_a2",
+            "generator": "region",
+            "config": {
+                "country_codes_standard": "ISO_3166_1_alpha_2",
+                "languages": [
+                    "English"
+                ]
+            },
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
+        },
+        {
+            "name": "region_a3",
+            "generator": "region",
+            "config": {
+                "country_codes_standard": "ISO_3166_1_alpha_3",
+                "languages": [
+                    "English"
+                ]
+            },
+            "data_linkage": "location:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "integer",
             "generator": "integer",
             "config": {
-                "start": 1,
+                "start": 0,
                 "end": 100
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
             "name": "decimal",
             "generator": "decimal",
             "config": {
-                "start": 1.0,
-                "end": 100.0,
-                "decimal_places": 2
+                "start": 0,
+                "end": 100,
+                "decimal_places": 7
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -295,6 +532,16 @@
                     "PayPal",
                     "Apple Pay"
                 ]
+            },
+            "data_linkage": "payment:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -302,7 +549,7 @@
             "generator": "card_type",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "card_types": [
                     "AmericanExpress",
@@ -312,7 +559,16 @@
                     "Visa"
                 ]
             },
-            "data_linkage": "card:group_1"
+            "data_linkage": "payment:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "card_number",
@@ -326,24 +582,24 @@
                     "Visa"
                 ]
             },
+            "data_linkage": "payment:Group1",
             "unique": true,
-            "data_linkage": "card:group_1"
-        },
-        {
-            "name": "card_date",
-            "generator": "card_date",
-            "config": {
-                "start_month": "01/23",
-                "end_month": "12/30"
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
             },
-            "data_linkage": "card:group_1"
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "first_name",
             "generator": "first_name",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "genders": [
                     "M",
@@ -351,121 +607,214 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "last_name",
             "generator": "last_name",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
-                ]
+                    "English"
+                ],
+                "use_translation": false
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "full_name",
             "generator": "full_name",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "genders": [
                     "M",
                     "F"
-                ]
+                ],
+                "use_translation": false
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "gender",
             "generator": "gender",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "title",
             "generator": "title",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "genders": [
                     "M",
                     "F"
                 ]
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
-            "name": "marital_status",
+            "name": "martial_status",
             "generator": "marital_status",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "phone_number",
             "generator": "phone_number",
             "config": {
-                "is_international": false,
-                "include_delimiters": false,
                 "regions": [
-                    "China"
-                ]
+                    "United States"
+                ],
+                "is_international": false,
+                "include_delimiters": true
             },
+            "data_linkage": "person:Group1",
             "unique": true,
-            "data_linkage": "person:group_1"
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "email",
             "generator": "email",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "domains": [
                     "gmail.com",
                     "outlook.com"
                 ]
             },
+            "data_linkage": "person:Group1",
             "unique": true,
-            "data_linkage": "person:group_1"
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "job_title",
             "generator": "job_title",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
             },
-            "data_linkage": "person:group_1"
+            "data_linkage": "person:Group1",
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "social_network_id",
             "generator": "social_network_id",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
-                ]
+                    "English"
+                ],
+                "use_translation": false
             },
+            "data_linkage": "person:Group1",
             "unique": true,
-            "data_linkage": "person:group_1"
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "product_name",
             "generator": "product_name",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ],
                 "keywords": [
                     "Cherry",
@@ -477,6 +826,15 @@
                     "Raspberry",
                     "Strawberry"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -484,8 +842,17 @@
             "generator": "product_category",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -493,14 +860,32 @@
             "generator": "color",
             "config": {
                 "languages": [
-                    "Simplified Chinese"
+                    "English"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
             "name": "size",
             "generator": "size",
-            "config": {}
+            "config": {},
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
             "name": "barcode",
@@ -510,10 +895,19 @@
                     "EAN13"
                 ]
             },
-            "unique": true
+            "unique": true,
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
+            }
         },
         {
-            "name": "enum_item",
+            "name": "enum",
             "generator": "enum_item",
             "config": {
                 "enums": [
@@ -521,6 +915,15 @@
                     "Second",
                     "Third"
                 ]
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -528,7 +931,16 @@
             "generator": "text",
             "config": {
                 "number_of_chars_start": 100,
-                "number_of_chars_end": 1000
+                "number_of_chars_end": 10000
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
@@ -536,23 +948,50 @@
             "generator": "uuid",
             "config": {
                 "include_hyphens": true
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
-            "name": "sequence_id",
+            "name": "sequence",
             "generator": "sequence",
             "config": {
-                "start": 0,
-                "end": 1010,
+                "start": 1,
+                "end": 100000000,
                 "step": 1,
-                "circle": false
+                "circle": true
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         },
         {
-            "name": "order_code",
+            "name": "regex",
             "generator": "regular_expression",
             "config": {
-                "pattern": "ORD-[A-Z]{3}-\\d{4}"
+                "pattern": "Test-[A-Za-z1-9]{10}-\\d{4}"
+            },
+            "default_value": {
+                "enabled": false,
+                "value": "",
+                "percent": 0
+            },
+            "null_value": {
+                "enabled": false,
+                "percent": 0
             }
         }
     ]

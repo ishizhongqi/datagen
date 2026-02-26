@@ -22,6 +22,7 @@ int CommandHelp::run(const std::vector<std::string>& /*args*/) {
               << "  describe   Show generator metadata.\n"
               << "  list       List available generators.\n"
               << "  validate   Validate JSON configuration.\n"
+              << "  schema     Generate JSON Schema from metadata.\n"
               << "  help       Show this help message.\n"
               << "\n"
               << "Command usage:\n"
@@ -33,6 +34,7 @@ int CommandHelp::run(const std::vector<std::string>& /*args*/) {
               << "  data-generator describe --generator <name> [--json]\n"
               << "  data-generator list\n"
               << "  data-generator validate --input <json> [--require-output]\n"
+              << "  data-generator schema [--output <file>]\n"
               << "\n"
               << "Examples:\n"
               << "  data-generator init\n"
@@ -44,7 +46,8 @@ int CommandHelp::run(const std::vector<std::string>& /*args*/) {
               << "  data-generator generate --input config.json --output out.sql --format sql --table my_table\n"
               << "  data-generator describe --generator sequence --json\n"
               << "  data-generator list\n"
-              << "  data-generator validate --input config.json --require-output\n";
+              << "  data-generator validate --input config.json --require-output\n"
+              << "  data-generator schema --output schema/data-generator.schema.json\n";
     return exit_codes::kOk;
 }
 

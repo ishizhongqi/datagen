@@ -5,6 +5,7 @@
 .vs
 dist/
 draft/
+*.profraw
 
 # CMake
 out/

@@ -35,6 +35,20 @@ target_link_libraries(data-generator-lib
 
 target_compile_features(data-generator-lib PUBLIC cxx_std_20)
 
+set(DATA_GENERATOR_SCHEMA_DIR "${CMAKE_SOURCE_DIR}/schema")
+set(DATA_GENERATOR_SCHEMA_FILE "${DATA_GENERATOR_SCHEMA_DIR}/data-generator.schema.json")
+
+add_custom_command(
+    OUTPUT "${DATA_GENERATOR_SCHEMA_FILE}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${DATA_GENERATOR_SCHEMA_DIR}"
+    COMMAND $<TARGET_FILE:data-generator> schema --output "${DATA_GENERATOR_SCHEMA_FILE}"
+    DEPENDS data-generator
+    COMMENT "Generating JSON Schema: ${DATA_GENERATOR_SCHEMA_FILE}"
+    VERBATIM
+)
+
+add_custom_target(generate-schema ALL DEPENDS "${DATA_GENERATOR_SCHEMA_FILE}")
+
 if(DATA_GENERATOR_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(data-generator-lib
             PUBLIC

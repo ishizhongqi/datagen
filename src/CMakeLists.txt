@@ -43,6 +43,8 @@ set(CLI_SOURCE
         ${CLI_DIRECTORY}/command_list.h
         ${CLI_DIRECTORY}/command_validate.cpp
         ${CLI_DIRECTORY}/command_validate.h
+        ${CLI_DIRECTORY}/command_schema.cpp
+        ${CLI_DIRECTORY}/command_schema.h
         ${CLI_DIRECTORY}/command_help.cpp
         ${CLI_DIRECTORY}/command_help.h
 )

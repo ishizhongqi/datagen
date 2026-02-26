@@ -84,6 +84,8 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
 
     EXPECT_EQ(invoke_cli({"validate", "--input", valid_input.string()}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"validate", "--input", valid_input.string(), "--require-output"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"schema"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"schema", "--help"}), cli::exit_codes::kOk);
 
     const auto invalid_input = write_json_file("dg_cli_invalid.json", "{");
     EXPECT_EQ(invoke_cli({"validate", "--input", invalid_input.string()}), cli::exit_codes::kRuntimeFailure);
@@ -165,6 +167,7 @@ TEST(CliCommandsTest, HelpAndParseErrorBranches) {
     EXPECT_EQ(invoke_cli({"validate", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"describe", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--help"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"schema", "--help"}), cli::exit_codes::kOk);
 
     EXPECT_EQ(invoke_cli({"generate", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"preview", "--bad-opt"}), cli::exit_codes::kUsage);
@@ -172,6 +175,7 @@ TEST(CliCommandsTest, HelpAndParseErrorBranches) {
     EXPECT_EQ(invoke_cli({"describe", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"list", "--bad-opt"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"schema", "--bad-opt"}), cli::exit_codes::kUsage);
 
     const auto bad_output = std::filesystem::temp_directory_path() / "no_such_dir_2" / "init.json";
     EXPECT_EQ(
@@ -180,6 +184,13 @@ TEST(CliCommandsTest, HelpAndParseErrorBranches) {
     );
 
     EXPECT_EQ(invoke_cli({"validate"}), cli::exit_codes::kUsage);
+
+    const auto schema_out = std::filesystem::temp_directory_path() / "dg_cli_schema.json";
+    EXPECT_EQ(invoke_cli({"schema", "--output", schema_out.string()}), cli::exit_codes::kOk);
+    EXPECT_TRUE(std::filesystem::exists(schema_out));
+
+    const auto bad_schema_output = std::filesystem::temp_directory_path() / "no_such_dir_schema" / "schema.json";
+    EXPECT_EQ(invoke_cli({"schema", "--output", bad_schema_output.string()}), cli::exit_codes::kCliError);
 }
 
 TEST(CliCommandsTest, PreviewAndValidateRuntimeErrorBranches) {
