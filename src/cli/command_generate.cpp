@@ -39,7 +39,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator generate", "generate dataset from JSON config.");
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
-        ("output", "Output filename under workspace root", cxxopts::value<std::string>())
+        ("output", "Output file path. If omitted, writes dgresult_YYYYmmddHHMMSS.<format> in current directory", cxxopts::value<std::string>())
         ("rows", "Override rows", cxxopts::value<int>())
         ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
         ("threads", "Generator threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
@@ -121,14 +121,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
             }
         }
 
-        if (result.count("output")) {
-            const std::string output_name = result["output"].as<std::string>();
-            if (!core::is_workspace_local_filename(output_name)) {
-                std::cerr << "--output must be a filename only (no directory), file is created in workspace root\n";
-                return exit_codes::kUsage;
-            }
-            overrides.output_path = output_name;
-        }
+        if (result.count("output")) { overrides.output_path = result["output"].as<std::string>(); }
 
         if (result.count("output-dest")) {
             const auto parsed = core::parse_output_destination(result["output-dest"].as<std::string>());

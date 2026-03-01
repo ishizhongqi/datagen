@@ -114,7 +114,7 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
             "--input",
             valid_input.string(),
             "--output",
-            "dg_cli_out.csv",
+            out_csv.string(),
             "--workspace",
             workspace.string(),
             "--rows",
@@ -134,23 +134,53 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
     const auto bad_path = std::filesystem::temp_directory_path() / "no_such_dir" / "x.csv";
     EXPECT_EQ(
         invoke_cli({"generate", "--input", valid_input.string(), "--output", bad_path.string()}),
-        cli::exit_codes::kUsage
+        cli::exit_codes::kRuntimeFailure
     );
 
     const auto fallback_input = write_json_file(
         "dg_cli_generate_fallback.json",
         R"json({"rows":2,"output_format":"csv","fields":[{"name":"email","generator":"email","unique":true,"config":{"languages":["English"]}}]})json"
     );
+    const auto fallback_output = std::filesystem::temp_directory_path() / "dg_cli_generate_fallback.csv";
     EXPECT_EQ(
-        invoke_cli({"generate", "--input", fallback_input.string(), "--threads", "4"}),
+        invoke_cli({"generate", "--input", fallback_input.string(), "--threads", "4", "--output", fallback_output.string()}),
         cli::exit_codes::kOk
     );
+    EXPECT_TRUE(std::filesystem::exists(fallback_output));
+
+    const auto default_output_dir = std::filesystem::temp_directory_path() / "dg_cli_default_output_dir";
+    std::filesystem::create_directories(default_output_dir);
+    std::error_code ec;
+    const auto old_cwd = std::filesystem::current_path(ec);
+    ASSERT_FALSE(ec);
+    std::filesystem::current_path(default_output_dir, ec);
+    ASSERT_FALSE(ec);
+
+    EXPECT_EQ(
+        invoke_cli({"generate", "--input", valid_input.string(), "--rows", "3", "--threads", "1"}),
+        cli::exit_codes::kOk
+    );
+
+    std::filesystem::current_path(old_cwd, ec);
+    ASSERT_FALSE(ec);
+
+    bool found_default_output = false;
+    for (const auto& entry : std::filesystem::directory_iterator(default_output_dir)) {
+        if (!entry.is_regular_file()) { continue; }
+        const std::string filename = entry.path().filename().string();
+        if (filename.rfind("dgresult_", 0) == 0 && entry.path().extension() == ".csv") {
+            found_default_output = true;
+            std::filesystem::remove(entry.path(), ec);
+        }
+    }
+    EXPECT_TRUE(found_default_output);
 
     const auto invalid_schema = write_json_file("dg_cli_generate_invalid_schema.json", R"json({"rows":2,"output_format":"csv","fields":[]})json");
     EXPECT_EQ(invoke_cli({"generate", "--input", invalid_schema.string()}), cli::exit_codes::kRuntimeFailure);
 
+    const auto missing_input = std::filesystem::temp_directory_path() / "dg_cli_missing_input_987654321.json";
     EXPECT_EQ(
-        invoke_cli({"generate", "--input", "/tmp/no_such_input_987654321.json"}),
+        invoke_cli({"generate", "--input", missing_input.string()}),
         cli::exit_codes::kRuntimeFailure
     );
 }
@@ -212,8 +242,9 @@ TEST(CliCommandsTest, PreviewAndValidateRuntimeErrorBranches) {
         cli::exit_codes::kOk
     );
 
+    const auto missing_preview = std::filesystem::temp_directory_path() / "dg_cli_missing_preview_987654321.json";
     EXPECT_EQ(
-        invoke_cli({"preview", "--input", "/tmp/no_such_preview_987654321.json"}),
+        invoke_cli({"preview", "--input", missing_preview.string()}),
         cli::exit_codes::kRuntimeFailure
     );
 

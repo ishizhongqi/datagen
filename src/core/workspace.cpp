@@ -4,22 +4,40 @@
 #include "core/workspace.h"
 
 #include <cstdlib>
+#include <optional>
+#include <string>
 
 namespace data_generator::core {
 
 namespace {
 
+std::optional<std::string> read_env_value(const char* key) {
+#if defined(_WIN32)
+    char*  value  = nullptr;
+    size_t length = 0;
+    if (_dupenv_s(&value, &length, key) != 0 || value == nullptr) { return std::nullopt; }
+
+    std::string text(value);
+    std::free(value);
+    return text;
+#else
+    const char* value = std::getenv(key);
+    if (!value) { return std::nullopt; }
+    return std::string(value);
+#endif
+}
+
 std::filesystem::path home_directory() {
 #if defined(_WIN32)
-    if (const char* user_profile = std::getenv("USERPROFILE")) {
-        return std::filesystem::path(user_profile);
+    if (const auto user_profile = read_env_value("USERPROFILE"); user_profile.has_value()) {
+        return std::filesystem::path(*user_profile);
     }
-    if (const char* home = std::getenv("HOME")) {
-        return std::filesystem::path(home);
+    if (const auto home = read_env_value("HOME"); home.has_value()) {
+        return std::filesystem::path(*home);
     }
 #else
-    if (const char* home = std::getenv("HOME")) {
-        return std::filesystem::path(home);
+    if (const auto home = read_env_value("HOME"); home.has_value()) {
+        return std::filesystem::path(*home);
     }
 #endif
     return std::filesystem::current_path();

@@ -14,7 +14,6 @@
 #include <stdexcept>
 
 #include "core/serialization.h"
-#include "core/workspace.h"
 #include "logging/logger.h"
 
 namespace data_generator::output {
@@ -63,7 +62,7 @@ std::string extension_for_format(const core::OutputFormat format) {
 }
 
 std::string build_default_output_path(const core::OutputFormat format) {
-    return "result_" + now_compact_timestamp() + "." + extension_for_format(format);
+    return "dgresult_" + now_compact_timestamp() + "." + extension_for_format(format);
 }
 
 std::uint64_t estimate_row_size(const core::GenerationConfig& cfg) {
@@ -142,13 +141,9 @@ void write_sql_row(const std::vector<std::string>& columns, const core::Row& row
 OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core::ExecutionOptions& options) {
     logging::Logger& logger = logging::Logger::instance();
 
-    const std::string output_name = cfg.output.file.path.empty() ? build_default_output_path(cfg.format)
-                                                                  : cfg.output.file.path;
-    if (!core::is_workspace_local_filename(output_name)) {
-        throw std::runtime_error("output filename must not include directory, file is stored under workspace root");
-    }
-
-    const std::filesystem::path output_path = std::filesystem::path(cfg.workspace) / output_name;
+    const std::filesystem::path output_path = cfg.output.file.path.empty()
+                                                  ? std::filesystem::path(build_default_output_path(cfg.format))
+                                                  : std::filesystem::path(cfg.output.file.path);
 
     const std::uint64_t estimated_row_size = estimate_row_size(cfg);
     const std::uint64_t estimated_total_size = estimated_row_size * static_cast<std::uint64_t>(cfg.rows);

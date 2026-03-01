@@ -55,7 +55,7 @@ TEST(RunTest, GenerateFromInputFileReturnsOkAndWritesOutput) {
         "--workspace",
         workspace.string(),
         "--output",
-        "data-generator-test-output.csv",
+        output.string(),
         "--rows",
         "16",
         "--threads",

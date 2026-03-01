@@ -46,7 +46,7 @@ int CommandHelp::run(const std::vector<std::string>& /*args*/) {
               << "  data-generator preview --input config.json --field email\n"
               << "  data-generator preview --input config.json --format json\n"
               << "  data-generator generate --input config.json --threads 4\n"
-              << "  data-generator generate --input config.json --output out.sql --format sql --table my_table\n"
+              << "  data-generator generate --input config.json --output ./out.sql --format sql --table my_table\n"
               << "  data-generator generate --input config.json --output-dest database --url mysql://u:p@127.0.0.1:3306/db --table t_orders\n"
               << "  data-generator describe --generator sequence --json\n"
               << "  data-generator list\n"

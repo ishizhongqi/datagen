@@ -56,7 +56,8 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
         out << "{";
     }
     EXPECT_THROW((void)load_json_from_file(bad.string()), std::runtime_error);
-    EXPECT_THROW((void)load_json_from_file("/tmp/no_such_file_1234567.json"), std::runtime_error);
+    const auto missing = std::filesystem::temp_directory_path() / "dg_cli_shared_missing_1234567.json";
+    EXPECT_THROW((void)load_json_from_file(missing.string()), std::runtime_error);
 
     cxxopts::Options options("prog", "desc");
     options.add_options()("x", "x", cxxopts::value<int>());

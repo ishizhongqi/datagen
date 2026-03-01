@@ -12,15 +12,54 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <sstream>
 
 namespace data_generator::database {
 
 namespace {
 
+#if defined(__APPLE__)
 constexpr const char* kMysqlBinary = "/opt/homebrew/opt/mysql@8.0/bin/mysql";
+#else
+constexpr const char* kMysqlBinary = "mysql";
+#endif
 
-std::string shell_escape_single_quote(const std::string& value) {
+std::optional<std::string> read_env_value(const char* key) {
+#if defined(_WIN32)
+    char*  value  = nullptr;
+    size_t length = 0;
+    if (_dupenv_s(&value, &length, key) != 0 || value == nullptr) { return std::nullopt; }
+
+    std::string text(value);
+    std::free(value);
+    return text;
+#else
+    const char* value = std::getenv(key);
+    if (!value) { return std::nullopt; }
+    return std::string(value);
+#endif
+}
+
+#if defined(_WIN32)
+std::string shell_escape(const std::string& value) {
+    std::string result;
+    result.reserve(value.size() + 2);
+    result.push_back('"');
+    for (const char ch : value) {
+        if (ch == '"') {
+            result += "\\\"";
+        } else if (ch == '%') {
+            result += "%%";
+        } else {
+            result.push_back(ch);
+        }
+    }
+    result.push_back('"');
+    return result;
+}
+#else
+std::string shell_escape(const std::string& value) {
     std::string result;
     result.reserve(value.size() + 2);
     result.push_back('\'');
@@ -34,6 +73,7 @@ std::string shell_escape_single_quote(const std::string& value) {
     result.push_back('\'');
     return result;
 }
+#endif
 
 std::string trim_line(const std::string& text) {
     std::size_t begin = 0;
@@ -50,7 +90,10 @@ std::string trim_line(const std::string& text) {
 std::filesystem::path build_temp_sql_path() {
     std::error_code       ec;
     std::filesystem::path base = std::filesystem::temp_directory_path(ec);
-    if (ec || base.empty()) { base = "/tmp"; }
+    if (ec || base.empty()) {
+        base = std::filesystem::current_path(ec);
+        if (ec || base.empty()) { base = "."; }
+    }
 
     const auto token = std::to_string(
         static_cast<unsigned long long>(
@@ -294,27 +337,30 @@ bool MysqlDriver::run_mysql_command(
         return false;
     }
 
-    const std::string mysql_binary = std::getenv("DATA_GENERATOR_MYSQL_BIN") ? std::getenv("DATA_GENERATOR_MYSQL_BIN")
-                                                                               : kMysqlBinary;
+    const std::string mysql_binary = read_env_value("DATA_GENERATOR_MYSQL_BIN").value_or(kMysqlBinary);
 
     std::filesystem::path sql_file;
     if (!write_temp_sql_file(sql, &sql_file, error_message)) { return false; }
 
     std::ostringstream command;
-    command << "MYSQL_PWD=" << shell_escape_single_quote(connection_.password)
-            << " " << shell_escape_single_quote(mysql_binary)
+    command << shell_escape(mysql_binary)
             << " --protocol=TCP"
-            << " --user=" << shell_escape_single_quote(connection_.username)
-            << " --host=" << shell_escape_single_quote(connection_.host)
+            << " --user=" << shell_escape(connection_.username)
+            << " --password=" << shell_escape(connection_.password)
+            << " --host=" << shell_escape(connection_.host)
             << " --port=" << connection_.port
-            << " --database=" << shell_escape_single_quote(connection_.database)
+            << " --database=" << shell_escape(connection_.database)
             << " --default-character-set=utf8mb4"
             << " --local-infile=1"
             << " --raw --batch --skip-column-names";
     if (expect_rows) { command << " --silent"; }
-    command << " < " << shell_escape_single_quote(sql_file.string()) << " 2>&1";
+    command << " < " << shell_escape(sql_file.string()) << " 2>&1";
 
+#if defined(_WIN32)
+    FILE* pipe = _popen(command.str().c_str(), "r");
+#else
     FILE* pipe = popen(command.str().c_str(), "r");
+#endif
     if (!pipe) {
         std::error_code ec;
         std::filesystem::remove(sql_file, ec);
@@ -328,7 +374,11 @@ bool MysqlDriver::run_mysql_command(
         output += buffer.data();
     }
 
+#if defined(_WIN32)
+    const int rc = _pclose(pipe);
+#else
     const int rc = pclose(pipe);
+#endif
     std::error_code remove_ec;
     std::filesystem::remove(sql_file, remove_ec);
     if (stdout_text) { *stdout_text = output; }
