@@ -10,42 +10,68 @@
 #include <unordered_set>
 
 #include "cli/generator_catalog.h"
+#include "core/workspace.h"
 #include "generators/linkage_helper.h"
 
 namespace data_generator::core {
 
 namespace {
 
-void add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message) {
-    issues.emplace_back(ValidationIssue{std::move(path), std::move(message)});
+void add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message, const bool warning = false) {
+    issues.emplace_back(ValidationIssue{.warning = warning, .path = std::move(path), .message = std::move(message)});
 }
 
-bool parse_rows(const Json& root, ParseMode mode, int* rows, std::vector<ValidationIssue>& issues) {
-    if (!root.contains("rows")) {
-        if (mode == ParseMode::RequireOutputSettings) {
-            add_issue(issues, "$.rows", "missing required integer");
+bool parse_positive_int(
+    const Json& root,
+    const char* key,
+    int* out,
+    std::vector<ValidationIssue>& issues,
+    const int min_value,
+    const bool required,
+    const bool warning_if_missing = false
+) {
+    if (!root.contains(key)) {
+        if (required) {
+            add_issue(issues, std::string("$.") + key, "missing required integer");
             return false;
         }
+        if (warning_if_missing) { add_issue(issues, std::string("$.") + key, "not specified, default will be used", true); }
         return true;
     }
-    if (!root.at("rows").is_number_integer()) {
-        add_issue(issues, "$.rows", "must be an integer");
+    if (!root.at(key).is_number_integer()) {
+        add_issue(issues, std::string("$.") + key, "must be an integer");
         return false;
     }
-    const int value = root.at("rows").get<int>();
-    if (value <= 0) {
-        add_issue(issues, "$.rows", "must be a positive integer");
+    const int value = root.at(key).get<int>();
+    if (value < min_value) {
+        add_issue(
+            issues,
+            std::string("$.") + key,
+            "must be >= " + std::to_string(min_value)
+        );
         return false;
     }
-    *rows = value;
+    *out = value;
     return true;
 }
 
-bool parse_format(const Json& root, ParseMode mode, OutputFormat* format, std::vector<ValidationIssue>& issues) {
+bool parse_rows(const Json& root, const ParseMode mode, int* rows, std::vector<ValidationIssue>& issues) {
+    const bool required = (mode == ParseMode::RequireOutputSettings);
+    return parse_positive_int(root, "rows", rows, issues, 1, required, !required);
+}
+
+bool parse_format(const Json& root, const ParseMode mode, OutputFormat* format, std::vector<ValidationIssue>& issues) {
+    const std::string output_dest_key = root.contains("output_dest") ? "output_dest" : "output_destination";
+    const bool database_dest = root.contains(output_dest_key) && root.at(output_dest_key).is_string() &&
+                               root.at(output_dest_key).get<std::string>() == "database";
+
     if (!root.contains("output_format")) {
-        if (mode == ParseMode::RequireOutputSettings) {
+        if (mode == ParseMode::RequireOutputSettings && !database_dest) {
             add_issue(issues, "$.output_format", "missing required string (csv|json|sql)");
             return false;
+        }
+        if (!database_dest) {
+            add_issue(issues, "$.output_format", "not specified, default csv will be used", true);
         }
         return true;
     }
@@ -81,16 +107,152 @@ void parse_null_policy(const Json& root, NullPolicy* policy, std::vector<Validat
 void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& issues) {
     static const std::unordered_set<std::string> kKnownKeys = {
         "$schema",
+        "workspace",
         "rows",
         "output_format",
         "null_value_string",
+        "table",
         "table_name",
-        "include_create_table",
         "fields",
+        "output_dest",
+        "output_destination",
+        "output_path",
+        "url",
+        "database_url",
+        "insert_mode",
+        "batch_size",
+        "queue_size",
+        "db_threads",
+        "transaction_mode",
+        "error_policy",
+        "rate_limit_rows_per_sec",
     };
     for (auto it = root.begin(); it != root.end(); ++it) {
         if (!kKnownKeys.contains(it.key())) { add_issue(issues, "$." + it.key(), "unknown root key"); }
     }
+}
+
+void parse_workspace_setting(
+    const Json&                   root,
+    GenerationConfig*             cfg,
+    std::vector<ValidationIssue>& issues
+) {
+    if (!root.contains("workspace")) { return; }
+    if (!root.at("workspace").is_string() || root.at("workspace").get<std::string>().empty()) {
+        add_issue(issues, "$.workspace", "must be a non-empty string");
+        return;
+    }
+    cfg->workspace = root.at("workspace").get<std::string>();
+}
+
+bool parse_output_settings(
+    const Json&                   root,
+    const ParseMode               mode,
+    GenerationConfig*             cfg,
+    std::vector<ValidationIssue>& issues
+) {
+    const std::string output_dest_key = root.contains("output_dest") ? "output_dest" : "output_destination";
+    if (root.contains(output_dest_key)) {
+        if (!root.at(output_dest_key).is_string()) {
+            add_issue(issues, "$." + output_dest_key, "must be string (file|database)");
+        } else {
+            const auto parsed = parse_output_destination(root.at(output_dest_key).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, "$." + output_dest_key, "must be one of: file, database");
+            } else {
+                cfg->output.destination = *parsed;
+            }
+        }
+    }
+
+    if (root.contains("output_path")) {
+        if (!root.at("output_path").is_string()) {
+            add_issue(issues, "$.output_path", "must be a string");
+        } else {
+            cfg->output.file.path = root.at("output_path").get<std::string>();
+        }
+    }
+
+    const std::string url_key = root.contains("url") ? "url" : "database_url";
+    if (root.contains(url_key)) {
+        if (!root.at(url_key).is_string() || root.at(url_key).get<std::string>().empty()) {
+            add_issue(issues, "$." + url_key, "must be a non-empty string URL");
+        } else {
+            cfg->output.database.url = root.at(url_key).get<std::string>();
+        }
+    }
+
+    const std::string table_key =
+        root.contains("table") ? "table" : (root.contains("database_table") ? "database_table" : "table_name");
+    if (root.contains(table_key)) {
+        if (!root.at(table_key).is_string() || root.at(table_key).get<std::string>().empty()) {
+            add_issue(issues, "$." + table_key, "must be a non-empty string");
+        } else {
+            cfg->table_name = root.at(table_key).get<std::string>();
+            cfg->output.database.table_name = cfg->table_name;
+        }
+    }
+
+    if (root.contains("insert_mode")) {
+        if (!root.at("insert_mode").is_string()) {
+            add_issue(issues, "$.insert_mode", "must be a string (auto|insert|bulk|load)");
+        } else {
+            const auto parsed = parse_insert_mode(root.at("insert_mode").get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, "$.insert_mode", "must be one of: auto, insert, bulk, load");
+            } else {
+                cfg->output.database.insert_mode = *parsed;
+            }
+        }
+    }
+
+    if (root.contains("transaction_mode")) {
+        if (!root.at("transaction_mode").is_string()) {
+            add_issue(issues, "$.transaction_mode", "must be a string (per-batch|per-run|none)");
+        } else {
+            const auto parsed = parse_transaction_mode(root.at("transaction_mode").get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, "$.transaction_mode", "must be one of: per-batch, per-run, none");
+            } else {
+                cfg->output.database.transaction_mode = *parsed;
+            }
+        }
+    }
+
+    if (root.contains("error_policy")) {
+        if (!root.at("error_policy").is_string()) {
+            add_issue(issues, "$.error_policy", "must be a string (stop|continue|rollback-batch|rollback-all)");
+        } else {
+            const auto parsed = parse_error_policy(root.at("error_policy").get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, "$.error_policy", "must be one of: stop, continue, rollback-batch, rollback-all");
+            } else {
+                cfg->output.database.error_policy = *parsed;
+            }
+        }
+    }
+
+    (void)parse_positive_int(root, "batch_size", &cfg->output.database.batch_size, issues, 1, false);
+    (void)parse_positive_int(root, "queue_size", &cfg->output.database.queue_size, issues, 1, false);
+    (void)parse_positive_int(root, "db_threads", &cfg->output.database.db_threads, issues, 1, false);
+    (void)parse_positive_int(root, "rate_limit_rows_per_sec", &cfg->output.database.rate_limit_rows_per_sec, issues, 1, false);
+
+    if (cfg->output.destination == OutputDestination::Database) {
+        if (cfg->output.database.url.empty()) {
+            add_issue(
+                issues,
+                "$.url",
+                "database output requires URL (CLI or JSON)",
+                mode == ParseMode::AllowMissingOutputSettings
+            );
+        }
+    }
+
+    if (cfg->output.destination == OutputDestination::Database && root.contains("output_format")) {
+        add_issue(issues, "$.output_format", "ignored when output_dest=database", true);
+    }
+
+    return true;
 }
 
 void validate_and_collect_fields(
@@ -142,7 +304,7 @@ void validate_and_collect_fields(
         }
 
         static const std::unordered_set<std::string> kFieldKeys =
-            {"name", "generator", "config", "unique", "data_linkage", "null_value", "default_value"};
+            {"name", "generator", "config", "unique", "nullable", "data_linkage", "null_value", "default_value"};
         for (auto it = field.begin(); it != field.end(); ++it) {
             if (!kFieldKeys.contains(it.key())) { add_issue(issues, path + "." + it.key(), "unknown field key"); }
         }
@@ -153,6 +315,10 @@ void validate_and_collect_fields(
             } else if (!meta->supports_unique) {
                 add_issue(issues, path + ".unique", "generator does not support unique");
             }
+        }
+
+        if (field.contains("nullable")) {
+            if (!field.at("nullable").is_boolean()) { add_issue(issues, path + ".nullable", "must be a boolean"); }
         }
 
         std::optional<std::string> linkage;
@@ -218,6 +384,72 @@ std::string output_format_to_string(const OutputFormat format) {
     return "csv";
 }
 
+std::optional<OutputDestination> parse_output_destination(const std::string& value) {
+    if (value == "file") { return OutputDestination::File; }
+    if (value == "database") { return OutputDestination::Database; }
+    return std::nullopt;
+}
+
+std::string output_destination_to_string(const OutputDestination destination) {
+    switch (destination) {
+    case OutputDestination::File    : return "file";
+    case OutputDestination::Database: return "database";
+    }
+    return "file";
+}
+
+std::optional<InsertMode> parse_insert_mode(const std::string& value) {
+    if (value == "auto") { return InsertMode::Auto; }
+    if (value == "insert") { return InsertMode::Insert; }
+    if (value == "bulk") { return InsertMode::Bulk; }
+    if (value == "load") { return InsertMode::Load; }
+    return std::nullopt;
+}
+
+std::string insert_mode_to_string(const InsertMode mode) {
+    switch (mode) {
+    case InsertMode::Auto  : return "auto";
+    case InsertMode::Insert: return "insert";
+    case InsertMode::Bulk  : return "bulk";
+    case InsertMode::Load  : return "load";
+    }
+    return "auto";
+}
+
+std::optional<TransactionMode> parse_transaction_mode(const std::string& value) {
+    if (value == "per-batch") { return TransactionMode::PerBatch; }
+    if (value == "per-run") { return TransactionMode::PerRun; }
+    if (value == "none") { return TransactionMode::None; }
+    return std::nullopt;
+}
+
+std::string transaction_mode_to_string(const TransactionMode mode) {
+    switch (mode) {
+    case TransactionMode::PerBatch: return "per-batch";
+    case TransactionMode::PerRun  : return "per-run";
+    case TransactionMode::None    : return "none";
+    }
+    return "per-batch";
+}
+
+std::optional<ErrorPolicy> parse_error_policy(const std::string& value) {
+    if (value == "stop") { return ErrorPolicy::Stop; }
+    if (value == "continue") { return ErrorPolicy::Continue; }
+    if (value == "rollback-batch") { return ErrorPolicy::RollbackBatch; }
+    if (value == "rollback-all") { return ErrorPolicy::RollbackAll; }
+    return std::nullopt;
+}
+
+std::string error_policy_to_string(const ErrorPolicy policy) {
+    switch (policy) {
+    case ErrorPolicy::Stop         : return "stop";
+    case ErrorPolicy::Continue     : return "continue";
+    case ErrorPolicy::RollbackBatch: return "rollback-batch";
+    case ErrorPolicy::RollbackAll  : return "rollback-all";
+    }
+    return "stop";
+}
+
 bool parse_generation_config(
     const Json&                   root,
     const ParseMode               mode,
@@ -234,49 +466,53 @@ bool parse_generation_config(
 
     GenerationConfig cfg;
     cfg.root = root;
+    cfg.workspace = default_workspace_root().string();
 
     validate_known_root_keys(root, *issues);
-    parse_rows(root, mode, &cfg.rows, *issues);
-    parse_format(root, mode, &cfg.format, *issues);
+    parse_workspace_setting(root, &cfg, *issues);
+    (void)parse_rows(root, mode, &cfg.rows, *issues);
+    (void)parse_format(root, mode, &cfg.format, *issues);
     parse_null_policy(root, &cfg.null_policy, *issues);
 
-    if (root.contains("table_name")) {
-        if (!root.at("table_name").is_string() || root.at("table_name").get<std::string>().empty()) {
-            add_issue(*issues, "$.table_name", "must be a non-empty string");
-        } else {
-            cfg.table_name = root.at("table_name").get<std::string>();
-        }
-    }
-    if (root.contains("include_create_table")) {
-        if (!root.at("include_create_table").is_boolean()) {
-            add_issue(*issues, "$.include_create_table", "must be a boolean");
-        } else {
-            cfg.include_create_table = root.at("include_create_table").get<bool>();
-        }
-    }
-
+    (void)parse_output_settings(root, mode, &cfg, *issues);
     validate_and_collect_fields(root, &cfg.fields, *issues);
 
     if (cfg.fields.empty()) { add_issue(*issues, "$.fields", "must contain at least one field"); }
 
-    if (!issues->empty()) { return false; }
+    bool has_error = false;
+    for (const auto& issue : *issues) {
+        if (!issue.warning) {
+            has_error = true;
+            break;
+        }
+    }
+    if (has_error) { return false; }
 
     *out = std::move(cfg);
     return true;
 }
 
-void apply_cli_overrides(
-    GenerationConfig*                  cfg,
-    const std::optional<int>&          rows,
-    const std::optional<OutputFormat>& format,
-    const std::optional<std::string>&  table_name,
-    const std::optional<bool>&         include_create_table
-) {
+void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides) {
     if (!cfg) { return; }
-    if (rows.has_value()) { cfg->rows = *rows; }
-    if (format.has_value()) { cfg->format = *format; }
-    if (table_name.has_value()) { cfg->table_name = *table_name; }
-    if (include_create_table.has_value()) { cfg->include_create_table = *include_create_table; }
+    if (overrides.rows.has_value()) { cfg->rows = *overrides.rows; }
+    if (overrides.format.has_value()) { cfg->format = *overrides.format; }
+    if (overrides.table_name.has_value()) {
+        cfg->table_name = *overrides.table_name;
+        cfg->output.database.table_name = *overrides.table_name;
+    }
+    if (overrides.destination.has_value()) { cfg->output.destination = *overrides.destination; }
+    if (overrides.output_path.has_value()) { cfg->output.file.path = *overrides.output_path; }
+    if (overrides.database_url.has_value()) { cfg->output.database.url = *overrides.database_url; }
+    if (overrides.insert_mode.has_value()) { cfg->output.database.insert_mode = *overrides.insert_mode; }
+    if (overrides.batch_size.has_value()) { cfg->output.database.batch_size = *overrides.batch_size; }
+    if (overrides.queue_size.has_value()) { cfg->output.database.queue_size = *overrides.queue_size; }
+    if (overrides.db_threads.has_value()) { cfg->output.database.db_threads = *overrides.db_threads; }
+    if (overrides.transaction_mode.has_value()) { cfg->output.database.transaction_mode = *overrides.transaction_mode; }
+    if (overrides.error_policy.has_value()) { cfg->output.database.error_policy = *overrides.error_policy; }
+    if (overrides.rate_limit_rows_per_sec.has_value()) {
+        cfg->output.database.rate_limit_rows_per_sec = *overrides.rate_limit_rows_per_sec;
+    }
+    if (overrides.workspace.has_value()) { cfg->workspace = *overrides.workspace; }
 }
 
 }  // namespace data_generator::core

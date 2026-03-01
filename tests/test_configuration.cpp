@@ -19,8 +19,7 @@ TEST(ConfigurationTest, ParseValidConfig) {
   "rows": 5,
   "output_format": "json",
   "null_value_string": "<NULL>",
-  "table_name": "t_orders",
-  "include_create_table": false,
+  "table": "t_orders",
   "fields": [
     {
       "name": "id",
@@ -43,7 +42,6 @@ TEST(ConfigurationTest, ParseValidConfig) {
     EXPECT_EQ(cfg.rows, 5);
     EXPECT_EQ(cfg.format, OutputFormat::Json);
     EXPECT_EQ(cfg.table_name, "t_orders");
-    EXPECT_FALSE(cfg.include_create_table);
     ASSERT_EQ(cfg.fields.size(), 1U);
     EXPECT_EQ(cfg.fields.front().name, "id");
     ASSERT_TRUE(cfg.null_policy.configured);

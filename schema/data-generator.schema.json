@@ -7,6 +7,31 @@
     }
   },
   "properties": {
+    "batch_size": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "database_table": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "database_url": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "db_threads": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "error_policy": {
+      "enum": [
+        "stop",
+        "continue",
+        "rollback-batch",
+        "rollback-all"
+      ],
+      "type": "string"
+    },
     "fields": {
       "items": {
         "additionalProperties": false,
@@ -2710,6 +2735,9 @@
           "null_value": {
             "type": "object"
           },
+          "nullable": {
+            "type": "boolean"
+          },
           "supports_data_linkage": {
             "type": "boolean"
           },
@@ -2730,14 +2758,34 @@
       "minItems": 1,
       "type": "array"
     },
-    "include_create_table": {
-      "type": "boolean"
+    "insert_mode": {
+      "enum": [
+        "auto",
+        "insert",
+        "bulk",
+        "load"
+      ],
+      "type": "string"
     },
     "null_value_string": {
       "type": [
         "string",
         "null"
       ]
+    },
+    "output_dest": {
+      "enum": [
+        "file",
+        "database"
+      ],
+      "type": "string"
+    },
+    "output_destination": {
+      "enum": [
+        "file",
+        "database"
+      ],
+      "type": "string"
     },
     "output_format": {
       "enum": [
@@ -2747,11 +2795,42 @@
       ],
       "type": "string"
     },
+    "output_path": {
+      "type": "string"
+    },
+    "queue_size": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "rate_limit_rows_per_sec": {
+      "minimum": 1,
+      "type": "integer"
+    },
     "rows": {
       "minimum": 1,
       "type": "integer"
     },
+    "table": {
+      "minLength": 1,
+      "type": "string"
+    },
     "table_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "transaction_mode": {
+      "enum": [
+        "per-batch",
+        "per-run",
+        "none"
+      ],
+      "type": "string"
+    },
+    "url": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "workspace": {
       "minLength": 1,
       "type": "string"
     }

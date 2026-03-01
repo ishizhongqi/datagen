@@ -9,6 +9,10 @@ set(CORE_DIRECTORY core)
 set(CLI_DIRECTORY cli)
 
 set(GENERATOR_DIRECTORY generators)
+set(OUTPUT_DIRECTORY output)
+set(DATABASE_DIRECTORY database)
+set(DATABASE_DRIVER_DIRECTORY database/driver)
+set(LOGGING_DIRECTORY logging)
 
 set(APP_SOURCE
         ${APP_DIRECTORY}/run.cpp
@@ -22,6 +26,8 @@ set(CORE_SOURCE
         ${CORE_DIRECTORY}/executor.h
         ${CORE_DIRECTORY}/serialization.cpp
         ${CORE_DIRECTORY}/serialization.h
+        ${CORE_DIRECTORY}/workspace.cpp
+        ${CORE_DIRECTORY}/workspace.h
 )
 
 set(CLI_SOURCE
@@ -81,11 +87,49 @@ set(GENERATOR_SOURCE
         ${GENERATOR_DIRECTORY}/override_rules.h
 )
 
+set(OUTPUT_SOURCE
+        ${OUTPUT_DIRECTORY}/output_backend.h
+        ${OUTPUT_DIRECTORY}/output_backend.cpp
+        ${OUTPUT_DIRECTORY}/file_backend.h
+        ${OUTPUT_DIRECTORY}/file_backend.cpp
+        ${OUTPUT_DIRECTORY}/database_backend.h
+        ${OUTPUT_DIRECTORY}/database_backend.cpp
+)
+
+set(DATABASE_SOURCE
+        ${DATABASE_DIRECTORY}/db_metadata.h
+        ${DATABASE_DIRECTORY}/db_metadata.cpp
+        ${DATABASE_DIRECTORY}/db_url_parser.h
+        ${DATABASE_DIRECTORY}/db_url_parser.cpp
+        ${DATABASE_DIRECTORY}/db_schema_validator.h
+        ${DATABASE_DIRECTORY}/db_schema_validator.cpp
+        ${DATABASE_DIRECTORY}/type_adapter.h
+        ${DATABASE_DIRECTORY}/type_adapter.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/idatabase_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/idatabase_driver.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/mysql_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/mysql_driver.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/postgresql_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/postgresql_driver.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/sqlite_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/sqlite_driver.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/oracle_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/oracle_driver.cpp
+)
+
+set(LOGGING_SOURCE
+        ${LOGGING_DIRECTORY}/logger.h
+        ${LOGGING_DIRECTORY}/logger.cpp
+)
+
 add_library(data-generator-lib
         ${APP_SOURCE}
         ${CLI_SOURCE}
         ${GENERATOR_SOURCE}
         ${CORE_SOURCE}
+        ${OUTPUT_SOURCE}
+        ${DATABASE_SOURCE}
+        ${LOGGING_SOURCE}
 )
 
 add_executable(data-generator ${MAIN_SOURCE})

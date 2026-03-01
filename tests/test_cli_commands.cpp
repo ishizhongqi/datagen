@@ -83,7 +83,6 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
     EXPECT_EQ(invoke_cli({"preview"}), cli::exit_codes::kUsage);
 
     EXPECT_EQ(invoke_cli({"validate", "--input", valid_input.string()}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"validate", "--input", valid_input.string(), "--require-output"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"schema"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"schema", "--help"}), cli::exit_codes::kOk);
 
@@ -104,27 +103,26 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--rows", "0"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--format", "bad"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--table", ""}), cli::exit_codes::kUsage);
-    EXPECT_EQ(
-        invoke_cli({"generate", "--input", valid_input.string(), "--create-table", "--no-create-table"}),
-        cli::exit_codes::kUsage
-    );
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--threads", "0"}), cli::exit_codes::kUsage);
 
-    const auto out_csv = std::filesystem::temp_directory_path() / "dg_cli_out.csv";
+    const auto workspace = std::filesystem::temp_directory_path() / "dg_cli_workspace";
+    std::filesystem::create_directories(workspace);
+    const auto out_csv = workspace / "dg_cli_out.csv";
     EXPECT_EQ(
         invoke_cli({
             "generate",
             "--input",
             valid_input.string(),
             "--output",
-            out_csv.string(),
+            "dg_cli_out.csv",
+            "--workspace",
+            workspace.string(),
             "--rows",
             "10",
             "--format",
             "json",
             "--table",
             "t_cli",
-            "--no-create-table",
             "--threads",
             "2",
         }),
@@ -136,7 +134,7 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
     const auto bad_path = std::filesystem::temp_directory_path() / "no_such_dir" / "x.csv";
     EXPECT_EQ(
         invoke_cli({"generate", "--input", valid_input.string(), "--output", bad_path.string()}),
-        cli::exit_codes::kRuntimeFailure
+        cli::exit_codes::kUsage
     );
 
     const auto fallback_input = write_json_file(
@@ -234,7 +232,7 @@ TEST(CliCommandsTest, PreviewAndValidateRuntimeErrorBranches) {
 })json"
     );
     EXPECT_EQ(
-        invoke_cli({"validate", "--input", runtime_invalid.string(), "--require-output"}),
+        invoke_cli({"validate", "--input", runtime_invalid.string()}),
         cli::exit_codes::kRuntimeFailure
     );
 }

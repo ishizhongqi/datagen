@@ -38,16 +38,11 @@ TEST(SerializationTest, WriteCsvJsonSql) {
     EXPECT_NE(json.str().find("\"c1\""), std::string::npos);
     EXPECT_NE(json.str().find("null"), std::string::npos);
 
-    std::ostringstream sql_with_create;
-    write_sql(columns, rows, "t1", true, sql_with_create);
-    EXPECT_NE(sql_with_create.str().find("CREATE TABLE t1"), std::string::npos);
-    EXPECT_NE(sql_with_create.str().find("INSERT INTO t1"), std::string::npos);
-    EXPECT_NE(sql_with_create.str().find("x''y"), std::string::npos);
-
-    std::ostringstream sql_no_create;
-    write_sql(columns, rows, "t1", false, sql_no_create);
-    EXPECT_EQ(sql_no_create.str().find("CREATE TABLE"), std::string::npos);
-    EXPECT_NE(sql_no_create.str().find("INSERT INTO t1"), std::string::npos);
+    std::ostringstream sql_out;
+    write_sql(columns, rows, "t1", sql_out);
+    EXPECT_EQ(sql_out.str().find("CREATE TABLE"), std::string::npos);
+    EXPECT_NE(sql_out.str().find("INSERT INTO t1"), std::string::npos);
+    EXPECT_NE(sql_out.str().find("x''y"), std::string::npos);
 }
 
 }  // namespace

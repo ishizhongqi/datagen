@@ -75,7 +75,7 @@ TEST(GeneratorsSmokeTest, EveryGeneratorTemplateCanGenerateOneRow) {
                 continue;
             }
             std::ostringstream out;
-            (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out);
+            (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out);
         } catch (const std::exception& ex) {
             failures.push_back(meta.name + ": " + ex.what());
         }
@@ -116,7 +116,7 @@ TEST(GeneratorsSmokeTest, LinkagePathsGenerateAcrossModules) {
 
     auto cfg = parse_config_or_fail(root);
     std::ostringstream out;
-    const auto result = core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out);
+    const auto result = core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out);
 
     EXPECT_EQ(result.info.threads_used, 1U);
     EXPECT_FALSE(out.str().empty());
@@ -137,7 +137,7 @@ TEST(GeneratorsSmokeTest, ConflictingLinkageConfigThrows) {
     auto cfg = parse_config_or_fail(root);
     std::ostringstream out;
     EXPECT_THROW(
-        (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out),
+        (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out),
         std::runtime_error
     );
 }
@@ -164,7 +164,7 @@ TEST(GeneratorsSmokeTest, PersonLinkageAllGenerators) {
 
     auto cfg = parse_config_or_fail(root);
     std::ostringstream out;
-    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out);
+    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out);
     EXPECT_FALSE(out.str().empty());
 }
 
@@ -191,7 +191,7 @@ TEST(GeneratorsSmokeTest, LocationAndPaymentLinkageAllGenerators) {
 
     auto cfg = parse_config_or_fail(root);
     std::ostringstream out;
-    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out);
+    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out);
     EXPECT_FALSE(out.str().empty());
 }
 
@@ -210,7 +210,7 @@ TEST(GeneratorsSmokeTest, OptionalBranchesEmailAndPaymentMethodWithoutLists) {
 
     auto cfg = parse_config_or_fail(root);
     std::ostringstream out;
-    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1, .seed = std::nullopt}, out);
+    (void)core::generate_to_stream(cfg, core::ExecutionOptions{.requested_threads = 1}, out);
     EXPECT_FALSE(out.str().empty());
 }
 

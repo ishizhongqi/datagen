@@ -66,7 +66,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             cfg.format = *parsed;
         }
 
-        const auto        row          = core::preview_row(cfg, std::nullopt);
+        const auto        row          = core::preview_row(cfg);
         const std::string field_filter = result["field"].as<std::string>();
 
         if (!field_filter.empty() && field_filter != "all") {
@@ -98,7 +98,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             std::cout << "\n";
             break;
         case core::OutputFormat::Json: core::write_json(columns, rows, std::cout); break;
-        case core::OutputFormat::Sql : core::write_sql(columns, rows, "preview_table", false, std::cout); break;
+        case core::OutputFormat::Sql : core::write_sql(columns, rows, "preview_table", std::cout); break;
         }
 
         return exit_codes::kOk;

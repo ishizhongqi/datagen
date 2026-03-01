@@ -41,17 +41,21 @@ TEST(RunTest, HelpCommandReturnsOk) {
 
 TEST(RunTest, GenerateFromInputFileReturnsOkAndWritesOutput) {
     const auto input  = test_input("run_valid.json");
-    const auto output = std::filesystem::temp_directory_path() / "data-generator-test-output.csv";
+    const auto workspace = std::filesystem::temp_directory_path() / "data-generator-test-workspace";
+    const auto output = workspace / "data-generator-test-output.csv";
 
     std::error_code ec;
     std::filesystem::remove(output, ec);
+    std::filesystem::create_directories(workspace, ec);
 
     const int rc = invoke_cli({
         "generate",
         "--input",
         input.string(),
+        "--workspace",
+        workspace.string(),
         "--output",
-        output.string(),
+        "data-generator-test-output.csv",
         "--rows",
         "16",
         "--threads",
@@ -80,7 +84,7 @@ TEST(RunTest, ValidateMalformedJsonReturnsRuntimeFailure) {
 TEST(RunTest, ValidateMissingFieldsReturnsRuntimeFailure) {
     const auto input = test_input("missing_fields.json");
     EXPECT_EQ(
-        invoke_cli({"validate", "--input", input.string(), "--require-output"}),
+        invoke_cli({"validate", "--input", input.string()}),
         cli::exit_codes::kRuntimeFailure
     );
 }

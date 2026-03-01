@@ -7,6 +7,7 @@
 #include "core/executor.h"
 
 #include <algorithm>
+#include <atomic>
 #include <exception>
 #include <memory>
 #include <mutex>
@@ -87,9 +88,6 @@ bool has_enabled_override(const Json& field, const std::string& key) {
 bool is_parallel_eligible_generator(const std::string& name) {
     static const std::unordered_set<std::string> kEligible = {
         "integer",
-        // Disabled from external use:
-        // "unsigned_integer",
-        // "decimal_string",
         "decimal",
         "date",
         "time",
@@ -146,22 +144,45 @@ Row materialize_row(std::vector<RuntimeField>* runtime_fields, const NullPolicy&
     return row;
 }
 
-std::vector<Row> generate_rows_sequential(const GenerationConfig& cfg) {
+GenerateResult generate_sequential(
+    const GenerationConfig& cfg,
+    const RowConsumer&      consumer,
+    std::atomic<bool>*      cancelled
+) {
     auto runtime_fields = build_runtime_fields(cfg, cfg.rows);
 
-    std::vector<Row> rows;
-    rows.reserve(static_cast<std::size_t>(cfg.rows));
-    for (int i = 0; i < cfg.rows; ++i) { rows.emplace_back(materialize_row(&runtime_fields, cfg.null_policy)); }
-    return rows;
+    GenerateResult result;
+    result.info.threads_used = 1;
+
+    for (int i = 0; i < cfg.rows; ++i) {
+        if (cancelled->load()) { break; }
+        Row row = materialize_row(&runtime_fields, cfg.null_policy);
+        if (!consumer(std::move(row), static_cast<std::uint64_t>(i))) {
+            cancelled->store(true);
+            break;
+        }
+        ++result.rows_generated;
+    }
+
+    return result;
 }
 
-std::vector<Row> generate_rows_parallel(const GenerationConfig& cfg, const std::size_t threads) {
-    std::vector<Row>         rows(static_cast<std::size_t>(cfg.rows));
+GenerateResult generate_parallel(
+    const GenerationConfig& cfg,
+    const std::size_t       threads,
+    const RowConsumer&      consumer,
+    std::atomic<bool>*      cancelled
+) {
+    GenerateResult result;
+    result.info.threads_used = threads;
+
     std::vector<std::thread> workers;
     workers.reserve(threads);
 
     std::exception_ptr worker_exception;
     std::mutex         exception_mutex;
+
+    std::atomic<std::uint64_t> generated_count = 0;
 
     const int base  = cfg.rows / static_cast<int>(threads);
     const int rem   = cfg.rows % static_cast<int>(threads);
@@ -175,13 +196,22 @@ std::vector<Row> generate_rows_parallel(const GenerationConfig& cfg, const std::
         workers.emplace_back([&, begin, count] {
             try {
                 auto       runtime_fields = build_runtime_fields(cfg, count);
-                const auto row_offset     = static_cast<std::size_t>(begin);
-                for (std::size_t i = 0; i < static_cast<std::size_t>(count); ++i) {
-                    rows[row_offset + i] = materialize_row(&runtime_fields, cfg.null_policy);
+                const auto row_offset     = static_cast<std::uint64_t>(begin);
+                for (std::uint64_t i = 0; i < static_cast<std::uint64_t>(count); ++i) {
+                    if (cancelled->load()) { break; }
+                    Row row = materialize_row(&runtime_fields, cfg.null_policy);
+                    if (!consumer(std::move(row), row_offset + i)) {
+                        cancelled->store(true);
+                        break;
+                    }
+                    ++generated_count;
                 }
             } catch (...) {
                 std::lock_guard lock(exception_mutex);
-                if (!worker_exception) { worker_exception = std::current_exception(); }
+                if (!worker_exception) {
+                    worker_exception = std::current_exception();
+                    cancelled->store(true);
+                }
             }
         });
     }
@@ -190,7 +220,8 @@ std::vector<Row> generate_rows_parallel(const GenerationConfig& cfg, const std::
 
     if (worker_exception) { std::rethrow_exception(worker_exception); }
 
-    return rows;
+    result.rows_generated = generated_count.load();
+    return result;
 }
 
 }  // namespace
@@ -199,35 +230,39 @@ bool should_render_null(const NullPolicy& policy, const std::string& value) {
     return policy.configured && policy.null_if_empty && value.empty();
 }
 
-GenerateResult generate_to_stream(const GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out) {
-    GenerateResult result;
+GenerateResult generate_with_consumer(
+    const GenerationConfig& cfg,
+    const ExecutionOptions& opts,
+    const RowConsumer&      consumer
+) {
+    if (!consumer) { throw std::runtime_error("consumer callback is required"); }
 
     const std::size_t requested_threads = std::max<std::size_t>(1, opts.requested_threads);
     const std::size_t candidate_threads = effective_thread_count(requested_threads, cfg.rows);
 
-    std::vector<Row> rows;
-    if (opts.seed.has_value()) {
-        throw std::runtime_error(
-            "seed is not supported yet: faker does not expose a public seed API. "
-            "Please expose one in faker/include first."
-        );
-    }
+    std::atomic<bool> cancelled = false;
 
     if (candidate_threads > 1) {
         std::string reason;
         if (can_parallelize_safely(cfg, reason)) {
-            result.info.threads_used = candidate_threads;
-            rows                     = generate_rows_parallel(cfg, candidate_threads);
-        } else {
-            result.info.threads_used              = 1;
-            result.info.fallback_to_single_thread = true;
-            result.info.fallback_reason           = std::move(reason);
-            rows                                  = generate_rows_sequential(cfg);
+            return generate_parallel(cfg, candidate_threads, consumer, &cancelled);
         }
-    } else {
-        result.info.threads_used = 1;
-        rows                     = generate_rows_sequential(cfg);
+        GenerateResult result = generate_sequential(cfg, consumer, &cancelled);
+        result.info.fallback_to_single_thread = true;
+        result.info.fallback_reason = std::move(reason);
+        return result;
     }
+
+    return generate_sequential(cfg, consumer, &cancelled);
+}
+
+GenerateResult generate_to_stream(const GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out) {
+    std::vector<Row> rows(static_cast<std::size_t>(cfg.rows));
+
+    const GenerateResult result = generate_with_consumer(cfg, opts, [&](Row&& row, const std::uint64_t row_index) {
+        rows[static_cast<std::size_t>(row_index)] = std::move(row);
+        return true;
+    });
 
     std::vector<std::string> columns;
     columns.reserve(cfg.fields.size());
@@ -236,21 +271,13 @@ GenerateResult generate_to_stream(const GenerationConfig& cfg, const ExecutionOp
     switch (cfg.format) {
     case OutputFormat::Csv : write_csv(columns, rows, out); break;
     case OutputFormat::Json: write_json(columns, rows, out); break;
-    case OutputFormat::Sql : write_sql(columns, rows, cfg.table_name, cfg.include_create_table, out); break;
+    case OutputFormat::Sql : write_sql(columns, rows, cfg.table_name, out); break;
     }
 
     return result;
 }
 
-std::vector<std::optional<std::string>>
-    preview_row(const GenerationConfig& cfg, const std::optional<std::uint64_t>& seed) {
-    if (seed.has_value()) {
-        throw std::runtime_error(
-            "seed is not supported yet: faker does not expose a public seed API. "
-            "Please expose one in faker/include first."
-        );
-    }
-
+std::vector<std::optional<std::string>> preview_row(const GenerationConfig& cfg) {
     auto runtime_fields = build_runtime_fields(cfg, 1);
     auto row            = materialize_row(&runtime_fields, cfg.null_policy);
     return row;

@@ -125,7 +125,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","table_name":"","include_create_table":"x","null_value_string":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"null_value":1,"default_value":1}]})json"
+            R"json({"rows":1,"output_format":"csv","table":"","null_value_string":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"null_value":1,"default_value":1}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -183,13 +183,15 @@ TEST(ConfigurationEdgeTest, ApplyOverridesAndFormatRoundtrip) {
     cfg.rows = 10;
     cfg.format = OutputFormat::Csv;
     cfg.table_name = "t";
-    cfg.include_create_table = true;
 
-    apply_cli_overrides(&cfg, 20, OutputFormat::Sql, std::string("t2"), false);
+    CliOverrides overrides;
+    overrides.rows = 20;
+    overrides.format = OutputFormat::Sql;
+    overrides.table_name = std::string("t2");
+    apply_cli_overrides(&cfg, overrides);
     EXPECT_EQ(cfg.rows, 20);
     EXPECT_EQ(cfg.format, OutputFormat::Sql);
     EXPECT_EQ(cfg.table_name, "t2");
-    EXPECT_FALSE(cfg.include_create_table);
 }
 
 }  // namespace

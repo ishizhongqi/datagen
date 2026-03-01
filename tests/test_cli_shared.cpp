@@ -64,7 +64,13 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
     EXPECT_EQ(parsed["x"].as<int>(), 3);
 
     std::ostringstream oss;
-    print_validation_issues({{"$.a", "bad"}, {"$.b", "missing"}}, oss);
+    print_validation_issues(
+        {
+            {false, "$.a", "bad"},
+            {true, "$.b", "missing"},
+        },
+        oss
+    );
     EXPECT_NE(oss.str().find("$.a"), std::string::npos);
     EXPECT_NE(oss.str().find("$.b"), std::string::npos);
 }

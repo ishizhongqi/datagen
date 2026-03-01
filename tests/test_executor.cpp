@@ -46,7 +46,7 @@ TEST(ExecutorTest, ReplacesEmptyWithGlobalNullLiteral) {
 
     std::ostringstream out;
     const auto result =
-        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2, .seed = std::nullopt}, out);
+        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2}, out);
 
     EXPECT_EQ(result.info.threads_used, 2U);
     EXPECT_FALSE(result.info.fallback_to_single_thread);
@@ -83,7 +83,7 @@ TEST(ExecutorTest, ParallelIneligibleWorkloadFallsBackToSingleThread) {
 
     std::ostringstream out;
     const auto result =
-        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4, .seed = std::nullopt}, out);
+        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4}, out);
 
     EXPECT_EQ(result.info.threads_used, 1U);
     EXPECT_TRUE(result.info.fallback_to_single_thread);
@@ -91,7 +91,7 @@ TEST(ExecutorTest, ParallelIneligibleWorkloadFallsBackToSingleThread) {
     EXPECT_FALSE(out.str().empty());
 }
 
-TEST(ExecutorTest, ThrowsWhenSeedIsRequested) {
+TEST(ExecutorTest, GeneratesWithoutSeedOption) {
     const auto cfg = parse_or_fail(R"json(
 {
   "rows": 2,
@@ -110,10 +110,8 @@ TEST(ExecutorTest, ThrowsWhenSeedIsRequested) {
 )json");
 
     std::ostringstream out;
-    EXPECT_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1, .seed = 42U}, out),
-        std::runtime_error
-    );
+    EXPECT_NO_THROW((void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out));
+    EXPECT_FALSE(out.str().empty());
 }
 
 }  // namespace

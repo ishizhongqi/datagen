@@ -151,6 +151,7 @@ nlohmann::json BuildJsonSchema() {
         {"generator", Json{{"type", "string"}, {"enum", generator_names}}},
         {"config", Json{{"type", "object"}}},
         {"unique", Json{{"type", "boolean"}}},
+        {"nullable", Json{{"type", "boolean"}}},
         {"data_linkage", Json{{"type", "string"}}},
         {"supports_unique", Json{{"type", "boolean"}}},
         {"supports_data_linkage", Json{{"type", "boolean"}}},
@@ -166,11 +167,26 @@ nlohmann::json BuildJsonSchema() {
     schema["additionalProperties"] = false;
     schema["patternProperties"]    = Json{{R"(^\$schema$)", Json{{"type", "string"}}}};
     schema["properties"] = Json{
+        {"workspace", Json{{"type", "string"}, {"minLength", 1}}},
         {"rows", Json{{"type", "integer"}, {"minimum", 1}}},
         {"output_format", Json{{"type", "string"}, {"enum", Json::array({"csv", "json", "sql"})}}},
+        {"output_dest", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
+        {"output_destination", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
+        {"output_path", Json{{"type", "string"}}},
+        {"url", Json{{"type", "string"}, {"minLength", 1}}},
+        {"database_url", Json{{"type", "string"}, {"minLength", 1}}},
+        {"table", Json{{"type", "string"}, {"minLength", 1}}},
+        {"database_table", Json{{"type", "string"}, {"minLength", 1}}},
+        {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
+        {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"db_threads", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
+        {"error_policy",
+         Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
+        {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
         {"null_value_string", Json{{"type", Json::array({"string", "null"})}}},
         {"table_name", Json{{"type", "string"}, {"minLength", 1}}},
-        {"include_create_table", Json{{"type", "boolean"}}},
         {"fields",
          Json{
              {"type", "array"},
@@ -197,7 +213,10 @@ cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<
 }
 
 void print_validation_issues(const std::vector<core::ValidationIssue>& issues, std::ostream& output) {
-    for (const auto& issue : issues) { output << "Validation error: " << issue.path << " " << issue.message << "\n"; }
+    for (const auto& issue : issues) {
+        output << (issue.warning ? "Validation warning: " : "Validation error: ")
+               << issue.path << " " << issue.message << "\n";
+    }
 }
 
 std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta) {
@@ -227,8 +246,10 @@ std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta
     lines.emplace_back("Advanced Settings:");
     if (meta.supports_unique) { lines.emplace_back("* unique (type=boolean)"); }
     if (meta.supports_data_linkage) {
-        const std::string module_hint = meta.module.empty() ? "module" : meta.module;
-        lines.emplace_back("* data_linkage (type=string, format: " + module_hint + ":group_1)");
+        const std::string module_hint = meta.linkage_module.empty()
+                                            ? (meta.module.empty() ? "module" : meta.module)
+                                            : meta.linkage_module;
+        lines.emplace_back("* data_linkage (type=string, format: " + module_hint + ":Group1)");
     }
     lines.emplace_back("* null_value (type=object)");
     lines.emplace_back("* default_value (type=object)");
@@ -244,10 +265,12 @@ std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta
     example["name"]      = "field_1";
     example["generator"] = meta.name;
     example["config"]    = build_ordered_config_template(meta);
-    if (meta.supports_unique) { example["unique"] = true; }
+    if (meta.supports_unique) { example["unique"] = false; }
     if (meta.supports_data_linkage) {
-        const std::string module_hint = meta.module.empty() ? "module" : meta.module;
-        example["data_linkage"]       = module_hint + ":group_1";
+        const std::string module_hint = meta.linkage_module.empty()
+                                            ? (meta.module.empty() ? "module" : meta.module)
+                                            : meta.linkage_module;
+        example["data_linkage"]       = module_hint + ":Group1";
     }
     example["null_value"]    = OrderedJson{{"enabled", false}, {"percent", 0}};
     example["default_value"] = OrderedJson{{"enabled", false}, {"percent", 0}, {"value", ""}};

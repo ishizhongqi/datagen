@@ -29,7 +29,6 @@ void write_sql(
     const std::vector<std::string>& columns,
     const std::vector<Row>&         rows,
     const std::string&              table_name,
-    bool                            include_create_table,
     std::ostream&                   out
 );
 

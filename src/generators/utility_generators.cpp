@@ -250,9 +250,9 @@ void register_utility_generators(GeneratorRegistry& registry) {
     registry.register_generator("sequence", [](const Json& filed) {
         const Json&   config    = filed.at("config");
         const auto    overrides = parse_overrides(filed);
-        const int64_t start     = config.value("start", 1);
-        const int64_t end       = config.value("end", 100);
-        const int64_t step      = config.value("step", 1);
+        const int64_t start     = config.value("start", static_cast<int64_t>(1));
+        const int64_t end       = config.value("end", static_cast<int64_t>(100));
+        const int64_t step      = config.value("step", static_cast<int64_t>(1));
         const bool    circle    = config.value("circle", true);
         return std::make_unique<SequenceGenerator>(start, end, step, circle, overrides);
     });

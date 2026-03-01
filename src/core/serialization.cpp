@@ -72,19 +72,8 @@ void write_sql(
     const std::vector<std::string>& columns,
     const std::vector<Row>&         rows,
     const std::string&              table_name,
-    const bool                      include_create_table,
     std::ostream&                   out
 ) {
-    if (include_create_table) {
-        out << "CREATE TABLE " << table_name << " (\n";
-        for (size_t i = 0; i < columns.size(); ++i) {
-            out << "  " << columns[i] << " TEXT";
-            if (i + 1 < columns.size()) { out << ","; }
-            out << "\n";
-        }
-        out << ");\n";
-    }
-
     for (const auto& row : rows) {
         out << "INSERT INTO " << table_name << " (";
         for (size_t i = 0; i < columns.size(); ++i) {

@@ -8,18 +8,18 @@
 #define DATA_GENERATOR_CORE_EXECUTOR_H
 
 #include <cstdint>
-#include <optional>
+#include <functional>
 #include <ostream>
 #include <string>
 #include <vector>
 
 #include "core/configuration.h"
+#include "core/serialization.h"
 
 namespace data_generator::core {
 
 struct ExecutionOptions {
-    std::size_t                  requested_threads = 1;
-    std::optional<std::uint64_t> seed;
+    std::size_t requested_threads = 1;
 };
 
 struct ExecutionInfo {
@@ -29,15 +29,23 @@ struct ExecutionInfo {
 };
 
 struct GenerateResult {
-    ExecutionInfo info;
+    ExecutionInfo  info;
+    std::uint64_t  rows_generated = 0;
 };
 
 bool should_render_null(const NullPolicy& policy, const std::string& value);
 
+using RowConsumer = std::function<bool(Row&& row, std::uint64_t row_index)>;
+
+GenerateResult generate_with_consumer(
+    const GenerationConfig& cfg,
+    const ExecutionOptions& opts,
+    const RowConsumer&      consumer
+);
+
 GenerateResult generate_to_stream(const GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out);
 
-std::vector<std::optional<std::string>>
-    preview_row(const GenerationConfig& cfg, const std::optional<std::uint64_t>& seed);
+std::vector<std::optional<std::string>> preview_row(const GenerationConfig& cfg);
 
 }  // namespace data_generator::core
 

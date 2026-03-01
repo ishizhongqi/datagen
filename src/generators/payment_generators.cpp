@@ -97,12 +97,7 @@ public:
         }
         if (filed.contains("unique")) {
             const auto parsed = filed.at("unique").get<bool>();
-            if (unique_.has_value() && unique_.value() != parsed) {
-                throw std::runtime_error(
-                    "Conflicting unique in linked payment generators (found in " + generator_name + ")"
-                );
-            }
-            unique_ = parsed;
+            unique_ = unique_.has_value() ? (unique_.value() || parsed) : parsed;
         }
     }
 

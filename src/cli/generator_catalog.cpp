@@ -814,8 +814,7 @@ Json build_project_template(const int rows, const std::string& output_format) {
     root["output_format"]     = output_format;
     root["null_value_string"] = nullptr;
     if (output_format == "sql") {
-        root["table_name"]           = "generated_data";
-        root["include_create_table"] = true;
+        root["table"] = "generated_data";
     }
 
     Json fields = Json::array();
