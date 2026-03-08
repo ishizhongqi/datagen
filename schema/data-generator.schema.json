@@ -2773,6 +2773,10 @@
         "null"
       ]
     },
+    "odbc_connection": {
+      "minLength": 1,
+      "type": "string"
+    },
     "output_dest": {
       "enum": [
         "file",

@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
+/// @file db_metadata.cpp
+
 #include "database/db_metadata.h"
 
 #include <algorithm>
@@ -28,7 +30,6 @@ std::string db_type_to_string(const DbType type) {
     switch (type) {
     case DbType::Mysql     : return "mysql";
     case DbType::Postgresql: return "postgresql";
-    case DbType::Sqlite    : return "sqlite";
     case DbType::Oracle    : return "oracle";
     case DbType::Unknown   : return "unknown";
     }
@@ -39,7 +40,8 @@ ColumnTypeFamily classify_column_type(const ColumnMetadata& column) {
     const std::string type = to_lower(column.data_type);
     if (type == "tinyint(1)" || type == "boolean" || type == "bool") { return ColumnTypeFamily::Boolean; }
     if (contains(type, "int")) { return ColumnTypeFamily::Integer; }
-    if (contains(type, "decimal") || contains(type, "numeric") || contains(type, "float") || contains(type, "double")) {
+    if (contains(type, "decimal") || contains(type, "numeric") || contains(type, "number") ||
+        contains(type, "float") || contains(type, "double")) {
         return ColumnTypeFamily::Decimal;
     }
     if (contains(type, "datetime") || contains(type, "timestamp")) { return ColumnTypeFamily::DateTime; }

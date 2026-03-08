@@ -4,8 +4,8 @@
 
 /// @file executor.h
 
-#ifndef DATA_GENERATOR_CORE_EXECUTOR_H
-#define DATA_GENERATOR_CORE_EXECUTOR_H
+#ifndef DATA_GENERATOR_EXECUTOR_H
+#define DATA_GENERATOR_EXECUTOR_H
 
 #include <cstdint>
 #include <functional>

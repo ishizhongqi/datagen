@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_DATABASE_DB_SCHEMA_VALIDATOR_H
-#define DATA_GENERATOR_DATABASE_DB_SCHEMA_VALIDATOR_H
+/// @file db_schema_validator.h
+
+#ifndef DATA_GENERATOR_DB_SCHEMA_VALIDATOR_H
+#define DATA_GENERATOR_DB_SCHEMA_VALIDATOR_H
 
 #include <string>
 #include <vector>

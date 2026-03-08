@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_DATABASE_TYPE_ADAPTER_H
-#define DATA_GENERATOR_DATABASE_TYPE_ADAPTER_H
+/// @file type_adapter.h
+
+#ifndef DATA_GENERATOR_TYPE_ADAPTER_H
+#define DATA_GENERATOR_TYPE_ADAPTER_H
 
 #include <optional>
 #include <string>

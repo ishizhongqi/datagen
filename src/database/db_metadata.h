@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_DATABASE_DB_METADATA_H
-#define DATA_GENERATOR_DATABASE_DB_METADATA_H
+/// @file db_metadata.h
+
+#ifndef DATA_GENERATOR_DB_METADATA_H
+#define DATA_GENERATOR_DB_METADATA_H
 
 #include <optional>
 #include <string>
@@ -14,7 +16,6 @@ namespace data_generator::database {
 enum class DbType {
     Mysql,
     Postgresql,
-    Sqlite,
     Oracle,
     Unknown,
 };
@@ -35,6 +36,7 @@ enum class ColumnTypeFamily {
 struct DbUrl {
     DbType      type = DbType::Unknown;
     std::string raw;
+    std::string odbc_connection_string;
     std::string username;
     std::string password;
     std::string host;

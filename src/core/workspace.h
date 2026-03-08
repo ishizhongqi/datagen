@@ -1,8 +1,11 @@
 // Copyright (c) 2026 Shizhongqi
 // Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_CORE_WORKSPACE_H
-#define DATA_GENERATOR_CORE_WORKSPACE_H
+/// @file workspace.h
+
+#ifndef DATA_GENERATOR_WORKSPACE_H
+#define DATA_GENERATOR_WORKSPACE_H
 
 #include <filesystem>
 #include <optional>

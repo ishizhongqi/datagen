@@ -81,7 +81,7 @@ int CommandValidate::run(const std::vector<std::string>& args) {
 
         if (result.count("db-only")) {
             if (cfg.output.database.url.empty()) {
-                std::cerr << "Validation failed: database URL is required for --db-only\n";
+                std::cerr << "Validation failed: database URL/ODBC connection string is required for --db-only\n";
                 return exit_codes::kRuntimeFailure;
             }
 
@@ -101,7 +101,7 @@ int CommandValidate::run(const std::vector<std::string>& args) {
                 warnings.push_back(core::ValidationIssue{
                     .warning = true,
                     .path = "$.url",
-                    .message = "database generate requires URL (CLI can override)",
+                    .message = "database generate requires URL/ODBC connection string (CLI can override)",
                 });
             }
             if (cfg.table_name.empty()) {

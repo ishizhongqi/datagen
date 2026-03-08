@@ -28,7 +28,6 @@ namespace {
 std::optional<database::DbType> parse_db_type(const std::string& value) {
     if (value == "mysql") { return database::DbType::Mysql; }
     if (value == "postgresql") { return database::DbType::Postgresql; }
-    if (value == "sqlite") { return database::DbType::Sqlite; }
     if (value == "oracle") { return database::DbType::Oracle; }
     return std::nullopt;
 }
@@ -44,9 +43,9 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
         ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
         ("threads", "Generator threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
         ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>())
-        ("url", "Database URL", cxxopts::value<std::string>())
+        ("url", "Database URL or ODBC connection string", cxxopts::value<std::string>())
         ("table", "Target table name", cxxopts::value<std::string>())
-        ("db-type", "Database type for URL build (mysql|postgresql|sqlite|oracle)", cxxopts::value<std::string>())
+        ("db-type", "Database type for ODBC build (mysql|postgresql|oracle)", cxxopts::value<std::string>())
         ("db-user", "Database user", cxxopts::value<std::string>())
         ("db-password", "Database password", cxxopts::value<std::string>())
         ("db-host", "Database host", cxxopts::value<std::string>())
@@ -216,7 +215,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
 
             const auto db_type = parse_db_type(result["db-type"].as<std::string>());
             if (!db_type.has_value()) {
-                std::cerr << "--db-type must be one of: mysql, postgresql, sqlite, oracle\n";
+                std::cerr << "--db-type must be one of: mysql, postgresql, oracle\n";
                 return exit_codes::kUsage;
             }
 
@@ -235,7 +234,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
         core::apply_cli_overrides(&cfg, overrides);
 
         if (cfg.output.destination == core::OutputDestination::Database && cfg.output.database.url.empty()) {
-            std::cerr << "database output requires URL (CLI --url or JSON url)\n";
+            std::cerr << "database output requires URL/ODBC connection string (CLI --url or JSON)\n";
             return exit_codes::kUsage;
         }
 

@@ -4,8 +4,8 @@
 
 /// @file generator_catalog.h
 
-#ifndef DATA_GENERATOR_CLI_GENERATOR_CATALOG_H
-#define DATA_GENERATOR_CLI_GENERATOR_CATALOG_H
+#ifndef DATA_GENERATOR_GENERATOR_CATALOG_H
+#define DATA_GENERATOR_GENERATOR_CATALOG_H
 
 #include <nlohmann/json.hpp>
 #include <string>

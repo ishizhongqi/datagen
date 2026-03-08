@@ -4,8 +4,8 @@
 
 /// @file configuration.h
 
-#ifndef DATA_GENERATOR_CORE_CONFIGURATION_H
-#define DATA_GENERATOR_CORE_CONFIGURATION_H
+#ifndef DATA_GENERATOR_CONFIGURATION_H
+#define DATA_GENERATOR_CONFIGURATION_H
 
 #include <nlohmann/json.hpp>
 #include <cstdint>

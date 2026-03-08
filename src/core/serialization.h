@@ -4,8 +4,8 @@
 
 /// @file serialization.h
 
-#ifndef DATA_GENERATOR_CORE_SERIALIZATION_H
-#define DATA_GENERATOR_CORE_SERIALIZATION_H
+#ifndef DATA_GENERATOR_SERIALIZATION_H
+#define DATA_GENERATOR_SERIALIZATION_H
 
 #include <optional>
 #include <ostream>

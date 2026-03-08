@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_DATABASE_DRIVER_IDATABASE_DRIVER_H
-#define DATA_GENERATOR_DATABASE_DRIVER_IDATABASE_DRIVER_H
+/// @file idatabase_driver.h
+
+#ifndef DATA_GENERATOR_IDATABASE_DRIVER_H
+#define DATA_GENERATOR_IDATABASE_DRIVER_H
 
 #include <memory>
 #include <string>

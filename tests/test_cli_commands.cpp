@@ -42,6 +42,8 @@ std::filesystem::path write_json_file(const std::string& name, const std::string
 TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
     EXPECT_EQ(invoke_cli({"list"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"list", "--help"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"drivers"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"drivers", "--json"}), cli::exit_codes::kOk);
 
     EXPECT_EQ(invoke_cli({"describe", "--generator", "integer"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"describe", "--generator", "integer", "--json"}), cli::exit_codes::kOk);
@@ -195,6 +197,7 @@ TEST(CliCommandsTest, HelpAndParseErrorBranches) {
     EXPECT_EQ(invoke_cli({"validate", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"describe", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--help"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"drivers", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"schema", "--help"}), cli::exit_codes::kOk);
 
     EXPECT_EQ(invoke_cli({"generate", "--bad-opt"}), cli::exit_codes::kUsage);
@@ -203,6 +206,7 @@ TEST(CliCommandsTest, HelpAndParseErrorBranches) {
     EXPECT_EQ(invoke_cli({"describe", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"list", "--bad-opt"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"drivers", "--bad-opt"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"schema", "--bad-opt"}), cli::exit_codes::kUsage);
 
     const auto bad_output = std::filesystem::temp_directory_path() / "no_such_dir_2" / "init.json";

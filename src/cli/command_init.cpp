@@ -441,7 +441,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         ("format", "Output format (json|csv|sql), file mode only", cxxopts::value<std::string>())
         ("output", "Output file path", cxxopts::value<std::string>())
         ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>()->default_value("file"))
-        ("url", "Database URL (database mode)", cxxopts::value<std::string>())
+        ("url", "Database URL or ODBC connection string (database mode)", cxxopts::value<std::string>())
         ("table", "Target table name (database mode / sql mode)", cxxopts::value<std::string>())
         ("workspace", "Workspace root path", cxxopts::value<std::string>())
         ("h,help", "Show help");
@@ -495,7 +495,8 @@ int CommandInit::run(const std::vector<std::string>& args) {
         return exit_codes::kUsage;
     }
 
-    const std::string default_url = "mysql://user:password@localhost:3306/example_db";
+    const std::string default_url =
+        "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
     const std::string default_table = "generated_data";
 
     const std::string url = result.count("url") ? result["url"].as<std::string>() : default_url;
@@ -541,6 +542,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
 
             database::TableMetadata metadata;
             if (!driver->get_table_metadata(table, &metadata, &error)) {
+                driver->disconnect();
                 std::cerr << "Failed to read table metadata: " << error << "\n";
                 return exit_codes::kRuntimeFailure;
             }

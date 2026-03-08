@@ -119,6 +119,7 @@ void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& is
         "output_path",
         "url",
         "database_url",
+        "odbc_connection",
         "insert_mode",
         "batch_size",
         "queue_size",
@@ -173,12 +174,19 @@ bool parse_output_settings(
         }
     }
 
-    const std::string url_key = root.contains("url") ? "url" : "database_url";
-    if (root.contains(url_key)) {
-        if (!root.at(url_key).is_string() || root.at(url_key).get<std::string>().empty()) {
-            add_issue(issues, "$." + url_key, "must be a non-empty string URL");
+    std::string connection_key;
+    if (root.contains("url")) {
+        connection_key = "url";
+    } else if (root.contains("database_url")) {
+        connection_key = "database_url";
+    } else if (root.contains("odbc_connection")) {
+        connection_key = "odbc_connection";
+    }
+    if (!connection_key.empty()) {
+        if (!root.at(connection_key).is_string() || root.at(connection_key).get<std::string>().empty()) {
+            add_issue(issues, "$." + connection_key, "must be a non-empty database URL/ODBC string");
         } else {
-            cfg->output.database.url = root.at(url_key).get<std::string>();
+            cfg->output.database.url = root.at(connection_key).get<std::string>();
         }
     }
 
@@ -242,7 +250,7 @@ bool parse_output_settings(
             add_issue(
                 issues,
                 "$.url",
-                "database output requires URL (CLI or JSON)",
+                "database output requires URL/ODBC connection string (CLI or JSON)",
                 mode == ParseMode::AllowMissingOutputSettings
             );
         }

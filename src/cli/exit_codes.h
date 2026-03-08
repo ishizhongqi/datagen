@@ -4,8 +4,8 @@
 
 /// @file exit_codes.h
 
-#ifndef DATA_GENERATOR_CLI_EXIT_CODES_H
-#define DATA_GENERATOR_CLI_EXIT_CODES_H
+#ifndef DATA_GENERATOR_EXIT_CODES_H
+#define DATA_GENERATOR_EXIT_CODES_H
 
 namespace data_generator::cli::exit_codes {
 

@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_LOGGING_LOGGER_H
-#define DATA_GENERATOR_LOGGING_LOGGER_H
+/// @file logger.h
+
+#ifndef DATA_GENERATOR_LOGGER_H
+#define DATA_GENERATOR_LOGGER_H
 
 #include <fstream>
 #include <mutex>

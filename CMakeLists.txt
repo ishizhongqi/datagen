@@ -26,11 +26,14 @@ target_include_directories(cxxopts INTERFACE
 
 add_subdirectory(src)
 
+find_package(ODBC REQUIRED)
+
 target_link_libraries(data-generator-lib
         PUBLIC
         faker
         nlohmann_json
         cxxopts
+        ODBC::ODBC
 )
 
 target_compile_features(data-generator-lib PUBLIC cxx_std_20)

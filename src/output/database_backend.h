@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_OUTPUT_DATABASE_BACKEND_H
-#define DATA_GENERATOR_OUTPUT_DATABASE_BACKEND_H
+/// @file database_backend.h
+
+#ifndef DATA_GENERATOR_DATABASE_BACKEND_H
+#define DATA_GENERATOR_DATABASE_BACKEND_H
 
 #include "output/output_backend.h"
 

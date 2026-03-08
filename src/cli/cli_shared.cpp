@@ -175,6 +175,7 @@ nlohmann::json BuildJsonSchema() {
         {"output_path", Json{{"type", "string"}}},
         {"url", Json{{"type", "string"}, {"minLength", 1}}},
         {"database_url", Json{{"type", "string"}, {"minLength", 1}}},
+        {"odbc_connection", Json{{"type", "string"}, {"minLength", 1}}},
         {"table", Json{{"type", "string"}, {"minLength", 1}}},
         {"database_table", Json{{"type", "string"}, {"minLength", 1}}},
         {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},

@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
+/// @file type_adapter.cpp
+
 #include "database/type_adapter.h"
 
 #include <algorithm>

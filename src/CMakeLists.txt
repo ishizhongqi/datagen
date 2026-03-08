@@ -47,6 +47,8 @@ set(CLI_SOURCE
         ${CLI_DIRECTORY}/command_describe.h
         ${CLI_DIRECTORY}/command_list.cpp
         ${CLI_DIRECTORY}/command_list.h
+        ${CLI_DIRECTORY}/command_drivers.cpp
+        ${CLI_DIRECTORY}/command_drivers.h
         ${CLI_DIRECTORY}/command_validate.cpp
         ${CLI_DIRECTORY}/command_validate.h
         ${CLI_DIRECTORY}/command_schema.cpp
@@ -105,16 +107,12 @@ set(DATABASE_SOURCE
         ${DATABASE_DIRECTORY}/db_schema_validator.cpp
         ${DATABASE_DIRECTORY}/type_adapter.h
         ${DATABASE_DIRECTORY}/type_adapter.cpp
+        ${DATABASE_DIRECTORY}/odbc_registry.h
+        ${DATABASE_DIRECTORY}/odbc_registry.cpp
         ${DATABASE_DRIVER_DIRECTORY}/idatabase_driver.h
         ${DATABASE_DRIVER_DIRECTORY}/idatabase_driver.cpp
-        ${DATABASE_DRIVER_DIRECTORY}/mysql_driver.h
-        ${DATABASE_DRIVER_DIRECTORY}/mysql_driver.cpp
-        ${DATABASE_DRIVER_DIRECTORY}/postgresql_driver.h
-        ${DATABASE_DRIVER_DIRECTORY}/postgresql_driver.cpp
-        ${DATABASE_DRIVER_DIRECTORY}/sqlite_driver.h
-        ${DATABASE_DRIVER_DIRECTORY}/sqlite_driver.cpp
-        ${DATABASE_DRIVER_DIRECTORY}/oracle_driver.h
-        ${DATABASE_DRIVER_DIRECTORY}/oracle_driver.cpp
+        ${DATABASE_DRIVER_DIRECTORY}/odbc_driver.h
+        ${DATABASE_DRIVER_DIRECTORY}/odbc_driver.cpp
 )
 
 set(LOGGING_SOURCE

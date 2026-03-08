@@ -2,10 +2,14 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
+/// @file database_backend.cpp
+
 #include "output/database_backend.h"
 
 #include <atomic>
+#include <algorithm>
 #include <chrono>
+#include <cctype>
 #include <condition_variable>
 #include <deque>
 #include <filesystem>
@@ -184,6 +188,7 @@ std::string render_row_for_load(const std::vector<std::string>& sql_literals) {
 }
 
 std::string build_insert_sql(
+    const database::DbType db_type,
     const std::string& table_name,
     const std::vector<std::string>& columns,
     const std::vector<std::vector<std::string>>& rows,
@@ -202,6 +207,20 @@ std::string build_insert_sql(
         return oss.str();
     }
 
+    if (db_type == database::DbType::Oracle) {
+        oss << "INSERT ALL ";
+        for (const auto& row_values : rows) {
+            oss << "INTO " << table_name << " (" << join_columns(columns) << ") VALUES (";
+            for (size_t col_index = 0; col_index < row_values.size(); ++col_index) {
+                if (col_index > 0) { oss << ", "; }
+                oss << row_values[col_index];
+            }
+            oss << ") ";
+        }
+        oss << "SELECT 1 FROM DUAL";
+        return oss.str();
+    }
+
     oss << "INSERT INTO " << table_name << " (" << join_columns(columns) << ") VALUES ";
     for (size_t row_index = 0; row_index < rows.size(); ++row_index) {
         if (row_index > 0) { oss << ", "; }
@@ -217,20 +236,88 @@ std::string build_insert_sql(
 }
 
 std::string build_load_sql(
+    const database::DbType db_type,
     const std::string& table_name,
     const std::vector<std::string>& columns,
     const std::string& path
 ) {
     std::ostringstream oss;
-    oss << "LOAD DATA LOCAL INFILE '" << sql_escape_single_quote(path) << "' INTO TABLE " << table_name
-        << " FIELDS TERMINATED BY '\\t' ESCAPED BY '\\\\' LINES TERMINATED BY '\\n' ("
-        << join_columns(columns) << ")";
-    return oss.str();
+    if (db_type == database::DbType::Mysql) {
+        oss << "LOAD DATA LOCAL INFILE '" << sql_escape_single_quote(path) << "' INTO TABLE " << table_name
+            << " FIELDS TERMINATED BY '\\t' ESCAPED BY '\\\\' LINES TERMINATED BY '\\n' ("
+            << join_columns(columns) << ")";
+        return oss.str();
+    }
+    if (db_type == database::DbType::Postgresql) {
+        oss << "COPY " << table_name << " (" << join_columns(columns) << ") FROM '"
+            << sql_escape_single_quote(path)
+            << "' WITH (FORMAT text, DELIMITER E'\\t', NULL '\\\\N')";
+        return oss.str();
+    }
+    return "";
+}
+
+bool begin_transaction(
+    const database::DbType db_type,
+    database::IDatabaseDriver* driver,
+    std::string* error_message
+) {
+    if (!driver) {
+        if (error_message) { *error_message = "driver pointer is null"; }
+        return false;
+    }
+    if (db_type == database::DbType::Oracle) { return true; }
+    return driver->execute("START TRANSACTION", error_message);
+}
+
+bool commit_transaction(database::IDatabaseDriver* driver, std::string* error_message) {
+    if (!driver) {
+        if (error_message) { *error_message = "driver pointer is null"; }
+        return false;
+    }
+    return driver->execute("COMMIT", error_message);
+}
+
+void rollback_transaction(database::IDatabaseDriver* driver, std::string* error_message) {
+    if (!driver) { return; }
+    (void)driver->execute("ROLLBACK", error_message);
+}
+
+bool supports_multi_row_values(const database::DbType db_type) {
+    return db_type != database::DbType::Oracle;
+}
+
+std::string build_oracle_temporal_literal(
+    const database::ColumnTypeFamily family,
+    const std::string& converted_value
+) {
+    if (family == database::ColumnTypeFamily::DateTime) {
+        return "TO_TIMESTAMP('" + sql_escape_single_quote(converted_value) + "', 'YYYY-MM-DD HH24:MI:SS')";
+    }
+    if (family == database::ColumnTypeFamily::Date) {
+        return "TO_DATE('" + sql_escape_single_quote(converted_value) + "', 'YYYY-MM-DD')";
+    }
+    if (family == database::ColumnTypeFamily::Time) {
+        return "TO_TIMESTAMP('" + sql_escape_single_quote(converted_value) + "', 'HH24:MI:SS')";
+    }
+    return "'" + sql_escape_single_quote(converted_value) + "'";
 }
 
 std::string truncate_for_log(const std::string& text, const std::size_t max_size) {
     if (text.size() <= max_size) { return text; }
     return text.substr(0, max_size) + "...<truncated>";
+}
+
+bool is_load_data_disabled_error(const std::string& error_text) {
+    const std::string lower = [&] {
+        std::string text = error_text;
+        std::transform(text.begin(), text.end(), text.begin(), [](const unsigned char ch) {
+            return static_cast<char>(std::tolower(ch));
+        });
+        return text;
+    }();
+    return lower.find("local data is disabled") != std::string::npos ||
+           lower.find("local_infile") != std::string::npos;
 }
 
 }  // namespace
@@ -317,6 +404,7 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
 
     std::atomic<bool> stop{false};
     std::atomic<bool> rollback_all{false};
+    std::atomic<bool> load_fallback_warned{false};
     std::atomic<std::uint64_t> rows_generated{0};
     std::atomic<std::uint64_t> rows_imported{0};
     std::vector<std::filesystem::path> temp_files;
@@ -389,7 +477,7 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
 
             const bool per_run_tx = (cfg.output.database.transaction_mode == core::TransactionMode::PerRun);
             if (per_run_tx) {
-                if (!worker_driver->execute("START TRANSACTION", &worker_error)) {
+                if (!begin_transaction(db_url.type, worker_driver.get(), &worker_error)) {
                     register_error("worker failed to start transaction: " + worker_error);
                     stop.store(true);
                     return;
@@ -424,7 +512,16 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
                             return cfg.output.database.error_policy == core::ErrorPolicy::Continue ||
                                    cfg.output.database.error_policy == core::ErrorPolicy::RollbackBatch;
                         }
-                        sql_values.push_back(adapted.sql_literal);
+                        std::string sql_literal = adapted.sql_literal;
+                        if (db_url.type == database::DbType::Oracle && !adapted.is_null) {
+                            const database::ColumnTypeFamily family = database::classify_column_type(*mapped_columns[i]);
+                            if (family == database::ColumnTypeFamily::DateTime ||
+                                family == database::ColumnTypeFamily::Date ||
+                                family == database::ColumnTypeFamily::Time) {
+                                sql_literal = build_oracle_temporal_literal(family, adapted.converted_value);
+                            }
+                        }
+                        sql_values.push_back(std::move(sql_literal));
                     }
 
                     sql_rows.push_back(std::move(sql_values));
@@ -445,7 +542,7 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
 
                 const bool per_batch_tx = (cfg.output.database.transaction_mode == core::TransactionMode::PerBatch);
                 if (per_batch_tx) {
-                    if (!worker_driver->execute("START TRANSACTION", &worker_error)) {
+                    if (!begin_transaction(db_url.type, worker_driver.get(), &worker_error)) {
                         register_error("failed to start batch transaction: " + worker_error);
                         stop.store(true);
                         return false;
@@ -455,13 +552,40 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
                 bool ok = true;
                 if (resolved_mode == core::InsertMode::Insert) {
                     for (const auto& row_values : sql_rows) {
-                        if (!execute_sql(build_insert_sql(sql_table_name, sql_columns, {row_values}, core::InsertMode::Insert))) {
+                        if (!execute_sql(build_insert_sql(
+                                db_url.type,
+                                sql_table_name,
+                                sql_columns,
+                                {row_values},
+                                core::InsertMode::Insert
+                            ))) {
                             ok = false;
                             break;
                         }
                     }
                 } else if (resolved_mode == core::InsertMode::Bulk) {
-                    ok = execute_sql(build_insert_sql(sql_table_name, sql_columns, sql_rows, core::InsertMode::Bulk));
+                    if (!supports_multi_row_values(db_url.type)) {
+                        for (const auto& row_values : sql_rows) {
+                            if (!execute_sql(build_insert_sql(
+                                    db_url.type,
+                                    sql_table_name,
+                                    sql_columns,
+                                    {row_values},
+                                    core::InsertMode::Insert
+                                ))) {
+                                ok = false;
+                                break;
+                            }
+                        }
+                    } else {
+                        ok = execute_sql(build_insert_sql(
+                            db_url.type,
+                            sql_table_name,
+                            sql_columns,
+                            sql_rows,
+                            core::InsertMode::Bulk
+                        ));
+                    }
                 } else {
                     const std::filesystem::path load_file =
                         std::filesystem::path(cfg.workspace) / "tmp" /
@@ -480,19 +604,51 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
                             std::lock_guard lock(temp_files_mutex);
                             temp_files.push_back(load_file);
                         }
-                        ok = execute_sql(build_load_sql(sql_table_name, sql_columns, load_file.string()));
+                        const std::string load_sql = build_load_sql(db_url.type, sql_table_name, sql_columns, load_file.string());
+                        if (load_sql.empty()) {
+                            ok = false;
+                            register_error("load mode is not supported for current database type");
+                            handle_policy(cfg.output.database.error_policy, "load mode not supported");
+                        } else if (!worker_driver->execute(load_sql, &worker_error)) {
+                            const bool can_fallback_to_bulk =
+                                db_url.type == database::DbType::Mysql && is_load_data_disabled_error(worker_error);
+                            if (can_fallback_to_bulk) {
+                                bool expected = false;
+                                if (load_fallback_warned.compare_exchange_strong(expected, true)) {
+                                    logger.warn(
+                                        "LOAD DATA LOCAL INFILE is disabled, fallback to bulk insert"
+                                    );
+                                }
+                                ok = execute_sql(build_insert_sql(
+                                    db_url.type,
+                                    sql_table_name,
+                                    sql_columns,
+                                    sql_rows,
+                                    core::InsertMode::Bulk
+                                ));
+                            } else {
+                                register_error(
+                                    "sql execution failed: " + worker_error +
+                                    " sql=" + truncate_for_log(load_sql, 4096)
+                                );
+                                handle_policy(cfg.output.database.error_policy, "sql execution failed");
+                                ok = false;
+                            }
+                        } else {
+                            ok = true;
+                        }
                     }
                 }
 
                 if (per_batch_tx) {
                     if (ok) {
-                        if (!worker_driver->execute("COMMIT", &worker_error)) {
+                        if (!commit_transaction(worker_driver.get(), &worker_error)) {
                             register_error("commit failed: " + worker_error);
                             stop.store(true);
                             return false;
                         }
                     } else {
-                        (void)worker_driver->execute("ROLLBACK", &worker_error);
+                        rollback_transaction(worker_driver.get(), &worker_error);
                     }
                 }
 
@@ -531,8 +687,8 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
 
             if (per_run_tx) {
                 if (rollback_all.load() || stop.load()) {
-                    (void)worker_driver->execute("ROLLBACK", &worker_error);
-                } else if (!worker_driver->execute("COMMIT", &worker_error)) {
+                    rollback_transaction(worker_driver.get(), &worker_error);
+                } else if (!commit_transaction(worker_driver.get(), &worker_error)) {
                     register_error("per-run commit failed: " + worker_error);
                     stop.store(true);
                 }

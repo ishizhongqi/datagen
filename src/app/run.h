@@ -4,8 +4,8 @@
 
 /// @file run.h
 
-#ifndef DATA_GENERATOR_APP_RUN_H
-#define DATA_GENERATOR_APP_RUN_H
+#ifndef DATA_GENERATOR_RUN_H
+#define DATA_GENERATOR_RUN_H
 
 namespace data_generator {
 

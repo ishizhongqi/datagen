@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 // See the LICENSE file in the project root for more information.
 
-#ifndef DATA_GENERATOR_OUTPUT_OUTPUT_BACKEND_H
-#define DATA_GENERATOR_OUTPUT_OUTPUT_BACKEND_H
+/// @file output_backend.h
+
+#ifndef DATA_GENERATOR_OUTPUT_BACKEND_H
+#define DATA_GENERATOR_OUTPUT_BACKEND_H
 
 #include <cstdint>
 #include <memory>

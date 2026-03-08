@@ -1,5 +1,8 @@
 // Copyright (c) 2026 Shizhongqi
 // Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+/// @file workspace.cpp
 
 #include "core/workspace.h"
 
