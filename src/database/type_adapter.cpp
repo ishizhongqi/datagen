@@ -46,9 +46,6 @@ AdaptedValue DefaultTypeAdapter::adapt(
     const std::optional<std::string>& raw_value
 ) const {
     if (!raw_value.has_value()) {
-        if (!column.nullable) {
-            return make_error("null_violation", "received NULL for non-nullable column");
-        }
         AdaptedValue value;
         value.ok = true;
         value.is_null = true;

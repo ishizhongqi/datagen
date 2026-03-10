@@ -33,7 +33,8 @@ jobs:
             cmake \
             ninja-build \
             clang-18 \
-            llvm-18
+            llvm-18 \
+            unixodbc-dev
 
       - name: Configure
         run: |

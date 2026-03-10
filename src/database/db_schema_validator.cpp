@@ -49,15 +49,6 @@ bool is_generator_type_compatible(const std::string& generator_name, const Colum
     return family == ColumnTypeFamily::String || family == ColumnTypeFamily::Enum || family == ColumnTypeFamily::Unknown;
 }
 
-bool has_active_field_null_override(const core::FieldSpec& field) {
-    if (!field.raw.contains("null_value") || !field.raw.at("null_value").is_object()) { return false; }
-
-    const auto& null_value = field.raw.at("null_value");
-    if (!null_value.value("enabled", false)) { return false; }
-    const int percent = null_value.value("percent", 0);
-    return percent > 0;
-}
-
 }  // namespace
 
 std::size_t SchemaValidationReport::error_count() const {
@@ -160,21 +151,6 @@ SchemaValidationReport validate_table_schema(const core::GenerationConfig& cfg, 
             );
         }
 
-        if (!column.nullable && has_active_field_null_override(field)) {
-            add_message(
-                &report,
-                ValidationLevel::Error,
-                "field '" + field.name + "' null_value is enabled for NOT NULL column"
-            );
-        }
-
-        if (!column.nullable && cfg.null_policy.configured && cfg.null_policy.null_if_empty) {
-            add_message(
-                &report,
-                ValidationLevel::Warn,
-                "column '" + field.name + "' is NOT NULL but null policy may generate NULL"
-            );
-        }
     }
 
     if (!metadata.foreign_keys.empty()) {

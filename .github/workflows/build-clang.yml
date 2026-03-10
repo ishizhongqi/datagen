@@ -37,7 +37,8 @@ jobs:
             ninja-build \
             clang-18 \
             llvm-18 \
-            lld-18
+            lld-18 \
+            unixodbc-dev
 
       - name: Configure
         run: |
@@ -59,4 +60,4 @@ jobs:
             --input docs/input_example.json \
             --rows 5 \
             --threads 1 \
-            --output build/output.csv
+            --file-output build/output.csv

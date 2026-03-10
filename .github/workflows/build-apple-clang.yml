@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install cmake ninja
+          brew install cmake ninja unixodbc
 
       - name: Configure
         run: |
@@ -53,4 +53,4 @@ jobs:
             --input docs/input_example.json \
             --rows 5 \
             --threads 1 \
-            --output build/output.csv
+            --file-output build/output.csv

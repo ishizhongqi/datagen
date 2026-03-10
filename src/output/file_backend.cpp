@@ -15,28 +15,13 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "core/progress_bar.h"
 #include "core/serialization.h"
 #include "logging/logger.h"
 
 namespace data_generator::output {
 
 namespace {
-
-std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {
-    constexpr int kWidth = 20;
-    const double progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
-    const int filled = static_cast<int>(progress * static_cast<double>(kWidth));
-
-    std::string bar;
-    bar.reserve(kWidth);
-    for (int i = 0; i < kWidth; ++i) {
-        bar.push_back(i < filled ? '#' : '-');
-    }
-
-    std::ostringstream oss;
-    oss << "[" << bar << "] " << static_cast<int>(progress * 100.0) << "% (" << done << "/" << total << ")";
-    return oss.str();
-}
 
 std::string now_compact_timestamp() {
     const auto now = std::chrono::system_clock::now();
@@ -181,6 +166,8 @@ OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core:
     }
 
     std::uint64_t generated = 0;
+    std::uint64_t last_printed = 0;
+    bool progress_printed = false;
     const auto started_at = std::chrono::steady_clock::now();
 
     const core::GenerateResult result = core::generate_with_consumer(cfg, options, [&](core::Row&& row, std::uint64_t) {
@@ -193,13 +180,19 @@ OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core:
         }
 
         ++generated;
-        if (generated % 2000 == 0 || generated == static_cast<std::uint64_t>(cfg.rows)) {
-            std::cerr << "\r[Rows Generated] " << format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows))
-                      << "\n[Data Imported ] " << format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows))
+        if (generated % 2000 == 0) {
+            std::cout << "\r[Rows Generated] " << core::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows))
                       << std::flush;
+            progress_printed = true;
+            last_printed = generated;
         }
         return true;
     });
+
+    if (!progress_printed || last_printed != generated) {
+        std::cout << "\r[Rows Generated] " << core::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows));
+    }
+    std::cout << "\n" << std::flush;
 
     if (cfg.format == core::OutputFormat::Json) {
         output_stream << "\n]\n";

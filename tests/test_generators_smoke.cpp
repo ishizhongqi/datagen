@@ -35,7 +35,8 @@ TEST(GeneratorsSmokeTest, EveryGeneratorTemplateCanGenerateOneRow) {
     for (const auto& meta : cli::get_generator_catalog()) {
         nlohmann::json root;
         root["rows"] = 1;
-        root["output_format"] = "json";
+        root["destination"] = "file";
+        root["file_format"] = "json";
         root["null_value_string"] = "N";
 
         nlohmann::json field;
@@ -93,7 +94,8 @@ TEST(GeneratorsSmokeTest, LinkagePathsGenerateAcrossModules) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 3,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"company_name","generator":"company_name","config":{"languages":["English"]},"data_linkage":"company:group_a"},
     {"name":"industry","generator":"industry","config":{"languages":["English"]},"data_linkage":"company:group_a"},
@@ -126,7 +128,8 @@ TEST(GeneratorsSmokeTest, ConflictingLinkageConfigThrows) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"company_name","generator":"company_name","config":{"languages":["English"]},"data_linkage":"company:group_conflict"},
     {"name":"industry","generator":"industry","config":{"languages":["Japanese"]},"data_linkage":"company:group_conflict"}
@@ -146,7 +149,8 @@ TEST(GeneratorsSmokeTest, PersonLinkageAllGenerators) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 3,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"first_name","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"data_linkage":"person:all"},
     {"name":"last_name","generator":"last_name","config":{"languages":["English"],"use_translation":false},"data_linkage":"person:all"},
@@ -172,7 +176,8 @@ TEST(GeneratorsSmokeTest, LocationAndPaymentLinkageAllGenerators) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 3,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"address_line1","generator":"address_line1","config":{"regions":["United States"],"use_translation":false},"data_linkage":"location:all"},
     {"name":"address_line2","generator":"address_line2","config":{"regions":["United States"],"use_translation":false},"data_linkage":"location:all"},
@@ -199,7 +204,8 @@ TEST(GeneratorsSmokeTest, OptionalBranchesEmailAndPaymentMethodWithoutLists) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 2,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"email_any","generator":"email","config":{"languages":["English"]}},
     {"name":"method_any","generator":"payment_method","config":{}},

@@ -30,7 +30,8 @@ TEST(ExecutorEdgeTest, PreviewRowAndNullLiteralBranches) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "null_value_string": "N",
   "fields": [
     {"name":"f","generator":"regular_expression","config":{"pattern":""}}
@@ -52,7 +53,8 @@ TEST(ExecutorEdgeTest, GenerateSingleThreadPath) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {"name":"f","generator":"integer","config":{"start":1,"end":9}}
   ]
@@ -72,7 +74,8 @@ TEST(ExecutorEdgeTest, ParallelFallbackBecauseOfOverrideRule) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 16,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {
       "name":"v",
@@ -99,7 +102,8 @@ TEST(ExecutorEdgeTest, NullIfEmptyProducesJsonNullAndSqlPathWorks) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 2,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "null_value_string": null,
   "fields": [
     {"name":"f","generator":"regular_expression","config":{"pattern":""}}
@@ -145,7 +149,8 @@ TEST(ExecutorEdgeTest, ParallelFallbackReasonsForUniqueAndLinkage) {
     const auto root_base = nlohmann::json::parse(R"json(
 {
   "rows": 16,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {"name":"u","generator":"integer","config":{"start":1,"end":100}}
   ]
@@ -176,7 +181,8 @@ TEST(ExecutorEdgeTest, ParallelWorkerExceptionPath) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 8,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"["}}
   ]

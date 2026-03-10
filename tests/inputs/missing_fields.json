@@ -1,4 +1,5 @@
 {
   "rows": 3,
-  "output_format": "csv"
+  "destination": "file",
+  "file_format": "csv"
 }

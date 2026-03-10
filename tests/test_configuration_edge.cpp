@@ -20,7 +20,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     EXPECT_FALSE(issues.empty());
 
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":"x","output_format":1,"fields":[]})json"),
+        nlohmann::json::parse(R"json({"rows":"x","file_format":1,"fields":[]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -28,7 +28,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     EXPECT_FALSE(issues.empty());
 
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"output_format":"bad","fields":[]})json"),
+        nlohmann::json::parse(R"json({"rows":1,"file_format":"bad","fields":[]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -36,7 +36,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","unknown_root":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unknown_field":1}]})json"
+            R"json({"rows":1,"destination":"file","file_format":"csv","unknown_root":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unknown_field":1}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -45,7 +45,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
 
     EXPECT_TRUE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"destination":"file","file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -53,13 +53,13 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     ));
 
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
+        nlohmann::json::parse(R"json({"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":0,"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
+        nlohmann::json::parse(R"json({"rows":0,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -71,14 +71,14 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
         &issues
     ));
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"output_format":"csv","fields":{}})json"),
+        nlohmann::json::parse(R"json({"rows":1,"file_format":"csv","fields":{}})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
 
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"output_format":"csv","fields":[{"name":"f","generator":"date","unique":true,"config":{"start_date":"2024-01-01","end_date":"2024-01-31"}}]})json"),
+        nlohmann::json::parse(R"json({"rows":1,"destination":"file","file_format":"csv","fields":[{"name":"f","generator":"date","unique":true,"config":{"start_date":"2024-01-01","end_date":"2024-01-31"}}]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -90,7 +90,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
     std::vector<ValidationIssue> issues;
 
     EXPECT_FALSE(parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"output_format":"csv","fields":[1]})json"),
+        nlohmann::json::parse(R"json({"rows":1,"file_format":"csv","fields":[1]})json"),
         ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -98,7 +98,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","fields":[{"name":1,"generator":2,"config":3}]})json"
+            R"json({"rows":1,"file_format":"csv","fields":[{"name":1,"generator":2,"config":3}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -107,7 +107,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unique":"x"}]})json"
+            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unique":"x"}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -116,7 +116,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"data_linkage":123}]})json"
+            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"data_linkage":123}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -125,7 +125,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","table":"","null_value_string":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"null_value":1,"default_value":1}]})json"
+            R"json({"rows":1,"file_format":"csv","table":"","null_value_string":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"null_value":1,"default_value":1}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -134,7 +134,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_TRUE(parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output_format":"csv","fields":[{"name":"f","generator":"date","config":{"end_date":"2024-01-01"}}]})json"
+            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"date","config":{"end_date":"2024-01-01"}}]})json"
         ),
         ParseMode::RequireOutputSettings,
         &cfg,

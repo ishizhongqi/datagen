@@ -22,8 +22,12 @@ set(APP_SOURCE
 set(CORE_SOURCE
         ${CORE_DIRECTORY}/configuration.cpp
         ${CORE_DIRECTORY}/configuration.h
+        ${CORE_DIRECTORY}/env_utils.cpp
+        ${CORE_DIRECTORY}/env_utils.h
         ${CORE_DIRECTORY}/executor.cpp
         ${CORE_DIRECTORY}/executor.h
+        ${CORE_DIRECTORY}/progress_bar.cpp
+        ${CORE_DIRECTORY}/progress_bar.h
         ${CORE_DIRECTORY}/serialization.cpp
         ${CORE_DIRECTORY}/serialization.h
         ${CORE_DIRECTORY}/workspace.cpp

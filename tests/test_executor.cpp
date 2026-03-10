@@ -30,7 +30,8 @@ TEST(ExecutorTest, ReplacesEmptyWithGlobalNullLiteral) {
     auto cfg = parse_or_fail(R"json(
 {
   "rows": 4,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "null_value_string": "N/A",
   "fields": [
     {
@@ -65,7 +66,8 @@ TEST(ExecutorTest, ParallelIneligibleWorkloadFallsBackToSingleThread) {
     const auto cfg = parse_or_fail(R"json(
 {
   "rows": 32,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {
       "name": "seq",
@@ -95,7 +97,8 @@ TEST(ExecutorTest, GeneratesWithoutSeedOption) {
     const auto cfg = parse_or_fail(R"json(
 {
   "rows": 2,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {
       "name": "id",

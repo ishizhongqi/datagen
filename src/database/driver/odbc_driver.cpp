@@ -365,7 +365,7 @@ bool OdbcDriver::load_mysql_metadata(
     const std::string escaped_table_name = escape_sql_literal(table_name);
 
     const std::string column_sql =
-        "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, (COLUMN_DEFAULT IS NULL), IS_NULLABLE, EXTRA, "
+        "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, (COLUMN_DEFAULT IS NULL), EXTRA, "
         "CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE "
         "FROM information_schema.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" + escaped_table_name + "' "
@@ -373,19 +373,18 @@ bool OdbcDriver::load_mysql_metadata(
     if (!run_query(column_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
-        if (row.size() < 9) { continue; }
+        if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
         column.name = row[0];
         column.data_type = row[1];
         const bool default_is_null = (row[3] == "1");
         column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.nullable = (row[4] == "YES");
-        column.auto_increment = (to_lower_ascii(row[5]).find("auto_increment") != std::string::npos);
+        column.auto_increment = (to_lower_ascii(row[4]).find("auto_increment") != std::string::npos);
         column.unsigned_number = (to_lower_ascii(row[1]).find("unsigned") != std::string::npos);
-        column.character_length = try_parse_optional_int(row[6]);
-        column.numeric_precision = try_parse_optional_int(row[7]);
-        column.numeric_scale = try_parse_optional_int(row[8]);
+        column.character_length = try_parse_optional_int(row[5]);
+        column.numeric_precision = try_parse_optional_int(row[6]);
+        column.numeric_scale = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }
@@ -454,7 +453,7 @@ bool OdbcDriver::load_postgresql_metadata(
 
     const std::string column_sql =
         "SELECT c.column_name, c.udt_name, c.column_default, (c.column_default IS NULL), "
-        "(c.is_nullable = 'YES'), FALSE, c.character_maximum_length, c.numeric_precision, c.numeric_scale "
+        "FALSE, c.character_maximum_length, c.numeric_precision, c.numeric_scale "
         "FROM information_schema.columns c "
         "WHERE c.table_schema = COALESCE(NULLIF('" + schema + "', ''), current_schema()) "
         "AND c.table_name = '" + table + "' "
@@ -462,19 +461,18 @@ bool OdbcDriver::load_postgresql_metadata(
     if (!run_query(column_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
-        if (row.size() < 9) { continue; }
+        if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
         column.name = row[0];
         column.data_type = row[1];
         const bool default_is_null = (row[3] == "1" || to_lower_ascii(row[3]) == "true");
         column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.nullable = (row[4] == "1" || to_lower_ascii(row[4]) == "true");
         column.auto_increment = false;
         column.unsigned_number = false;
-        column.character_length = try_parse_optional_int(row[6]);
-        column.numeric_precision = try_parse_optional_int(row[7]);
-        column.numeric_scale = try_parse_optional_int(row[8]);
+        column.character_length = try_parse_optional_int(row[5]);
+        column.numeric_precision = try_parse_optional_int(row[6]);
+        column.numeric_scale = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }
@@ -535,7 +533,6 @@ bool OdbcDriver::load_oracle_metadata(
         column_sql =
             "SELECT utc.column_name, utc.data_type, utc.data_default, "
             "CASE WHEN utc.data_default IS NULL THEN 1 ELSE 0 END, "
-            "CASE WHEN utc.nullable = 'Y' THEN 1 ELSE 0 END, "
             "CASE WHEN utc.identity_column = 'YES' THEN 1 ELSE 0 END, "
             "utc.char_length, utc.data_precision, utc.data_scale "
             "FROM user_tab_columns utc "
@@ -546,7 +543,6 @@ bool OdbcDriver::load_oracle_metadata(
         column_sql =
             "SELECT atc.column_name, atc.data_type, atc.data_default, "
             "CASE WHEN atc.data_default IS NULL THEN 1 ELSE 0 END, "
-            "CASE WHEN atc.nullable = 'Y' THEN 1 ELSE 0 END, "
             "CASE WHEN atc.identity_column = 'YES' THEN 1 ELSE 0 END, "
             "atc.char_length, atc.data_precision, atc.data_scale "
             "FROM all_tab_columns atc "
@@ -558,19 +554,18 @@ bool OdbcDriver::load_oracle_metadata(
     if (!run_query(column_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
-        if (row.size() < 9) { continue; }
+        if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
         column.name = row[0];
         column.data_type = row[1];
         const bool default_is_null = (row[3] == "1");
         column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.nullable = (row[4] == "1");
-        column.auto_increment = (row[5] == "1");
+        column.auto_increment = (row[4] == "1");
         column.unsigned_number = false;
-        column.character_length = try_parse_optional_int(row[6]);
-        column.numeric_precision = try_parse_optional_int(row[7]);
-        column.numeric_scale = try_parse_optional_int(row[8]);
+        column.character_length = try_parse_optional_int(row[5]);
+        column.numeric_precision = try_parse_optional_int(row[6]);
+        column.numeric_scale = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }

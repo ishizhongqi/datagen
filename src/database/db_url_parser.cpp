@@ -7,10 +7,11 @@
 #include "database/db_url_parser.h"
 
 #include <cctype>
-#include <cstdlib>
 #include <iomanip>
 #include <regex>
 #include <sstream>
+
+#include "core/env_utils.h"
 
 namespace data_generator::database {
 
@@ -78,20 +79,14 @@ std::string to_lower_ascii(std::string value) {
     return value;
 }
 
-std::string get_env_or_default(const char* key, const char* default_value) {
-    const char* env_value = std::getenv(key);
-    if (env_value && *env_value) { return env_value; }
-    return default_value;
-}
-
 std::string odbc_driver_name_for_db_type(const DbType type) {
     switch (type) {
     case DbType::Mysql:
-        return get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_MYSQL", kDefaultMysqlOdbcDriver);
+        return core::get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_MYSQL", kDefaultMysqlOdbcDriver);
     case DbType::Postgresql:
-        return get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_POSTGRESQL", kDefaultPostgresqlOdbcDriver);
+        return core::get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_POSTGRESQL", kDefaultPostgresqlOdbcDriver);
     case DbType::Oracle:
-        return get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_ORACLE", kDefaultOracleOdbcDriver);
+        return core::get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_ORACLE", kDefaultOracleOdbcDriver);
     case DbType::Unknown:
         return "";
     }

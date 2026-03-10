@@ -60,7 +60,7 @@ enum class ParseMode {
 };
 
 struct NullPolicy {
-    bool                       configured    = false;
+    bool                       configured = false;
     bool                       null_if_empty = false;
     std::optional<std::string> null_literal;
 };
@@ -70,20 +70,20 @@ struct FileOutputConfig {
 };
 
 struct DatabaseOutputConfig {
-    std::string    url;
-    std::string    table_name = "generated_data";
-    InsertMode     insert_mode = InsertMode::Auto;
-    int            batch_size = 1000;
-    int            queue_size = 1024;
-    int            db_threads = 2;
+    std::string     url;
+    std::string     table_name = "generated_data";
+    InsertMode      insert_mode = InsertMode::Auto;
+    int             batch_size = 1000;
+    int             queue_size = 1024;
+    int             db_threads = 2;
     TransactionMode transaction_mode = TransactionMode::PerBatch;
-    ErrorPolicy    error_policy = ErrorPolicy::Stop;
-    int            rate_limit_rows_per_sec = 20000;
+    ErrorPolicy     error_policy = ErrorPolicy::Stop;
+    int             rate_limit_rows_per_sec = 20000;
 };
 
 struct OutputConfig {
-    OutputDestination  destination = OutputDestination::File;
-    FileOutputConfig   file;
+    OutputDestination   destination = OutputDestination::File;
+    FileOutputConfig    file;
     DatabaseOutputConfig database;
 };
 
@@ -125,20 +125,12 @@ bool parse_generation_config(
 );
 
 struct CliOverrides {
-    std::optional<int>             rows;
-    std::optional<OutputFormat>    format;
-    std::optional<std::string>     table_name;
+    std::optional<int>              rows;
+    std::optional<OutputFormat>     format;
+    std::optional<std::string>      table_name;
     std::optional<OutputDestination> destination;
-    std::optional<std::string>     output_path;
-    std::optional<std::string>     database_url;
-    std::optional<InsertMode>      insert_mode;
-    std::optional<int>             batch_size;
-    std::optional<int>             queue_size;
-    std::optional<int>             db_threads;
-    std::optional<TransactionMode> transaction_mode;
-    std::optional<ErrorPolicy>     error_policy;
-    std::optional<int>             rate_limit_rows_per_sec;
-    std::optional<std::string>     workspace;
+    std::optional<std::string>      output_path;
+    std::optional<std::string>      database_url;
 };
 
 void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides);

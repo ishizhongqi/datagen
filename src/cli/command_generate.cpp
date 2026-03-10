@@ -8,7 +8,6 @@
 
 #include <cxxopts.hpp>
 #include <iostream>
-#include <optional>
 #include <string>
 
 #include "cli/cli_shared.h"
@@ -16,8 +15,6 @@
 #include "core/configuration.h"
 #include "core/executor.h"
 #include "core/workspace.h"
-#include "database/db_metadata.h"
-#include "database/db_url_parser.h"
 #include "logging/logger.h"
 #include "output/output_backend.h"
 
@@ -25,11 +22,15 @@ namespace data_generator::cli {
 
 namespace {
 
-std::optional<database::DbType> parse_db_type(const std::string& value) {
-    if (value == "mysql") { return database::DbType::Mysql; }
-    if (value == "postgresql") { return database::DbType::Postgresql; }
-    if (value == "oracle") { return database::DbType::Oracle; }
-    return std::nullopt;
+std::string build_startup_log_line(const core::GenerationConfig& cfg, const std::size_t requested_threads) {
+    std::string message =
+        "startup rows=" + std::to_string(cfg.rows) +
+        " version=1.0 destination=" + core::output_destination_to_string(cfg.output.destination);
+    if (cfg.output.destination == core::OutputDestination::File) {
+        message += " format=" + core::output_format_to_string(cfg.format);
+    }
+    message += " threads=" + std::to_string(requested_threads);
+    return message;
 }
 
 }  // namespace
@@ -38,27 +39,18 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator generate", "generate dataset from JSON config.");
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
-        ("output", "Output file path. If omitted, writes dgresult_YYYYmmddHHMMSS.<format> in current directory", cxxopts::value<std::string>())
+        (
+            "file-output",
+            "Output file path for file destination. If omitted, writes dgresult_YYYYmmddHHMMSS.<format> in current directory",
+            cxxopts::value<std::string>()
+        )
+        ("output", "Output file path for file destination (alias of --file-output)", cxxopts::value<std::string>())
         ("rows", "Override rows", cxxopts::value<int>())
-        ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>())
-        ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
-        ("url", "Database URL or ODBC connection string", cxxopts::value<std::string>())
+        ("destination", "Output destination (file|database)", cxxopts::value<std::string>())
+        ("file-format", "Override file format (csv|json|sql)", cxxopts::value<std::string>())
+        ("database-url", "Database URL or ODBC connection string", cxxopts::value<std::string>())
         ("table", "Target table name", cxxopts::value<std::string>())
-        ("db-type", "Database type for ODBC build (mysql|postgresql|oracle)", cxxopts::value<std::string>())
-        ("db-user", "Database user", cxxopts::value<std::string>())
-        ("db-password", "Database password", cxxopts::value<std::string>())
-        ("db-host", "Database host", cxxopts::value<std::string>())
-        ("db-port", "Database port", cxxopts::value<int>())
-        ("db-name", "Database name", cxxopts::value<std::string>())
-        ("insert-mode", "Insert mode (auto|insert|bulk|load)", cxxopts::value<std::string>())
-        ("batch-size", "Batch size", cxxopts::value<int>())
-        ("queue-size", "Queue size", cxxopts::value<int>())
-        ("db-threads", "Database worker threads", cxxopts::value<int>())
-        ("transaction-mode", "Transaction mode (per-batch|per-run|none)", cxxopts::value<std::string>())
-        ("error-policy", "error policy (stop|continue|rollback-batch|rollback-all)", cxxopts::value<std::string>())
-        ("rate-limit", "Rate limit rows/s", cxxopts::value<int>())
         ("threads", "Generator threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
-        ("workspace", "Workspace root path", cxxopts::value<std::string>())
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -103,10 +95,10 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
             overrides.rows = rows;
         }
 
-        if (result.count("format")) {
-            const auto parsed = core::parse_output_format(result["format"].as<std::string>());
+        if (result.count("file-format")) {
+            const auto parsed = core::parse_output_format(result["file-format"].as<std::string>());
             if (!parsed.has_value()) {
-                std::cerr << "--format must be one of: csv, json, sql\n";
+                std::cerr << "--file-format must be one of: csv, json, sql\n";
                 return exit_codes::kUsage;
             }
             overrides.format = parsed;
@@ -120,126 +112,32 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
             }
         }
 
-        if (result.count("output")) { overrides.output_path = result["output"].as<std::string>(); }
+        if (result.count("file-output")) {
+            overrides.output_path = result["file-output"].as<std::string>();
+        } else if (result.count("output")) {
+            overrides.output_path = result["output"].as<std::string>();
+        }
 
-        if (result.count("output-dest")) {
-            const auto parsed = core::parse_output_destination(result["output-dest"].as<std::string>());
+        if (result.count("destination")) {
+            const auto parsed = core::parse_output_destination(result["destination"].as<std::string>());
             if (!parsed.has_value()) {
-                std::cerr << "--output-dest must be one of: file, database\n";
+                std::cerr << "--destination must be one of: file, database\n";
                 return exit_codes::kUsage;
             }
             overrides.destination = parsed;
         }
 
-        if (result.count("url")) { overrides.database_url = result["url"].as<std::string>(); }
-
-        if (result.count("insert-mode")) {
-            const auto parsed = core::parse_insert_mode(result["insert-mode"].as<std::string>());
-            if (!parsed.has_value()) {
-                std::cerr << "--insert-mode must be one of: auto, insert, bulk, load\n";
-                return exit_codes::kUsage;
-            }
-            overrides.insert_mode = parsed;
-        }
-
-        if (result.count("batch-size")) {
-            const int value = result["batch-size"].as<int>();
-            if (value <= 0) {
-                std::cerr << "--batch-size must be >= 1\n";
-                return exit_codes::kUsage;
-            }
-            overrides.batch_size = value;
-        }
-
-        if (result.count("queue-size")) {
-            const int value = result["queue-size"].as<int>();
-            if (value <= 0) {
-                std::cerr << "--queue-size must be >= 1\n";
-                return exit_codes::kUsage;
-            }
-            overrides.queue_size = value;
-        }
-
-        if (result.count("db-threads")) {
-            const int value = result["db-threads"].as<int>();
-            if (value <= 0) {
-                std::cerr << "--db-threads must be >= 1\n";
-                return exit_codes::kUsage;
-            }
-            overrides.db_threads = value;
-        }
-
-        if (result.count("transaction-mode")) {
-            const auto parsed = core::parse_transaction_mode(result["transaction-mode"].as<std::string>());
-            if (!parsed.has_value()) {
-                std::cerr << "--transaction-mode must be one of: per-batch, per-run, none\n";
-                return exit_codes::kUsage;
-            }
-            overrides.transaction_mode = parsed;
-        }
-
-        if (result.count("error-policy")) {
-            const auto parsed = core::parse_error_policy(result["error-policy"].as<std::string>());
-            if (!parsed.has_value()) {
-                std::cerr << "--error-policy must be one of: stop, continue, rollback-batch, rollback-all\n";
-                return exit_codes::kUsage;
-            }
-            overrides.error_policy = parsed;
-        }
-
-        if (result.count("rate-limit")) {
-            const int value = result["rate-limit"].as<int>();
-            if (value <= 0) {
-                std::cerr << "--rate-limit must be >= 1\n";
-                return exit_codes::kUsage;
-            }
-            overrides.rate_limit_rows_per_sec = value;
-        }
-
-        if (result.count("workspace")) {
-            overrides.workspace = result["workspace"].as<std::string>();
-            if (overrides.workspace->empty()) {
-                std::cerr << "--workspace must not be empty\n";
-                return exit_codes::kUsage;
-            }
-        }
-
-        const bool has_db_parts = result.count("db-type") || result.count("db-user") || result.count("db-password") ||
-                                  result.count("db-host") || result.count("db-port") || result.count("db-name");
-        if (has_db_parts) {
-            if (!result.count("db-type") || !result.count("db-user") || !result.count("db-password") ||
-                !result.count("db-host") || !result.count("db-name")) {
-                std::cerr << "building URL from CLI requires --db-type --db-user --db-password --db-host --db-name\n";
-                return exit_codes::kUsage;
-            }
-
-            const auto db_type = parse_db_type(result["db-type"].as<std::string>());
-            if (!db_type.has_value()) {
-                std::cerr << "--db-type must be one of: mysql, postgresql, oracle\n";
-                return exit_codes::kUsage;
-            }
-
-            const std::optional<int> port = result.count("db-port") ? std::optional<int>(result["db-port"].as<int>())
-                                                                      : std::nullopt;
-            overrides.database_url = database::build_db_url(
-                *db_type,
-                result["db-user"].as<std::string>(),
-                result["db-password"].as<std::string>(),
-                result["db-host"].as<std::string>(),
-                port,
-                result["db-name"].as<std::string>()
-            );
-        }
+        if (result.count("database-url")) { overrides.database_url = result["database-url"].as<std::string>(); }
 
         core::apply_cli_overrides(&cfg, overrides);
 
         if (cfg.output.destination == core::OutputDestination::Database && cfg.output.database.url.empty()) {
-            std::cerr << "database output requires URL/ODBC connection string (CLI --url or JSON)\n";
+            std::cerr << "database output requires URL/ODBC connection string (CLI --database-url or JSON)\n";
             return exit_codes::kUsage;
         }
 
-        if (cfg.output.destination == core::OutputDestination::Database && result.count("format")) {
-            std::cerr << "--format is ignored when --output-dest database\n";
+        if (cfg.output.destination == core::OutputDestination::Database && result.count("file-format")) {
+            std::cerr << "--file-format is ignored when --destination database\n";
         }
 
         std::string workspace_error;
@@ -261,13 +159,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
             return exit_codes::kUsage;
         }
 
-        logger.info(
-            "startup rows=" + std::to_string(cfg.rows) +
-            " version=1.0 workspace=" + cfg.workspace +
-            " destination=" + core::output_destination_to_string(cfg.output.destination) +
-            " format=" + core::output_format_to_string(cfg.format) +
-            " threads=" + std::to_string(exec_opts.requested_threads)
-        );
+        logger.info(build_startup_log_line(cfg, exec_opts.requested_threads));
 
         auto backend = output::make_output_backend(cfg);
         const output::OutputStats stats = backend->generate(cfg, exec_opts);

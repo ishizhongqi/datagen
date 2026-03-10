@@ -17,6 +17,49 @@ namespace data_generator::core {
 
 namespace {
 
+constexpr const char* kKeyRows = "rows";
+constexpr const char* kKeyDestination = "destination";
+constexpr const char* kKeyFileFormat = "file_format";
+constexpr const char* kKeyNullValueString = "null_value_string";
+constexpr const char* kKeyTable = "table";
+constexpr const char* kKeyFields = "fields";
+constexpr const char* kKeyDatabaseUrl = "database_url";
+constexpr const char* kKeyDatabaseInsertMode = "database_insert_mode";
+constexpr const char* kKeyDatabaseBatchSize = "database_batch_size";
+constexpr const char* kKeyDatabaseQueueSize = "database_queue_size";
+constexpr const char* kKeyDatabaseThreads = "database_threads";
+constexpr const char* kKeyDatabaseTransactionMode = "database_transaction_mode";
+constexpr const char* kKeyDatabaseErrorPolicy = "database_error_policy";
+constexpr const char* kKeyDatabaseRateLimitRowsPerSec = "database_rate_limit_rows_per_sec";
+
+const std::unordered_set<std::string> kKnownRootKeys = {
+    "$schema",
+    kKeyRows,
+    kKeyDestination,
+    kKeyFileFormat,
+    kKeyNullValueString,
+    kKeyTable,
+    kKeyFields,
+    kKeyDatabaseUrl,
+    kKeyDatabaseInsertMode,
+    kKeyDatabaseBatchSize,
+    kKeyDatabaseQueueSize,
+    kKeyDatabaseThreads,
+    kKeyDatabaseTransactionMode,
+    kKeyDatabaseErrorPolicy,
+    kKeyDatabaseRateLimitRowsPerSec,
+};
+
+const std::unordered_set<std::string> kKnownFieldKeys = {
+    "name",
+    "generator",
+    "config",
+    "unique",
+    "data_linkage",
+    "null_value",
+    "default_value",
+};
+
 void add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message, const bool warning = false) {
     issues.emplace_back(ValidationIssue{.warning = warning, .path = std::move(path), .message = std::move(message)});
 }
@@ -57,31 +100,34 @@ bool parse_positive_int(
 
 bool parse_rows(const Json& root, const ParseMode mode, int* rows, std::vector<ValidationIssue>& issues) {
     const bool required = (mode == ParseMode::RequireOutputSettings);
-    return parse_positive_int(root, "rows", rows, issues, 1, required, !required);
+    return parse_positive_int(root, kKeyRows, rows, issues, 1, required, !required);
 }
 
 bool parse_format(const Json& root, const ParseMode mode, OutputFormat* format, std::vector<ValidationIssue>& issues) {
-    const std::string output_dest_key = root.contains("output_dest") ? "output_dest" : "output_destination";
-    const bool database_dest = root.contains(output_dest_key) && root.at(output_dest_key).is_string() &&
-                               root.at(output_dest_key).get<std::string>() == "database";
+    const bool database_dest = root.contains(kKeyDestination) && root.at(kKeyDestination).is_string() &&
+                               root.at(kKeyDestination).get<std::string>() == "database";
+    if (database_dest && root.contains(kKeyFileFormat)) {
+        add_issue(issues, "$.file_format", "ignored when destination=database", true);
+        return true;
+    }
 
-    if (!root.contains("output_format")) {
+    if (!root.contains(kKeyFileFormat)) {
         if (mode == ParseMode::RequireOutputSettings && !database_dest) {
-            add_issue(issues, "$.output_format", "missing required string (csv|json|sql)");
+            add_issue(issues, "$.file_format", "missing required string (csv|json|sql)");
             return false;
         }
         if (!database_dest) {
-            add_issue(issues, "$.output_format", "not specified, default csv will be used", true);
+            add_issue(issues, "$.file_format", "not specified, default csv will be used", true);
         }
         return true;
     }
-    if (!root.at("output_format").is_string()) {
-        add_issue(issues, "$.output_format", "must be a string (csv|json|sql)");
+    if (!root.at(kKeyFileFormat).is_string()) {
+        add_issue(issues, "$.file_format", "must be a string (csv|json|sql)");
         return false;
     }
-    const auto parsed = parse_output_format(root.at("output_format").get<std::string>());
+    const auto parsed = parse_output_format(root.at(kKeyFileFormat).get<std::string>());
     if (!parsed.has_value()) {
-        add_issue(issues, "$.output_format", "must be one of: csv, json, sql");
+        add_issue(issues, "$.file_format", "must be one of: csv, json, sql");
         return false;
     }
     *format = *parsed;
@@ -89,9 +135,9 @@ bool parse_format(const Json& root, const ParseMode mode, OutputFormat* format, 
 }
 
 void parse_null_policy(const Json& root, NullPolicy* policy, std::vector<ValidationIssue>& issues) {
-    if (!root.contains("null_value_string")) { return; }
+    if (!root.contains(kKeyNullValueString)) { return; }
     policy->configured = true;
-    const auto& value  = root.at("null_value_string");
+    const auto& value = root.at(kKeyNullValueString);
     if (value.is_null()) {
         policy->null_if_empty = true;
         policy->null_literal.reset();
@@ -105,45 +151,9 @@ void parse_null_policy(const Json& root, NullPolicy* policy, std::vector<Validat
 }
 
 void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& issues) {
-    static const std::unordered_set<std::string> kKnownKeys = {
-        "$schema",
-        "workspace",
-        "rows",
-        "output_format",
-        "null_value_string",
-        "table",
-        "table_name",
-        "fields",
-        "output_dest",
-        "output_destination",
-        "output_path",
-        "url",
-        "database_url",
-        "odbc_connection",
-        "insert_mode",
-        "batch_size",
-        "queue_size",
-        "db_threads",
-        "transaction_mode",
-        "error_policy",
-        "rate_limit_rows_per_sec",
-    };
     for (auto it = root.begin(); it != root.end(); ++it) {
-        if (!kKnownKeys.contains(it.key())) { add_issue(issues, "$." + it.key(), "unknown root key"); }
+        if (!kKnownRootKeys.contains(it.key())) { add_issue(issues, "$." + it.key(), "unknown root key"); }
     }
-}
-
-void parse_workspace_setting(
-    const Json&                   root,
-    GenerationConfig*             cfg,
-    std::vector<ValidationIssue>& issues
-) {
-    if (!root.contains("workspace")) { return; }
-    if (!root.at("workspace").is_string() || root.at("workspace").get<std::string>().empty()) {
-        add_issue(issues, "$.workspace", "must be a non-empty string");
-        return;
-    }
-    cfg->workspace = root.at("workspace").get<std::string>();
 }
 
 bool parse_output_settings(
@@ -152,112 +162,98 @@ bool parse_output_settings(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    const std::string output_dest_key = root.contains("output_dest") ? "output_dest" : "output_destination";
-    if (root.contains(output_dest_key)) {
-        if (!root.at(output_dest_key).is_string()) {
-            add_issue(issues, "$." + output_dest_key, "must be string (file|database)");
+    if (root.contains(kKeyDestination)) {
+        if (!root.at(kKeyDestination).is_string()) {
+            add_issue(issues, "$.destination", "must be string (file|database)");
         } else {
-            const auto parsed = parse_output_destination(root.at(output_dest_key).get<std::string>());
+            const auto parsed = parse_output_destination(root.at(kKeyDestination).get<std::string>());
             if (!parsed.has_value()) {
-                add_issue(issues, "$." + output_dest_key, "must be one of: file, database");
+                add_issue(issues, "$.destination", "must be one of: file, database");
             } else {
                 cfg->output.destination = *parsed;
             }
         }
     }
 
-    if (root.contains("output_path")) {
-        if (!root.at("output_path").is_string()) {
-            add_issue(issues, "$.output_path", "must be a string");
+    if (root.contains(kKeyDatabaseUrl)) {
+        if (!root.at(kKeyDatabaseUrl).is_string() || root.at(kKeyDatabaseUrl).get<std::string>().empty()) {
+            add_issue(issues, "$.database_url", "must be a non-empty database URL/ODBC string");
         } else {
-            cfg->output.file.path = root.at("output_path").get<std::string>();
+            cfg->output.database.url = root.at(kKeyDatabaseUrl).get<std::string>();
         }
     }
 
-    std::string connection_key;
-    if (root.contains("url")) {
-        connection_key = "url";
-    } else if (root.contains("database_url")) {
-        connection_key = "database_url";
-    } else if (root.contains("odbc_connection")) {
-        connection_key = "odbc_connection";
-    }
-    if (!connection_key.empty()) {
-        if (!root.at(connection_key).is_string() || root.at(connection_key).get<std::string>().empty()) {
-            add_issue(issues, "$." + connection_key, "must be a non-empty database URL/ODBC string");
+    if (root.contains(kKeyTable)) {
+        if (!root.at(kKeyTable).is_string() || root.at(kKeyTable).get<std::string>().empty()) {
+            add_issue(issues, "$.table", "must be a non-empty string");
         } else {
-            cfg->output.database.url = root.at(connection_key).get<std::string>();
-        }
-    }
-
-    const std::string table_key =
-        root.contains("table") ? "table" : (root.contains("database_table") ? "database_table" : "table_name");
-    if (root.contains(table_key)) {
-        if (!root.at(table_key).is_string() || root.at(table_key).get<std::string>().empty()) {
-            add_issue(issues, "$." + table_key, "must be a non-empty string");
-        } else {
-            cfg->table_name = root.at(table_key).get<std::string>();
+            cfg->table_name = root.at(kKeyTable).get<std::string>();
             cfg->output.database.table_name = cfg->table_name;
         }
     }
 
-    if (root.contains("insert_mode")) {
-        if (!root.at("insert_mode").is_string()) {
-            add_issue(issues, "$.insert_mode", "must be a string (auto|insert|bulk|load)");
+    if (root.contains(kKeyDatabaseInsertMode)) {
+        if (!root.at(kKeyDatabaseInsertMode).is_string()) {
+            add_issue(issues, "$.database_insert_mode", "must be a string (auto|insert|bulk|load)");
         } else {
-            const auto parsed = parse_insert_mode(root.at("insert_mode").get<std::string>());
+            const auto parsed = parse_insert_mode(root.at(kKeyDatabaseInsertMode).get<std::string>());
             if (!parsed.has_value()) {
-                add_issue(issues, "$.insert_mode", "must be one of: auto, insert, bulk, load");
+                add_issue(issues, "$.database_insert_mode", "must be one of: auto, insert, bulk, load");
             } else {
                 cfg->output.database.insert_mode = *parsed;
             }
         }
     }
 
-    if (root.contains("transaction_mode")) {
-        if (!root.at("transaction_mode").is_string()) {
-            add_issue(issues, "$.transaction_mode", "must be a string (per-batch|per-run|none)");
+    if (root.contains(kKeyDatabaseTransactionMode)) {
+        if (!root.at(kKeyDatabaseTransactionMode).is_string()) {
+            add_issue(issues, "$.database_transaction_mode", "must be a string (per-batch|per-run|none)");
         } else {
-            const auto parsed = parse_transaction_mode(root.at("transaction_mode").get<std::string>());
+            const auto parsed = parse_transaction_mode(root.at(kKeyDatabaseTransactionMode).get<std::string>());
             if (!parsed.has_value()) {
-                add_issue(issues, "$.transaction_mode", "must be one of: per-batch, per-run, none");
+                add_issue(issues, "$.database_transaction_mode", "must be one of: per-batch, per-run, none");
             } else {
                 cfg->output.database.transaction_mode = *parsed;
             }
         }
     }
 
-    if (root.contains("error_policy")) {
-        if (!root.at("error_policy").is_string()) {
-            add_issue(issues, "$.error_policy", "must be a string (stop|continue|rollback-batch|rollback-all)");
+    if (root.contains(kKeyDatabaseErrorPolicy)) {
+        if (!root.at(kKeyDatabaseErrorPolicy).is_string()) {
+            add_issue(issues, "$.database_error_policy", "must be a string (stop|continue|rollback-batch|rollback-all)");
         } else {
-            const auto parsed = parse_error_policy(root.at("error_policy").get<std::string>());
+            const auto parsed = parse_error_policy(root.at(kKeyDatabaseErrorPolicy).get<std::string>());
             if (!parsed.has_value()) {
-                add_issue(issues, "$.error_policy", "must be one of: stop, continue, rollback-batch, rollback-all");
+                add_issue(
+                    issues,
+                    "$.database_error_policy",
+                    "must be one of: stop, continue, rollback-batch, rollback-all"
+                );
             } else {
                 cfg->output.database.error_policy = *parsed;
             }
         }
     }
 
-    (void)parse_positive_int(root, "batch_size", &cfg->output.database.batch_size, issues, 1, false);
-    (void)parse_positive_int(root, "queue_size", &cfg->output.database.queue_size, issues, 1, false);
-    (void)parse_positive_int(root, "db_threads", &cfg->output.database.db_threads, issues, 1, false);
-    (void)parse_positive_int(root, "rate_limit_rows_per_sec", &cfg->output.database.rate_limit_rows_per_sec, issues, 1, false);
+    (void)parse_positive_int(root, kKeyDatabaseBatchSize, &cfg->output.database.batch_size, issues, 1, false);
+    (void)parse_positive_int(root, kKeyDatabaseQueueSize, &cfg->output.database.queue_size, issues, 1, false);
+    (void)parse_positive_int(root, kKeyDatabaseThreads, &cfg->output.database.db_threads, issues, 1, false);
+    (void)parse_positive_int(
+        root,
+        kKeyDatabaseRateLimitRowsPerSec,
+        &cfg->output.database.rate_limit_rows_per_sec,
+        issues,
+        1,
+        false
+    );
 
-    if (cfg->output.destination == OutputDestination::Database) {
-        if (cfg->output.database.url.empty()) {
-            add_issue(
-                issues,
-                "$.url",
-                "database output requires URL/ODBC connection string (CLI or JSON)",
-                mode == ParseMode::AllowMissingOutputSettings
-            );
-        }
-    }
-
-    if (cfg->output.destination == OutputDestination::Database && root.contains("output_format")) {
-        add_issue(issues, "$.output_format", "ignored when output_dest=database", true);
+    if (cfg->output.destination == OutputDestination::Database && cfg->output.database.url.empty()) {
+        add_issue(
+            issues,
+            "$.database_url",
+            "database output requires URL/ODBC connection string (CLI or JSON)",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
     }
 
     return true;
@@ -311,10 +307,8 @@ void validate_and_collect_fields(
             continue;
         }
 
-        static const std::unordered_set<std::string> kFieldKeys =
-            {"name", "generator", "config", "unique", "nullable", "data_linkage", "null_value", "default_value"};
         for (auto it = field.begin(); it != field.end(); ++it) {
-            if (!kFieldKeys.contains(it.key())) { add_issue(issues, path + "." + it.key(), "unknown field key"); }
+            if (!kKnownFieldKeys.contains(it.key())) { add_issue(issues, path + "." + it.key(), "unknown field key"); }
         }
 
         if (field.contains("unique")) {
@@ -323,10 +317,6 @@ void validate_and_collect_fields(
             } else if (!meta->supports_unique) {
                 add_issue(issues, path + ".unique", "generator does not support unique");
             }
-        }
-
-        if (field.contains("nullable")) {
-            if (!field.at("nullable").is_boolean()) { add_issue(issues, path + ".nullable", "must be a boolean"); }
         }
 
         std::optional<std::string> linkage;
@@ -352,10 +342,6 @@ void validate_and_collect_fields(
             if (p.required && !config.contains(p.name) && !has_default) {
                 add_issue(issues, path + ".config." + p.name, "missing required config key");
             }
-        }
-
-        if (field.contains("null_value")) {
-            if (!field.at("null_value").is_object()) { add_issue(issues, path + ".null_value", "must be an object"); }
         }
 
         if (field.contains("default_value")) {
@@ -473,11 +459,10 @@ bool parse_generation_config(
     }
 
     GenerationConfig cfg;
-    cfg.root = root;
+    cfg.root      = root;
     cfg.workspace = default_workspace_root().string();
 
     validate_known_root_keys(root, *issues);
-    parse_workspace_setting(root, &cfg, *issues);
     (void)parse_rows(root, mode, &cfg.rows, *issues);
     (void)parse_format(root, mode, &cfg.format, *issues);
     parse_null_policy(root, &cfg.null_policy, *issues);
@@ -511,16 +496,6 @@ void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides) {
     if (overrides.destination.has_value()) { cfg->output.destination = *overrides.destination; }
     if (overrides.output_path.has_value()) { cfg->output.file.path = *overrides.output_path; }
     if (overrides.database_url.has_value()) { cfg->output.database.url = *overrides.database_url; }
-    if (overrides.insert_mode.has_value()) { cfg->output.database.insert_mode = *overrides.insert_mode; }
-    if (overrides.batch_size.has_value()) { cfg->output.database.batch_size = *overrides.batch_size; }
-    if (overrides.queue_size.has_value()) { cfg->output.database.queue_size = *overrides.queue_size; }
-    if (overrides.db_threads.has_value()) { cfg->output.database.db_threads = *overrides.db_threads; }
-    if (overrides.transaction_mode.has_value()) { cfg->output.database.transaction_mode = *overrides.transaction_mode; }
-    if (overrides.error_policy.has_value()) { cfg->output.database.error_policy = *overrides.error_policy; }
-    if (overrides.rate_limit_rows_per_sec.has_value()) {
-        cfg->output.database.rate_limit_rows_per_sec = *overrides.rate_limit_rows_per_sec;
-    }
-    if (overrides.workspace.has_value()) { cfg->workspace = *overrides.workspace; }
 }
 
 }  // namespace data_generator::core

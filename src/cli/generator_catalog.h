@@ -58,7 +58,7 @@ const std::vector<GeneratorMetadata>& get_generator_catalog();
 const GeneratorMetadata* find_generator_metadata(const std::string& name);
 
 /// @brief Build a default project template.
-Json build_project_template(int rows, const std::string& output_format);
+Json build_project_template(int rows, const std::string& file_format);
 
 }  // namespace data_generator::cli
 

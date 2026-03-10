@@ -23,7 +23,6 @@
 #include "cli/cli_shared.h"
 #include "cli/exit_codes.h"
 #include "cli/generator_catalog.h"
-#include "core/workspace.h"
 #include "database/db_metadata.h"
 #include "database/db_url_parser.h"
 #include "database/driver/idatabase_driver.h"
@@ -439,11 +438,10 @@ int CommandInit::run(const std::vector<std::string>& args) {
         ("generator", "Generator name", cxxopts::value<std::string>())
         ("output", "Output file path", cxxopts::value<std::string>())
         ("rows", "Number of rows", cxxopts::value<int>())
-        ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>()->default_value("file"))
-        ("format", "Output format (json|csv|sql), file mode only", cxxopts::value<std::string>())
-        ("url", "Database URL or ODBC connection string (database mode)", cxxopts::value<std::string>())
+        ("destination", "Output destination (file|database)", cxxopts::value<std::string>()->default_value("file"))
+        ("file-format", "Output format for file destination (json|csv|sql)", cxxopts::value<std::string>())
+        ("database-url", "Database URL or ODBC connection string (database mode)", cxxopts::value<std::string>())
         ("table", "Target table name (database mode / sql mode)", cxxopts::value<std::string>())
-        ("workspace", "Workspace root path", cxxopts::value<std::string>())
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -469,64 +467,56 @@ int CommandInit::run(const std::vector<std::string>& args) {
         }
     }
 
-    std::string output_dest = result["output-dest"].as<std::string>();
-    if (output_dest != "file" && output_dest != "database") {
-        std::cerr << "--output-dest must be file or database\n";
+    std::string destination = result["destination"].as<std::string>();
+    if (destination != "file" && destination != "database") {
+        std::cerr << "--destination must be file or database\n";
         return exit_codes::kUsage;
     }
 
-    std::string output_format = "csv";
-    if (result.count("format")) {
-        if (output_dest != "file") {
-            std::cerr << "--format only works with --output-dest file\n";
+    std::string file_format = "csv";
+    if (result.count("file-format")) {
+        if (destination != "file") {
+            std::cerr << "--file-format only works with --destination file\n";
             return exit_codes::kUsage;
         }
-        output_format = result["format"].as<std::string>();
-        if (output_format != "csv" && output_format != "json" && output_format != "sql") {
-            std::cerr << "Unsupported format: " << output_format << "\n";
+        file_format = result["file-format"].as<std::string>();
+        if (file_format != "csv" && file_format != "json" && file_format != "sql") {
+            std::cerr << "Unsupported format: " << file_format << "\n";
             return exit_codes::kUsage;
         }
-    }
-
-    const std::string workspace = result.count("workspace") ? result["workspace"].as<std::string>()
-                                                             : core::default_workspace_root().string();
-    if (workspace.empty()) {
-        std::cerr << "workspace must not be empty\n";
-        return exit_codes::kUsage;
     }
 
     const std::string default_url =
         "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
     const std::string default_table = "generated_data";
 
-    const std::string url = result.count("url") ? result["url"].as<std::string>() : default_url;
+    const std::string database_url = result.count("database-url") ? result["database-url"].as<std::string>() : default_url;
     const std::string table = result.count("table") ? result["table"].as<std::string>() : default_table;
 
     OrderedJson output = OrderedJson::object();
     output["$schema"] = "./schema/data-generator.schema.json";
-    output["workspace"] = workspace;
     output["rows"] = rows;
-    output["output_dest"] = output_dest;
+    output["destination"] = destination;
     output["null_value_string"] = "";
-    output["insert_mode"] = "auto";
-    output["batch_size"] = 1000;
-    output["queue_size"] = 1024;
-    output["db_threads"] = 2;
-    output["transaction_mode"] = "per-batch";
-    output["error_policy"] = "stop";
-    output["rate_limit_rows_per_sec"] = 20000;
 
     OrderedJson fields = OrderedJson::array();
 
-    if (output_dest == "database") {
-        output["url"] = url;
+    if (destination == "database") {
+        output["database_url"] = database_url;
         output["table"] = table;
+        output["database_insert_mode"] = "auto";
+        output["database_batch_size"] = 1000;
+        output["database_queue_size"] = 1024;
+        output["database_threads"] = 2;
+        output["database_transaction_mode"] = "per-batch";
+        output["database_error_policy"] = "stop";
+        output["database_rate_limit_rows_per_sec"] = 20000;
 
-        if (result.count("url") && result.count("table")) {
+        if (result.count("database-url") && result.count("table")) {
             database::DbUrl parsed_url;
             std::string     error;
-            if (!database::parse_db_url(url, &parsed_url, &error)) {
-                std::cerr << "Invalid --url: " << error << "\n";
+            if (!database::parse_db_url(database_url, &parsed_url, &error)) {
+                std::cerr << "Invalid --database-url: " << error << "\n";
                 return exit_codes::kUsage;
             }
 
@@ -559,8 +549,8 @@ int CommandInit::run(const std::vector<std::string>& args) {
             fields = build_fields_from_template(root_template);
         }
     } else {
-        output["output_format"] = output_format;
-        if (output_format == "sql") {
+        output["file_format"] = file_format;
+        if (file_format == "sql") {
             output["table"] = table;
         }
 
@@ -588,7 +578,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
             );
             fields.push_back(std::move(field));
         } else {
-            const Json root_template = build_project_template(rows, output_format);
+            const Json root_template = build_project_template(rows, file_format);
             fields = build_fields_from_template(root_template);
         }
     }

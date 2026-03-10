@@ -808,12 +808,13 @@ const GeneratorMetadata* find_generator_metadata(const std::string& name) {
     return &(*it);
 }
 
-Json build_project_template(const int rows, const std::string& output_format) {
+Json build_project_template(const int rows, const std::string& file_format) {
     Json root;
     root["rows"]              = rows;
-    root["output_format"]     = output_format;
+    root["destination"]       = "file";
+    root["file_format"]       = file_format;
     root["null_value_string"] = nullptr;
-    if (output_format == "sql") {
+    if (file_format == "sql") {
         root["table"] = "generated_data";
     }
 

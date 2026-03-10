@@ -48,7 +48,6 @@ struct ColumnMetadata {
     std::string                name;
     std::string                data_type;
     std::optional<std::string> default_value;
-    bool                       nullable = true;
     bool                       auto_increment = false;
     bool                       unsigned_number = false;
     std::optional<int>         character_length;

@@ -12,15 +12,24 @@
 #include <cctype>
 #include <condition_variable>
 #include <deque>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
+#include "core/progress_bar.h"
+#include "core/env_utils.h"
 #include "database/db_schema_validator.h"
 #include "database/db_url_parser.h"
 #include "database/driver/idatabase_driver.h"
@@ -33,20 +42,16 @@ namespace {
 
 using RowWithIndex = std::pair<std::uint64_t, core::Row>;
 
-std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {
-    constexpr int kWidth = 20;
-    const double progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
-    const int filled = static_cast<int>(progress * static_cast<double>(kWidth));
+constexpr std::size_t kProgressClearWidth = 160;
+constexpr const char* kAnsiClearLine = "\x1b[2K";
+constexpr const char* kAnsiMoveUp = "\x1b[1A";
 
-    std::string bar;
-    bar.reserve(kWidth);
-    for (int i = 0; i < kWidth; ++i) {
-        bar.push_back(i < filled ? '#' : '-');
-    }
-
-    std::ostringstream oss;
-    oss << "[" << bar << "] " << static_cast<int>(progress * 100.0) << "% (" << done << "/" << total << ")";
-    return oss.str();
+bool stdout_is_tty() {
+#if defined(_WIN32)
+    return _isatty(_fileno(stdout)) != 0;
+#else
+    return isatty(fileno(stdout)) != 0;
+#endif
 }
 
 core::InsertMode choose_insert_mode(
@@ -320,6 +325,258 @@ bool is_load_data_disabled_error(const std::string& error_text) {
            lower.find("local_infile") != std::string::npos;
 }
 
+std::string trim_ascii_spaces(std::string text) {
+    std::size_t start = 0;
+    while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) {
+        ++start;
+    }
+
+    std::size_t end = text.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) {
+        --end;
+    }
+
+    return text.substr(start, end - start);
+}
+
+std::string to_upper_ascii(std::string text) {
+    std::transform(text.begin(), text.end(), text.begin(), [](const unsigned char ch) {
+        return static_cast<char>(std::toupper(ch));
+    });
+    return text;
+}
+
+std::unordered_map<std::string, std::string> parse_odbc_attributes(const std::string& connection_string) {
+    std::unordered_map<std::string, std::string> attributes;
+    std::size_t begin = 0;
+    while (begin <= connection_string.size()) {
+        const std::size_t end = connection_string.find(';', begin);
+        const std::string token =
+            end == std::string::npos ? connection_string.substr(begin) : connection_string.substr(begin, end - begin);
+        if (!token.empty()) {
+            const std::size_t equal = token.find('=');
+            if (equal != std::string::npos) {
+                const std::string key = to_upper_ascii(trim_ascii_spaces(token.substr(0, equal)));
+                const std::string value = trim_ascii_spaces(token.substr(equal + 1));
+                if (!key.empty()) { attributes[key] = value; }
+            }
+        }
+        if (end == std::string::npos) { break; }
+        begin = end + 1;
+    }
+    return attributes;
+}
+
+std::optional<std::filesystem::path> resolve_odbc_ini_path() {
+    if (const auto odbc_ini = core::get_env_value("ODBCINI"); odbc_ini.has_value()) {
+        return std::filesystem::path(*odbc_ini);
+    }
+    if (const auto odbc_sys = core::get_env_value("ODBCSYSINI"); odbc_sys.has_value()) {
+        return std::filesystem::path(*odbc_sys) / "odbc.ini";
+    }
+
+    const std::vector<std::filesystem::path> candidates = {
+        "/etc/odbc.ini",
+        "/usr/local/etc/odbc.ini",
+        "/opt/homebrew/etc/odbc.ini",
+    };
+    for (const auto& path : candidates) {
+        if (std::filesystem::exists(path)) { return path; }
+    }
+
+    if (const auto home = core::get_env_value("HOME"); home.has_value()) {
+        const std::filesystem::path user_path = std::filesystem::path(*home) / ".odbc.ini";
+        if (std::filesystem::exists(user_path)) { return user_path; }
+    }
+
+    return std::nullopt;
+}
+
+bool load_odbc_ini_section(const std::string& section_name, std::unordered_map<std::string, std::string>* out) {
+    if (!out) { return false; }
+    const auto path = resolve_odbc_ini_path();
+    if (!path.has_value()) { return false; }
+
+    std::ifstream in(*path);
+    if (!in) { return false; }
+
+    const std::string target = to_upper_ascii(trim_ascii_spaces(section_name));
+    std::string       current;
+    std::string       line;
+    bool              found = false;
+
+    while (std::getline(in, line)) {
+        std::string trimmed = trim_ascii_spaces(line);
+        if (trimmed.empty()) { continue; }
+        if (trimmed[0] == ';' || trimmed[0] == '#') { continue; }
+
+        if (trimmed.front() == '[' && trimmed.back() == ']') {
+            current = to_upper_ascii(trim_ascii_spaces(trimmed.substr(1, trimmed.size() - 2)));
+            continue;
+        }
+
+        if (current != target) { continue; }
+        const std::size_t equal = trimmed.find('=');
+        if (equal == std::string::npos) { continue; }
+
+        const std::string key = to_upper_ascii(trim_ascii_spaces(trimmed.substr(0, equal)));
+        const std::string value = trim_ascii_spaces(trimmed.substr(equal + 1));
+        if (!key.empty()) {
+            (*out)[key] = value;
+            found = true;
+        }
+    }
+
+    return found;
+}
+
+void parse_oracle_dbq(
+    const std::string& dbq,
+    std::string* host,
+    std::string* port,
+    std::string* database
+) {
+    const std::size_t colon = dbq.find(':');
+    const std::size_t slash = dbq.find('/');
+    if (colon != std::string::npos) {
+        *host = dbq.substr(0, colon);
+        if (slash != std::string::npos && slash > colon + 1) {
+            *port = dbq.substr(colon + 1, slash - colon - 1);
+        } else if (colon + 1 < dbq.size()) {
+            *port = dbq.substr(colon + 1);
+        }
+    } else if (!dbq.empty()) {
+        *host = dbq;
+    }
+    if (slash != std::string::npos && slash + 1 < dbq.size()) {
+        *database = dbq.substr(slash + 1);
+    }
+}
+
+std::string build_connection_info_line(const database::DbUrl& db_url) {
+    std::string driver;
+    std::string dsn;
+    std::string host = db_url.host;
+    std::string port = db_url.port > 0 ? std::to_string(db_url.port) : "";
+    std::string database = db_url.database;
+    std::string user = db_url.username;
+
+    const auto attributes = parse_odbc_attributes(db_url.odbc_connection_string);
+    if (const auto it = attributes.find("DRIVER"); it != attributes.end()) { driver = it->second; }
+    if (const auto it = attributes.find("DSN"); it != attributes.end()) { dsn = it->second; }
+    if (host.empty()) {
+        if (const auto it = attributes.find("SERVER"); it != attributes.end()) { host = it->second; }
+    }
+    if (host.empty()) {
+        if (const auto it = attributes.find("HOST"); it != attributes.end()) { host = it->second; }
+    }
+    if (port.empty()) {
+        if (const auto it = attributes.find("PORT"); it != attributes.end()) { port = it->second; }
+    }
+    if (database.empty()) {
+        if (const auto it = attributes.find("DATABASE"); it != attributes.end()) { database = it->second; }
+    }
+    if (database.empty()) {
+        if (const auto it = attributes.find("DB"); it != attributes.end()) { database = it->second; }
+    }
+    if (user.empty()) {
+        if (const auto it = attributes.find("UID"); it != attributes.end()) { user = it->second; }
+    }
+    if (user.empty()) {
+        if (const auto it = attributes.find("USER"); it != attributes.end()) { user = it->second; }
+    }
+    if (user.empty()) {
+        if (const auto it = attributes.find("USERNAME"); it != attributes.end()) { user = it->second; }
+    }
+    if (user.empty()) {
+        if (const auto it = attributes.find("USERID"); it != attributes.end()) { user = it->second; }
+    }
+    if (user.empty()) {
+        if (const auto it = attributes.find("USER ID"); it != attributes.end()) { user = it->second; }
+    }
+
+    if (const auto it = attributes.find("DBQ"); it != attributes.end()) {
+        parse_oracle_dbq(it->second, &host, &port, &database);
+    }
+
+    if (!dsn.empty()) {
+        std::unordered_map<std::string, std::string> ini_attributes;
+        if (load_odbc_ini_section(dsn, &ini_attributes)) {
+            if (driver.empty()) {
+                if (const auto it = ini_attributes.find("DRIVER"); it != ini_attributes.end()) { driver = it->second; }
+            }
+            if (host.empty()) {
+                if (const auto it = ini_attributes.find("SERVER"); it != ini_attributes.end()) { host = it->second; }
+            }
+            if (host.empty()) {
+                if (const auto it = ini_attributes.find("HOST"); it != ini_attributes.end()) { host = it->second; }
+            }
+            if (host.empty()) {
+                if (const auto it = ini_attributes.find("SERVERNAME"); it != ini_attributes.end()) { host = it->second; }
+            }
+            if (port.empty()) {
+                if (const auto it = ini_attributes.find("PORT"); it != ini_attributes.end()) { port = it->second; }
+            }
+            if (database.empty()) {
+                if (const auto it = ini_attributes.find("DATABASE"); it != ini_attributes.end()) { database = it->second; }
+            }
+            if (database.empty()) {
+                if (const auto it = ini_attributes.find("DB"); it != ini_attributes.end()) { database = it->second; }
+            }
+            if (user.empty()) {
+                if (const auto it = ini_attributes.find("UID"); it != ini_attributes.end()) { user = it->second; }
+            }
+            if (user.empty()) {
+                if (const auto it = ini_attributes.find("USER"); it != ini_attributes.end()) { user = it->second; }
+            }
+            if (user.empty()) {
+                if (const auto it = ini_attributes.find("USERNAME"); it != ini_attributes.end()) { user = it->second; }
+            }
+            if (user.empty()) {
+                if (const auto it = ini_attributes.find("USERID"); it != ini_attributes.end()) { user = it->second; }
+            }
+            if (user.empty()) {
+                if (const auto it = ini_attributes.find("USER ID"); it != ini_attributes.end()) { user = it->second; }
+            }
+            if (const auto it = ini_attributes.find("DBQ"); it != ini_attributes.end()) {
+                parse_oracle_dbq(it->second, &host, &port, &database);
+            }
+        }
+    }
+
+    std::vector<std::string> parts;
+    if (!dsn.empty()) { parts.push_back("dsn=" + dsn); }
+    if (!user.empty()) { parts.push_back("user=" + user); }
+    if (!host.empty()) { parts.push_back("host=" + host); }
+    if (!port.empty()) { parts.push_back("port=" + port); }
+    if (!database.empty()) { parts.push_back("database=" + database); }
+    if (!driver.empty()) { parts.push_back("driver=" + driver); }
+
+    if (parts.empty()) { return "Database connection=<unavailable>"; }
+
+    std::ostringstream oss;
+    oss << "Database connection";
+    for (std::size_t i = 0; i < parts.size(); ++i) {
+        oss << (i == 0 ? " " : " ");
+        oss << parts[i];
+    }
+    return oss.str();
+}
+
+std::string build_generated_line(
+    const std::uint64_t generated,
+    const std::uint64_t total
+) {
+    return "[Rows Generated] " + core::format_progress_bar(generated, total);
+}
+
+std::string build_imported_line(
+    const std::uint64_t imported,
+    const std::uint64_t total
+) {
+    return "[Data Imported ] " + core::format_progress_bar(imported, total);
+}
+
 }  // namespace
 
 OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const core::ExecutionOptions& options) {
@@ -348,6 +605,7 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
     }
 
     logger.info("Database type=" + database::db_type_to_string(db_url.type));
+    logger.info(build_connection_info_line(db_url));
     logger.info("Insert mode=" + core::insert_mode_to_string(cfg.output.database.insert_mode));
     logger.info("Batch size=" + std::to_string(cfg.output.database.batch_size));
     logger.info("Queue size=" + std::to_string(cfg.output.database.queue_size));
@@ -415,19 +673,68 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
     std::mutex error_mutex;
     std::string first_error;
 
+    std::mutex        progress_mutex;
+    std::atomic<bool> progress_active{false};
+    const bool        multiline_progress = stdout_is_tty();
+    bool              progress_rendered = false;
+
+    auto clear_progress_line = [&] {
+        if (!progress_rendered) { return; }
+        if (multiline_progress) {
+            std::cout << "\r" << kAnsiClearLine << kAnsiMoveUp << "\r" << kAnsiClearLine << "\r" << std::flush;
+        } else {
+            std::cout << "\r" << std::string(kProgressClearWidth, ' ') << "\r" << std::flush;
+        }
+        progress_rendered = false;
+    };
+
+    auto render_progress = [&](const std::uint64_t generated, const std::uint64_t imported, const bool force) {
+        if (!progress_active.load() && !force) { return; }
+        if (multiline_progress) {
+            if (progress_rendered) {
+                std::cout << "\r" << kAnsiClearLine << kAnsiMoveUp << "\r" << kAnsiClearLine << "\r";
+            }
+            std::cout << build_generated_line(generated, static_cast<std::uint64_t>(total_rows))
+                      << "\n"
+                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows))
+                      << std::flush;
+        } else {
+            std::cout << "\r"
+                      << build_generated_line(generated, static_cast<std::uint64_t>(total_rows))
+                      << " "
+                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows))
+                      << std::flush;
+        }
+        progress_rendered = true;
+    };
+
+    auto log_with_progress = [&](const std::string& message, const auto& log_fn) {
+        std::lock_guard lock(progress_mutex);
+        if (progress_active.load()) { clear_progress_line(); }
+        log_fn(message);
+        if (progress_active.load()) {
+            const std::uint64_t generated = rows_generated.load();
+            const std::uint64_t imported = rows_imported.load();
+            render_progress(generated, imported, false);
+        }
+    };
+
     auto register_error = [&](const std::string& text) {
         std::lock_guard lock(error_mutex);
         if (first_error.empty()) { first_error = text; }
-        logger.error(text);
+        log_with_progress(text, [&](const std::string& message) { logger.error(message); });
     };
 
     auto handle_policy = [&](const core::ErrorPolicy policy, const std::string& context_error) {
         if (policy == core::ErrorPolicy::Continue) {
-            logger.warn(context_error + " (continue)");
+            log_with_progress(context_error + " (continue)", [&](const std::string& message) { logger.warn(message); });
             return;
         }
         if (policy == core::ErrorPolicy::RollbackBatch) {
-            logger.warn(context_error + " (rollback current batch)");
+            log_with_progress(
+                context_error + " (rollback current batch)",
+                [&](const std::string& message) { logger.warn(message); }
+            );
             return;
         }
         if (policy == core::ErrorPolicy::RollbackAll) {
@@ -437,18 +744,15 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
     };
 
     std::atomic<bool> progress_stop{false};
+    progress_active.store(true);
     std::thread progress_thread([&] {
-        bool printed = false;
         while (!progress_stop.load()) {
             const std::uint64_t generated = rows_generated.load();
             const std::uint64_t imported = rows_imported.load();
-            if (printed) { std::cerr << "\033[2F"; }
-            std::cerr << "[Rows Generated] " << format_progress_bar(generated, static_cast<std::uint64_t>(total_rows))
-                      << "\n"
-                      << "[Data Imported ] " << format_progress_bar(imported, static_cast<std::uint64_t>(total_rows))
-                      << "\n"
-                      << std::flush;
-            printed = true;
+            {
+                std::lock_guard lock(progress_mutex);
+                render_progress(generated, imported, false);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     });
@@ -615,8 +919,9 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
                             if (can_fallback_to_bulk) {
                                 bool expected = false;
                                 if (load_fallback_warned.compare_exchange_strong(expected, true)) {
-                                    logger.warn(
-                                        "LOAD DATA LOCAL INFILE is disabled, fallback to bulk insert"
+                                    log_with_progress(
+                                        "LOAD DATA LOCAL INFILE is disabled, fallback to bulk insert",
+                                        [&](const std::string& message) { logger.warn(message); }
                                     );
                                 }
                                 ok = execute_sql(build_insert_sql(
@@ -728,6 +1033,12 @@ OutputStats DatabaseBackend::generate(const core::GenerationConfig& cfg, const c
 
     const std::uint64_t generated = rows_generated.load();
     const std::uint64_t imported = rows_imported.load();
+    {
+        std::lock_guard lock(progress_mutex);
+        render_progress(generated, imported, true);
+        std::cout << "\n" << std::flush;
+    }
+    progress_active.store(false);
 
     logger.info("Generated rows=" + std::to_string(generated));
     logger.info(

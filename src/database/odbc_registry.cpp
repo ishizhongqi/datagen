@@ -6,6 +6,13 @@
 
 #include "database/odbc_registry.h"
 
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include <sql.h>
 #include <sqlext.h>
 

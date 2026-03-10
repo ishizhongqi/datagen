@@ -24,7 +24,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
     options.add_options()
         ("input", "Input JSON file", cxxopts::value<std::string>())
         ("field", "Field name or 'all'", cxxopts::value<std::string>()->default_value("all"))
-        ("format", "Output format (csv|json|sql)", cxxopts::value<std::string>())
+        ("file-format", "Output format (csv|json|sql)", cxxopts::value<std::string>())
         ("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -57,8 +57,8 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             return exit_codes::kRuntimeFailure;
         }
 
-        if (result.count("format")) {
-            const auto parsed = core::parse_output_format(result["format"].as<std::string>());
+        if (result.count("file-format")) {
+            const auto parsed = core::parse_output_format(result["file-format"].as<std::string>());
             if (!parsed.has_value()) {
                 std::cerr << "Unsupported format. Use csv|json|sql\n";
                 return exit_codes::kUsage;

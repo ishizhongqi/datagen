@@ -100,7 +100,7 @@ int CommandValidate::run(const std::vector<std::string>& args) {
             if (cfg.output.database.url.empty()) {
                 warnings.push_back(core::ValidationIssue{
                     .warning = true,
-                    .path = "$.url",
+                    .path = "$.database_url",
                     .message = "database generate requires URL/ODBC connection string (CLI can override)",
                 });
             }
@@ -130,9 +130,11 @@ int CommandValidate::run(const std::vector<std::string>& args) {
             }
         }
 
-        std::cout << "Validation success. fields=" << cfg.fields.size() << " rows=" << cfg.rows
-                  << " format=" << core::output_format_to_string(cfg.format)
-                  << " warnings=" << (issues.size() + warnings.size()) << "\n";
+        std::cout << "Validation success. fields=" << cfg.fields.size() << " rows=" << cfg.rows;
+        if (cfg.output.destination == core::OutputDestination::File) {
+            std::cout << " format=" << core::output_format_to_string(cfg.format);
+        }
+        std::cout << " warnings=" << (issues.size() + warnings.size()) << "\n";
         return exit_codes::kOk;
     } catch (const std::exception& ex) {
         std::cerr << "Validation failed: " << ex.what() << "\n";

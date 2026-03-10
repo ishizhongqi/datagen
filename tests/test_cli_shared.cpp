@@ -107,7 +107,7 @@ TEST(CliSharedTest, RequiredFlagsOnlyUseTranslationCanBeFalse) {
 }
 
 TEST(CliSharedTest, BuildJsonSchemaUsesCatalogMetadata) {
-    const Json schema = BuildJsonSchema();
+    const Json schema = build_json_schema();
 
     ASSERT_TRUE(schema.contains("$schema"));
     EXPECT_EQ(schema.at("$schema").get<std::string>(), "https://json-schema.org/draft/2020-12/schema");
@@ -117,6 +117,10 @@ TEST(CliSharedTest, BuildJsonSchemaUsesCatalogMetadata) {
 
     ASSERT_TRUE(schema.contains("properties"));
     const Json& properties = schema.at("properties");
+    ASSERT_TRUE(properties.contains("destination"));
+    EXPECT_EQ(properties.at("destination").at("type").get<std::string>(), "string");
+    ASSERT_TRUE(properties.contains("file_format"));
+    EXPECT_EQ(properties.at("file_format").at("type").get<std::string>(), "string");
     ASSERT_TRUE(properties.contains("fields"));
     const Json& fields_schema = properties.at("fields");
     EXPECT_EQ(fields_schema.at("type").get<std::string>(), "array");

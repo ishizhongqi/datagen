@@ -41,4 +41,4 @@ jobs:
         shell: pwsh
         run: |
           .\build\src\Release\data-generator.exe help | Out-Null
-          .\build\src\Release\data-generator.exe generate --input docs\input_example.json --rows 5 --threads 1 --output build\output.csv
+          .\build\src\Release\data-generator.exe generate --input docs\input_example.json --rows 5 --threads 1 --file-output build\output.csv

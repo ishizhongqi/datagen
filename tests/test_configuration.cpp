@@ -17,7 +17,8 @@ TEST(ConfigurationTest, ParseValidConfig) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 5,
-  "output_format": "json",
+  "destination": "file",
+  "file_format": "json",
   "null_value_string": "<NULL>",
   "table": "t_orders",
   "fields": [
@@ -53,7 +54,8 @@ TEST(ConfigurationTest, MissingFieldsReturnsError) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 5,
-  "output_format": "csv"
+  "destination": "file",
+  "file_format": "csv"
 }
 )json");
 
@@ -69,7 +71,8 @@ TEST(ConfigurationTest, UnknownGeneratorReturnsError) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 3,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {
       "name": "f1",

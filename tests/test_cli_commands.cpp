@@ -54,14 +54,14 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
     EXPECT_EQ(invoke_cli({"describe"}), cli::exit_codes::kUsage);
 
     EXPECT_EQ(invoke_cli({"init"}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"init", "--generator", "integer", "--rows", "5", "--format", "sql"}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"init", "--rows", "5", "--format", "sql"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"init", "--generator", "integer", "--rows", "5", "--file-format", "sql"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"init", "--rows", "5", "--file-format", "sql"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--generator", "company_name"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--generator", "unsigned_integer"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--generator", "decimal"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"init", "--generator", "decimal_string"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--rows", "0"}), cli::exit_codes::kUsage);
-    EXPECT_EQ(invoke_cli({"init", "--format", "bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"init", "--file-format", "bad"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--generator", "not_exist"}), cli::exit_codes::kUsage);
 
     const auto init_out = std::filesystem::temp_directory_path() / "dg_cli_init_template.json";
@@ -73,15 +73,15 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
 
     const auto valid_input = write_json_file(
         "dg_cli_valid_preview.json",
-        R"json({"rows":2,"output_format":"csv","fields":[{"name":"id","generator":"integer","config":{"start":1,"end":9}}]})json"
+        R"json({"rows":2,"destination":"file","file_format":"csv","fields":[{"name":"id","generator":"integer","config":{"start":1,"end":9}}]})json"
     );
 
-    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "all", "--format", "csv"}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "all", "--format", "json"}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "id", "--format", "json"}), cli::exit_codes::kOk);
-    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--format", "sql"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "all", "--file-format", "csv"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "all", "--file-format", "json"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "id", "--file-format", "json"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--file-format", "sql"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--field", "missing"}), cli::exit_codes::kRuntimeFailure);
-    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--format", "bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"preview", "--input", valid_input.string(), "--file-format", "bad"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"preview"}), cli::exit_codes::kUsage);
 
     EXPECT_EQ(invoke_cli({"validate", "--input", valid_input.string()}), cli::exit_codes::kOk);
@@ -91,19 +91,19 @@ TEST(CliCommandsTest, InitDescribeListPreviewAndValidateBranches) {
     const auto invalid_input = write_json_file("dg_cli_invalid.json", "{");
     EXPECT_EQ(invoke_cli({"validate", "--input", invalid_input.string()}), cli::exit_codes::kRuntimeFailure);
 
-    const auto invalid_schema = write_json_file("dg_cli_invalid_schema.json", R"json({"rows":2,"output_format":"csv","fields":[]})json");
+    const auto invalid_schema = write_json_file("dg_cli_invalid_schema.json", R"json({"rows":2,"destination":"file","file_format":"csv","fields":[]})json");
     EXPECT_EQ(invoke_cli({"preview", "--input", invalid_schema.string()}), cli::exit_codes::kRuntimeFailure);
 }
 
 TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
     const auto valid_input = write_json_file(
         "dg_cli_valid_generate.json",
-        R"json({"rows":2,"output_format":"csv","fields":[{"name":"id","generator":"integer","config":{"start":1,"end":9}}]})json"
+        R"json({"rows":2,"destination":"file","file_format":"csv","fields":[{"name":"id","generator":"integer","config":{"start":1,"end":9}}]})json"
     );
 
     EXPECT_EQ(invoke_cli({"generate"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--rows", "0"}), cli::exit_codes::kUsage);
-    EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--format", "bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--file-format", "bad"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--table", ""}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"generate", "--input", valid_input.string(), "--threads", "0"}), cli::exit_codes::kUsage);
 
@@ -115,13 +115,11 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
             "generate",
             "--input",
             valid_input.string(),
-            "--output",
+            "--file-output",
             out_csv.string(),
-            "--workspace",
-            workspace.string(),
             "--rows",
             "10",
-            "--format",
+            "--file-format",
             "json",
             "--table",
             "t_cli",
@@ -135,17 +133,17 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
 
     const auto bad_path = std::filesystem::temp_directory_path() / "no_such_dir" / "x.csv";
     EXPECT_EQ(
-        invoke_cli({"generate", "--input", valid_input.string(), "--output", bad_path.string()}),
+        invoke_cli({"generate", "--input", valid_input.string(), "--file-output", bad_path.string()}),
         cli::exit_codes::kRuntimeFailure
     );
 
     const auto fallback_input = write_json_file(
         "dg_cli_generate_fallback.json",
-        R"json({"rows":2,"output_format":"csv","fields":[{"name":"email","generator":"email","unique":true,"config":{"languages":["English"]}}]})json"
+        R"json({"rows":2,"destination":"file","file_format":"csv","fields":[{"name":"email","generator":"email","unique":true,"config":{"languages":["English"]}}]})json"
     );
     const auto fallback_output = std::filesystem::temp_directory_path() / "dg_cli_generate_fallback.csv";
     EXPECT_EQ(
-        invoke_cli({"generate", "--input", fallback_input.string(), "--threads", "4", "--output", fallback_output.string()}),
+        invoke_cli({"generate", "--input", fallback_input.string(), "--threads", "4", "--file-output", fallback_output.string()}),
         cli::exit_codes::kOk
     );
     EXPECT_TRUE(std::filesystem::exists(fallback_output));
@@ -177,7 +175,7 @@ TEST(CliCommandsTest, GenerateErrorAndSuccessBranches) {
     }
     EXPECT_TRUE(found_default_output);
 
-    const auto invalid_schema = write_json_file("dg_cli_generate_invalid_schema.json", R"json({"rows":2,"output_format":"csv","fields":[]})json");
+    const auto invalid_schema = write_json_file("dg_cli_generate_invalid_schema.json", R"json({"rows":2,"destination":"file","file_format":"csv","fields":[]})json");
     EXPECT_EQ(invoke_cli({"generate", "--input", invalid_schema.string()}), cli::exit_codes::kRuntimeFailure);
 
     const auto missing_input = std::filesystem::temp_directory_path() / "dg_cli_missing_input_987654321.json";
@@ -231,7 +229,8 @@ TEST(CliCommandsTest, PreviewAndValidateRuntimeErrorBranches) {
         R"json({
   "rows": 1,
   "null_value_string": null,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {
       "name": "value",
@@ -256,7 +255,8 @@ TEST(CliCommandsTest, PreviewAndValidateRuntimeErrorBranches) {
         "dg_cli_validate_runtime_invalid.json",
         R"json({
   "rows": 1,
-  "output_format": "csv",
+  "destination": "file",
+  "file_format": "csv",
   "fields": [
     {
       "name": "bad",
