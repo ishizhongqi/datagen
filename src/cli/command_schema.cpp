@@ -34,7 +34,7 @@ int CommandSchema::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    const std::string schema_text = BuildJsonSchema().dump(2);
+    const std::string schema_text = build_json_schema().dump(2);
     if (!result.count("output")) {
         std::cout << schema_text << "\n";
         return exit_codes::kOk;

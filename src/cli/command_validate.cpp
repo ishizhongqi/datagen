@@ -27,7 +27,7 @@ bool validate_database_connection(const core::GenerationConfig& cfg, std::string
     database::DbUrl parsed_url;
     if (!database::parse_db_url(cfg.output.database.url, &parsed_url, error_message)) { return false; }
 
-    auto driver = database::make_database_driver(parsed_url.type);
+    const auto driver = database::make_database_driver(parsed_url.type);
     if (!driver) {
         if (error_message) { *error_message = "unsupported database type"; }
         return false;

@@ -36,7 +36,7 @@ OrderedJson build_ordered_config_template(const GeneratorMetadata& meta);
  *
  * @return nlohmann::json JSON Schema root object.
  */
-nlohmann::json BuildJsonSchema();
+nlohmann::json build_json_schema();
 
 cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<std::string>& args);
 

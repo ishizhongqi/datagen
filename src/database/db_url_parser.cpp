@@ -60,7 +60,7 @@ std::string percent_decode(const std::string& encoded) {
 std::string percent_encode(const std::string& plain) {
     std::ostringstream oss;
     for (const char ch_char : plain) {
-        const unsigned char ch = static_cast<unsigned char>(ch_char);
+        const auto ch = static_cast<unsigned char>(ch_char);
         if (std::isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == '~') {
             oss << static_cast<char>(ch);
         } else {

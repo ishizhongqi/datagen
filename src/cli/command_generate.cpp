@@ -40,9 +40,8 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
         ("input", "Input JSON file", cxxopts::value<std::string>())
         ("output", "Output file path. If omitted, writes dgresult_YYYYmmddHHMMSS.<format> in current directory", cxxopts::value<std::string>())
         ("rows", "Override rows", cxxopts::value<int>())
-        ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
-        ("threads", "Generator threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
         ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>())
+        ("format", "Override format (csv|json|sql)", cxxopts::value<std::string>())
         ("url", "Database URL or ODBC connection string", cxxopts::value<std::string>())
         ("table", "Target table name", cxxopts::value<std::string>())
         ("db-type", "Database type for ODBC build (mysql|postgresql|oracle)", cxxopts::value<std::string>())
@@ -58,6 +57,7 @@ int CommandGenerate::run(const std::vector<std::string>& args) {
         ("transaction-mode", "Transaction mode (per-batch|per-run|none)", cxxopts::value<std::string>())
         ("error-policy", "error policy (stop|continue|rollback-batch|rollback-all)", cxxopts::value<std::string>())
         ("rate-limit", "Rate limit rows/s", cxxopts::value<int>())
+        ("threads", "Generator threads for eligible workloads", cxxopts::value<std::size_t>()->default_value("1"))
         ("workspace", "Workspace root path", cxxopts::value<std::string>())
         ("h,help", "Show help");
 

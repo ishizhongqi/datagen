@@ -240,7 +240,7 @@ GenerateResult generate_with_consumer(
     const std::size_t requested_threads = std::max<std::size_t>(1, opts.requested_threads);
     const std::size_t candidate_threads = effective_thread_count(requested_threads, cfg.rows);
 
-    std::atomic<bool> cancelled = false;
+    std::atomic cancelled = false;
 
     if (candidate_threads > 1) {
         std::string reason;

@@ -29,8 +29,8 @@ struct ValidationMessage {
 struct SchemaValidationReport {
     std::vector<ValidationMessage> messages;
 
-    std::size_t error_count() const;
-    std::size_t warning_count() const;
+    [[nodiscard]] std::size_t error_count() const;
+    [[nodiscard]] std::size_t warning_count() const;
 };
 
 SchemaValidationReport validate_table_schema(

@@ -283,10 +283,10 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
     case database::ColumnTypeFamily::Date    : return "date";
     case database::ColumnTypeFamily::Time    : return "time";
     case database::ColumnTypeFamily::DateTime: return "datetime";
-    case database::ColumnTypeFamily::Enum    : return "enum_item";
+    case database::ColumnTypeFamily::Enum    :
     case database::ColumnTypeFamily::Boolean : return "enum_item";
-    case database::ColumnTypeFamily::String  : return "text";
-    case database::ColumnTypeFamily::Binary  : return "text";
+    case database::ColumnTypeFamily::String  :
+    case database::ColumnTypeFamily::Binary  :
     case database::ColumnTypeFamily::Unknown : return "text";
     }
     return "text";
@@ -437,10 +437,10 @@ int CommandInit::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator init", "Generate JSON configuration template.");
     options.add_options()
         ("generator", "Generator name", cxxopts::value<std::string>())
-        ("rows", "Number of rows", cxxopts::value<int>())
-        ("format", "Output format (json|csv|sql), file mode only", cxxopts::value<std::string>())
         ("output", "Output file path", cxxopts::value<std::string>())
+        ("rows", "Number of rows", cxxopts::value<int>())
         ("output-dest", "Output destination (file|database)", cxxopts::value<std::string>()->default_value("file"))
+        ("format", "Output format (json|csv|sql), file mode only", cxxopts::value<std::string>())
         ("url", "Database URL or ODBC connection string (database mode)", cxxopts::value<std::string>())
         ("table", "Target table name (database mode / sql mode)", cxxopts::value<std::string>())
         ("workspace", "Workspace root path", cxxopts::value<std::string>())

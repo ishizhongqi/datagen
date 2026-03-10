@@ -16,7 +16,7 @@ namespace data_generator::cli {
 
 namespace {
 
-Json BuildSchemaForParamType(const std::string& param_type) {
+Json build_schema_for_param_type(const std::string& param_type) {
     if (param_type == "string") { return Json{{"type", "string"}}; }
     if (param_type == "number") { return Json{{"type", "number"}}; }
     if (param_type == "boolean") { return Json{{"type", "boolean"}}; }
@@ -31,8 +31,8 @@ Json BuildSchemaForParamType(const std::string& param_type) {
     return Json::object();
 }
 
-Json BuildSchemaForConfigParam(const ConfigParam& param) {
-    Json schema = BuildSchemaForParamType(param.type);
+Json build_param_for_config_param(const ConfigParam& param) {
+    Json schema = build_schema_for_param_type(param.type);
     if (param.supported_values.empty()) { return schema; }
 
     if (param.type == "array<string>") {
@@ -45,7 +45,7 @@ Json BuildSchemaForConfigParam(const ConfigParam& param) {
     return schema;
 }
 
-Json BuildConfigSchema(const GeneratorMetadata& meta) {
+Json build_config_schema(const GeneratorMetadata& meta) {
     Json config_schema;
     config_schema["type"]                 = "object";
     config_schema["properties"]           = Json::object();
@@ -53,7 +53,7 @@ Json BuildConfigSchema(const GeneratorMetadata& meta) {
 
     Json required = Json::array();
     for (const auto& param : meta.config_params) {
-        config_schema["properties"][param.name] = BuildSchemaForConfigParam(param);
+        config_schema["properties"][param.name] = build_param_for_config_param(param);
         if (param.required) { required.push_back(param.name); }
     }
     if (!required.empty()) { config_schema["required"] = std::move(required); }
@@ -61,7 +61,7 @@ Json BuildConfigSchema(const GeneratorMetadata& meta) {
     return config_schema;
 }
 
-Json BuildGeneratorConstraint(const GeneratorMetadata& meta) {
+Json build_generator_constraint(const GeneratorMetadata& meta) {
     Json constraint;
     constraint["if"] = Json{
         {"properties", Json{{"generator", Json{{"const", meta.name}}}}},
@@ -70,7 +70,7 @@ Json BuildGeneratorConstraint(const GeneratorMetadata& meta) {
 
     Json then_schema;
     then_schema["properties"] = Json{
-        {"config", BuildConfigSchema(meta)},
+        {"config", build_config_schema(meta)},
     };
 
     Json restriction_rules = Json::array();
@@ -134,14 +134,14 @@ OrderedJson build_ordered_config_template(const GeneratorMetadata& meta) {
     return ordered;
 }
 
-nlohmann::json BuildJsonSchema() {
+nlohmann::json build_json_schema() {
     const auto& catalog = get_generator_catalog();
 
     Json generator_names = Json::array();
     for (const auto& meta : catalog) { generator_names.push_back(meta.name); }
 
     Json field_constraints = Json::array();
-    for (const auto& meta : catalog) { field_constraints.push_back(BuildGeneratorConstraint(meta)); }
+    for (const auto& meta : catalog) { field_constraints.push_back(build_generator_constraint(meta)); }
 
     Json field_item_schema;
     field_item_schema["type"]                 = "object";

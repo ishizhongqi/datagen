@@ -19,7 +19,7 @@ class IDatabaseDriver {
 public:
     virtual ~IDatabaseDriver() = default;
 
-    virtual DbType type() const = 0;
+    [[nodiscard]] virtual DbType type() const = 0;
 
     virtual bool connect(const DbUrl& url, std::string* error_message) = 0;
     virtual void disconnect() = 0;
@@ -40,7 +40,7 @@ public:
         std::string*       error_message
     ) = 0;
 
-    virtual bool supports_load_mode() const = 0;
+    [[nodiscard]] virtual bool supports_load_mode() const = 0;
 };
 
 std::unique_ptr<IDatabaseDriver> make_database_driver(DbType type);
