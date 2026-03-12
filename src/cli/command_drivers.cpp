@@ -11,7 +11,7 @@
 
 #include "cli/cli_shared.h"
 #include "cli/exit_codes.h"
-#include "database/odbc_registry.h"
+#include "output/database/odbc_registry.h"
 
 namespace data_generator::cli {
 

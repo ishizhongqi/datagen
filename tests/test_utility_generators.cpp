@@ -7,17 +7,17 @@
 #include <sstream>
 #include <string>
 
-#include "core/configuration.h"
-#include "core/executor.h"
+#include "config/configuration.h"
+#include "engine/executor.h"
 
-using namespace data_generator::core;
+using namespace data_generator;
 
 namespace {
 
-GenerationConfig cfg_from(const nlohmann::json& root) {
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+config::GenerationConfig cfg_from(const nlohmann::json& root) {
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
     EXPECT_TRUE(ok);
     return cfg;
 }
@@ -42,7 +42,7 @@ TEST(UtilityGeneratorsTest, SequenceAndRegexVariants) {
 
     auto cfg = cfg_from(root);
     std::ostringstream out;
-    (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out);
+    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out);
     EXPECT_NE(out.str().find("seq_circle"), std::string::npos);
 }
 
@@ -61,7 +61,7 @@ TEST(UtilityGeneratorsTest, RegexInvalidPatternsThrow) {
     auto cfg = cfg_from(root);
     std::ostringstream out;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out),
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out),
         std::invalid_argument
     );
 }
@@ -80,7 +80,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg1 = cfg_from(root1);
     std::ostringstream out1;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg1, ExecutionOptions{.requested_threads = 1}, out1),
+        (void)engine::generate_to_stream(cfg1, engine::ExecutionOptions{.requested_threads = 1}, out1),
         std::invalid_argument
     );
 
@@ -97,7 +97,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg2 = cfg_from(root2);
     std::ostringstream out2;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg2, ExecutionOptions{.requested_threads = 1}, out2),
+        (void)engine::generate_to_stream(cfg2, engine::ExecutionOptions{.requested_threads = 1}, out2),
         std::invalid_argument
     );
 
@@ -114,7 +114,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg3 = cfg_from(root3);
     std::ostringstream out3;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg3, ExecutionOptions{.requested_threads = 1}, out3),
+        (void)engine::generate_to_stream(cfg3, engine::ExecutionOptions{.requested_threads = 1}, out3),
         std::invalid_argument
     );
 
@@ -131,7 +131,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg4 = cfg_from(root4);
     std::ostringstream out4;
     EXPECT_NO_THROW(
-        (void)generate_to_stream(cfg4, ExecutionOptions{.requested_threads = 1}, out4)
+        (void)engine::generate_to_stream(cfg4, engine::ExecutionOptions{.requested_threads = 1}, out4)
     );
 
     const auto root5 = nlohmann::json::parse(R"json(
@@ -147,7 +147,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg5 = cfg_from(root5);
     std::ostringstream out5;
     EXPECT_NO_THROW(
-        (void)generate_to_stream(cfg5, ExecutionOptions{.requested_threads = 1}, out5)
+        (void)engine::generate_to_stream(cfg5, engine::ExecutionOptions{.requested_threads = 1}, out5)
     );
 
     const auto root5b = nlohmann::json::parse(R"json(
@@ -163,7 +163,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg5b = cfg_from(root5b);
     std::ostringstream out5b;
     EXPECT_NO_THROW(
-        (void)generate_to_stream(cfg5b, ExecutionOptions{.requested_threads = 1}, out5b)
+        (void)engine::generate_to_stream(cfg5b, engine::ExecutionOptions{.requested_threads = 1}, out5b)
     );
 
     const auto root6 = nlohmann::json::parse(R"json(
@@ -179,7 +179,7 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     auto cfg6 = cfg_from(root6);
     std::ostringstream out6;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg6, ExecutionOptions{.requested_threads = 1}, out6),
+        (void)engine::generate_to_stream(cfg6, engine::ExecutionOptions{.requested_threads = 1}, out6),
         std::invalid_argument
     );
 }

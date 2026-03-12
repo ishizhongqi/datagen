@@ -18,7 +18,10 @@ namespace data_generator::cli {
 
 int CommandSchema::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator schema", "Generate JSON Schema from generator metadata.");
-    options.add_options()("output", "Output schema file path", cxxopts::value<std::string>())("h,help", "Show help");
+    options.add_options()
+        ("output", "Output schema file path", cxxopts::value<std::string>())
+        ("h,help", "Show help");
+    options.parse_positional({"output"});
 
     cxxopts::ParseResult result;
     try {
@@ -34,12 +37,13 @@ int CommandSchema::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    const std::string schema_text = build_json_schema().dump(2);
     if (!result.count("output")) {
-        std::cout << schema_text << "\n";
-        return exit_codes::kOk;
+        std::cerr << "Missing required <file>\n";
+        std::cerr << options.help() << "\n";
+        return exit_codes::kUsage;
     }
 
+    const std::string schema_text = build_json_schema().dump(2);
     const std::string path = result["output"].as<std::string>();
     std::ofstream     out(path, std::ios::trunc);
     if (!out) {

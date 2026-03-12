@@ -7,59 +7,6 @@
     }
   },
   "properties": {
-    "database_batch_size": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "database_error_policy": {
-      "enum": [
-        "stop",
-        "continue",
-        "rollback-batch",
-        "rollback-all"
-      ],
-      "type": "string"
-    },
-    "database_insert_mode": {
-      "enum": [
-        "auto",
-        "insert",
-        "bulk",
-        "load"
-      ],
-      "type": "string"
-    },
-    "database_queue_size": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "database_rate_limit_rows_per_sec": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "database_threads": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "database_transaction_mode": {
-      "enum": [
-        "per-batch",
-        "per-run",
-        "none"
-      ],
-      "type": "string"
-    },
-    "database_url": {
-      "minLength": 1,
-      "type": "string"
-    },
-    "destination": {
-      "enum": [
-        "file",
-        "database"
-      ],
-      "type": "string"
-    },
     "fields": {
       "items": {
         "additionalProperties": false,
@@ -2783,27 +2730,302 @@
       "minItems": 1,
       "type": "array"
     },
-    "file_format": {
-      "enum": [
-        "csv",
-        "json",
-        "sql"
-      ],
-      "type": "string"
-    },
-    "null_value_string": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "rows": {
       "minimum": 1,
       "type": "integer"
     },
-    "table": {
-      "minLength": 1,
-      "type": "string"
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "file",
+            "database"
+          ]
+        },
+        "file": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql",
+                "Tab-Delimited",
+                "Custom"
+              ]
+            },
+            "options": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "format"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "csv"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "type": "string",
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "Tab-Delimited"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "type": "string",
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "json"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "array": {
+                        "type": "boolean"
+                      },
+                      "include_null": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "sql"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "table": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "create_table": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "Custom"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "delimiter": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "quote": {
+                        "type": "string"
+                      },
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "type": "string",
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "minLength": 1
+            },
+            "table": {
+              "type": "string",
+              "minLength": 1
+            },
+            "insert_mode": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "insert",
+                "bulk",
+                "load"
+              ]
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "queue_size": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "threads": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "transaction_mode": {
+              "type": "string",
+              "enum": [
+                "per-batch",
+                "per-run",
+                "none"
+              ]
+            },
+            "error_policy": {
+              "type": "string",
+              "enum": [
+                "stop",
+                "continue",
+                "rollback-batch",
+                "rollback-all"
+              ]
+            },
+            "rate_limit_rows_per_sec": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "url",
+            "table"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "file"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "file"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "database"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "database"
+            ]
+          }
+        }
+      ]
     }
   },
   "required": [

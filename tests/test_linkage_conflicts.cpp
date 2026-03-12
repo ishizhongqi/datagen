@@ -7,18 +7,18 @@
 #include <sstream>
 #include <vector>
 
-#include "core/configuration.h"
-#include "core/executor.h"
+#include "config/configuration.h"
+#include "engine/executor.h"
 
-using namespace data_generator::core;
+using namespace data_generator;
 
 namespace {
 
-GenerationConfig cfg_from_json(const char* text) {
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
+config::GenerationConfig cfg_from_json(const char* text) {
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
     const auto root = nlohmann::json::parse(text);
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
     EXPECT_TRUE(ok);
     return cfg;
 }
@@ -37,7 +37,7 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
 )json");
     std::ostringstream out;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out),
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out),
         std::runtime_error
     );
 
@@ -54,7 +54,7 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
 )json");
     std::ostringstream out_gender;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg_gender, ExecutionOptions{.requested_threads = 1}, out_gender),
+        (void)engine::generate_to_stream(cfg_gender, engine::ExecutionOptions{.requested_threads = 1}, out_gender),
         std::runtime_error
     );
 }
@@ -73,7 +73,7 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
 )json");
     std::ostringstream out1;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg_regions, ExecutionOptions{.requested_threads = 1}, out1),
+        (void)engine::generate_to_stream(cfg_regions, engine::ExecutionOptions{.requested_threads = 1}, out1),
         std::runtime_error
     );
 
@@ -90,7 +90,7 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
 )json");
     std::ostringstream out2;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg_domains, ExecutionOptions{.requested_threads = 1}, out2),
+        (void)engine::generate_to_stream(cfg_domains, engine::ExecutionOptions{.requested_threads = 1}, out2),
         std::runtime_error
     );
 
@@ -106,7 +106,7 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
 }
     )json");
     std::ostringstream out3;
-    EXPECT_NO_THROW((void)generate_to_stream(cfg_unique, ExecutionOptions{.requested_threads = 1}, out3));
+    EXPECT_NO_THROW((void)engine::generate_to_stream(cfg_unique, engine::ExecutionOptions{.requested_threads = 1}, out3));
 }
 
 TEST(LinkageConflictTest, PaymentConflictBranches) {
@@ -123,7 +123,7 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
 )json");
     std::ostringstream out;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out),
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out),
         std::runtime_error
     );
 
@@ -140,9 +140,9 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
 )json");
     std::ostringstream out_card_types;
     EXPECT_THROW(
-        (void)generate_to_stream(
+        (void)engine::generate_to_stream(
             cfg_card_types,
-            ExecutionOptions{.requested_threads = 1},
+            engine::ExecutionOptions{.requested_threads = 1},
             out_card_types
         ),
         std::runtime_error
@@ -163,7 +163,7 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
 )json");
     std::ostringstream out1;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg_start, ExecutionOptions{.requested_threads = 1}, out1),
+        (void)engine::generate_to_stream(cfg_start, engine::ExecutionOptions{.requested_threads = 1}, out1),
         std::runtime_error
     );
 
@@ -180,7 +180,7 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
 )json");
     std::ostringstream out2;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg_end, ExecutionOptions{.requested_threads = 1}, out2),
+        (void)engine::generate_to_stream(cfg_end, engine::ExecutionOptions{.requested_threads = 1}, out2),
         std::runtime_error
     );
 
@@ -196,7 +196,7 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
 }
     )json");
     std::ostringstream out3;
-    EXPECT_NO_THROW((void)generate_to_stream(cfg_unique, ExecutionOptions{.requested_threads = 1}, out3));
+    EXPECT_NO_THROW((void)engine::generate_to_stream(cfg_unique, engine::ExecutionOptions{.requested_threads = 1}, out3));
 }
 
 TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
@@ -213,7 +213,7 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
 )json");
     std::ostringstream out1;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg1, ExecutionOptions{.requested_threads = 1}, out1),
+        (void)engine::generate_to_stream(cfg1, engine::ExecutionOptions{.requested_threads = 1}, out1),
         std::runtime_error
     );
 
@@ -230,7 +230,7 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
 )json");
     std::ostringstream out2;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg2, ExecutionOptions{.requested_threads = 1}, out2),
+        (void)engine::generate_to_stream(cfg2, engine::ExecutionOptions{.requested_threads = 1}, out2),
         std::runtime_error
     );
 
@@ -247,14 +247,14 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
 )json");
     std::ostringstream out3;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg3, ExecutionOptions{.requested_threads = 1}, out3),
+        (void)engine::generate_to_stream(cfg3, engine::ExecutionOptions{.requested_threads = 1}, out3),
         std::runtime_error
     );
 }
 
 TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
 
     const auto root1 = nlohmann::json::parse(R"json(
 {
@@ -266,7 +266,7 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
   ]
 }
 )json");
-    EXPECT_TRUE(parse_generation_config(root1, ParseMode::RequireOutputSettings, &cfg, &issues));
+    EXPECT_TRUE(config::parse_generation_config(root1, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     const auto root2 = nlohmann::json::parse(R"json(
 {
@@ -278,7 +278,7 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
   ]
 }
 )json");
-    EXPECT_TRUE(parse_generation_config(root2, ParseMode::RequireOutputSettings, &cfg, &issues));
+    EXPECT_TRUE(config::parse_generation_config(root2, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     const auto cfg_invalid_url = cfg_from_json(R"json(
 {
@@ -292,9 +292,9 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
 )json");
     std::ostringstream out_invalid_url;
     EXPECT_THROW(
-        (void)generate_to_stream(
+        (void)engine::generate_to_stream(
             cfg_invalid_url,
-            ExecutionOptions{.requested_threads = 1},
+            engine::ExecutionOptions{.requested_threads = 1},
             out_invalid_url
         ),
         std::invalid_argument
@@ -312,9 +312,9 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
 )json");
     std::ostringstream out_invalid_host;
     EXPECT_THROW(
-        (void)generate_to_stream(
+        (void)engine::generate_to_stream(
             cfg_invalid_host,
-            ExecutionOptions{.requested_threads = 1},
+            engine::ExecutionOptions{.requested_threads = 1},
             out_invalid_host
         ),
         std::invalid_argument
@@ -332,7 +332,7 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
 )json");
     std::ostringstream out3;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg3, ExecutionOptions{.requested_threads = 1}, out3),
+        (void)engine::generate_to_stream(cfg3, engine::ExecutionOptions{.requested_threads = 1}, out3),
         std::runtime_error
     );
 }
@@ -351,7 +351,7 @@ TEST(LinkageConflictTest, FileExtensionLinkagePath) {
 )json");
     std::ostringstream out;
     EXPECT_NO_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out)
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out)
     );
     EXPECT_NE(out.str().find("\"e\""), std::string::npos);
 }

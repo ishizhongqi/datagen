@@ -77,7 +77,7 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
 }
 
 TEST(CliSharedTest, BuildDescribeLinesBranches) {
-    GeneratorMetadata meta;
+    data_generator::config::GeneratorMetadata meta;
     meta.name = "g";
     meta.module = "m";
     meta.supports_unique = true;
@@ -86,16 +86,16 @@ TEST(CliSharedTest, BuildDescribeLinesBranches) {
     meta.config_template["a_bool"] = true;
     meta.config_template["a_array"] = Json::array({1, 2});
     meta.config_template["a_str"] = "x";
-    meta.config_params.push_back(ConfigParam{"a_bool", "boolean", "desc", false, {}});
-    meta.config_params.push_back(ConfigParam{"a_array", "", "desc", false, {}});
-    meta.config_params.push_back(ConfigParam{"a_str", "string", "desc", false, {"x", "y"}});
+    meta.config_params.push_back(data_generator::config::ConfigParam{"a_bool", "boolean", "desc", false, {}});
+    meta.config_params.push_back(data_generator::config::ConfigParam{"a_array", "", "desc", false, {}});
+    meta.config_params.push_back(data_generator::config::ConfigParam{"a_str", "string", "desc", false, {"x", "y"}});
 
     const auto lines = build_describe_text_lines(meta);
     EXPECT_FALSE(lines.empty());
 }
 
 TEST(CliSharedTest, RequiredFlagsOnlyUseTranslationCanBeFalse) {
-    for (const auto& meta : get_generator_catalog()) {
+    for (const auto& meta : data_generator::config::get_generator_catalog()) {
         for (const auto& param : meta.config_params) {
             if (param.name == "use_translation") {
                 EXPECT_FALSE(param.required);
@@ -130,7 +130,7 @@ TEST(CliSharedTest, BuildJsonSchemaUsesCatalogMetadata) {
     ASSERT_TRUE(item_schema.at("properties").contains("generator"));
     const Json& generator_schema = item_schema.at("properties").at("generator");
     EXPECT_EQ(generator_schema.at("type").get<std::string>(), "string");
-    const auto& catalog = get_generator_catalog();
+    const auto& catalog = data_generator::config::get_generator_catalog();
     const Json& generator_enum = generator_schema.at("enum");
     EXPECT_EQ(generator_enum.size(), catalog.size());
     for (const auto& meta : catalog) {

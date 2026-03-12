@@ -1,9 +1,16 @@
 {
     "$schema": "../schema/data-generator.schema.json",
     "rows": 10,
-    "destination": "file",
-    "file_format": "csv",
-    "null_value_string": null,
+    "output": {
+        "type": "file",
+        "file": {
+            "format": "csv",
+            "options": {
+                "header": true,
+                "line_ending": "LF"
+            }
+        }
+    },
     "fields": [
         {
             "name": "default",

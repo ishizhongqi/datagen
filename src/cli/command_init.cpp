@@ -7,49 +7,24 @@
 #include "cli/command_init.h"
 
 #include <cxxopts.hpp>
-#include <chrono>
-#include <ctime>
 #include <cctype>
-#include <cstdint>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "cli/cli_shared.h"
 #include "cli/exit_codes.h"
-#include "cli/generator_catalog.h"
-#include "database/db_metadata.h"
-#include "database/db_url_parser.h"
-#include "database/driver/idatabase_driver.h"
+#include "config/generator_catalog.h"
+#include "output/database/db_metadata.h"
+#include "output/database/db_url_parser.h"
+#include "output/database/drivers/idatabase_driver.h"
 
 namespace data_generator::cli {
 
 namespace {
-
-std::string now_compact_timestamp() {
-    const auto now = std::chrono::system_clock::now();
-    const auto tt  = std::chrono::system_clock::to_time_t(now);
-
-    std::tm tm{};
-#if defined(_WIN32)
-    localtime_s(&tm, &tt);
-#else
-    localtime_r(&tt, &tm);
-#endif
-
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%Y%m%d%H%M%S");
-    return oss.str();
-}
-
-std::string default_init_output_path() {
-    return "config_" + now_compact_timestamp() + ".json";
-}
 
 std::string to_lower_ascii(std::string text) {
     for (char& ch : text) {
@@ -96,79 +71,82 @@ std::vector<std::string> tokenize_identifier_for_match(const std::string& raw) {
     return tokens;
 }
 
+std::unordered_map<std::string, std::string> build_generator_name_map() {
+    std::unordered_map<std::string, std::string> map;
+    for (const auto& meta : config::get_generator_catalog()) {
+        map.emplace(normalize_identifier_for_match(meta.name), meta.name);
+    }
+    return map;
+}
+
+const std::unordered_map<std::string, std::string> kGeneratorNameMap = build_generator_name_map();
+const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
+    {"id", "sequence"},
+    {"seq", "sequence"},
+    {"sequenceid", "sequence"},
+    {"guid", "uuid"},
+    {"zipcode", "postcode"},
+    {"zip", "postcode"},
+    {"zipcod", "postcode"},
+    {"postalcode", "postcode"},
+    {"postcode", "postcode"},
+    {"comp", "company_name"},
+    {"company", "company_name"},
+    {"compname", "company_name"},
+    {"companyname", "company_name"},
+    {"corpname", "company_name"},
+    {"bizname", "company_name"},
+    {"dept", "department"},
+    {"industryname", "industry"},
+    {"ip", "ip_address"},
+    {"ipaddr", "ip_address"},
+    {"mac", "mac_address"},
+    {"hostname", "hostname"},
+    {"host", "hostname"},
+    {"website", "url"},
+    {"weburl", "url"},
+    {"filepath", "file_path"},
+    {"filename", "file_name"},
+    {"fileext", "file_extension"},
+    {"filedir", "file_directory"},
+    {"address1", "address_line1"},
+    {"addr1", "address_line1"},
+    {"address2", "address_line2"},
+    {"addr2", "address_line2"},
+    {"address", "full_address"},
+    {"fullname", "full_name"},
+    {"fname", "first_name"},
+    {"lname", "last_name"},
+    {"firstname", "first_name"},
+    {"lastname", "last_name"},
+    {"tel", "phone_number"},
+    {"telephone", "phone_number"},
+    {"mobile", "phone_number"},
+    {"cellphone", "phone_number"},
+    {"phonenumber", "phone_number"},
+    {"mail", "email"},
+    {"emailaddr", "email"},
+    {"emailaddress", "email"},
+    {"job", "job_title"},
+    {"title", "title"},
+    {"gender", "gender"},
+    {"dob", "date"},
+    {"birthdate", "date"},
+    {"dt", "datetime"},
+    {"timestamp", "datetime"},
+    {"amount", "decimal"},
+    {"price", "decimal"},
+    {"qty", "integer"},
+    {"count", "integer"},
+    {"num", "integer"},
+};
+
 const std::unordered_map<std::string, std::string>& generator_name_map() {
-    static const std::unordered_map<std::string, std::string> kMap = [] {
-        std::unordered_map<std::string, std::string> map;
-        for (const auto& meta : get_generator_catalog()) {
-            map.emplace(normalize_identifier_for_match(meta.name), meta.name);
-        }
-        return map;
-    }();
-    return kMap;
+    return kGeneratorNameMap;
 }
 
 const std::unordered_map<std::string, std::string>& generator_alias_map() {
-    static const std::unordered_map<std::string, std::string> kAlias = {
-        {"id", "sequence"},
-        {"seq", "sequence"},
-        {"sequenceid", "sequence"},
-        {"guid", "uuid"},
-        {"zipcode", "postcode"},
-        {"zip", "postcode"},
-        {"zipcod", "postcode"},
-        {"postalcode", "postcode"},
-        {"postcode", "postcode"},
-        {"comp", "company_name"},
-        {"company", "company_name"},
-        {"compname", "company_name"},
-        {"companyname", "company_name"},
-        {"corpname", "company_name"},
-        {"bizname", "company_name"},
-        {"dept", "department"},
-        {"industryname", "industry"},
-        {"ip", "ip_address"},
-        {"ipaddr", "ip_address"},
-        {"mac", "mac_address"},
-        {"hostname", "hostname"},
-        {"host", "hostname"},
-        {"website", "url"},
-        {"weburl", "url"},
-        {"filepath", "file_path"},
-        {"filename", "file_name"},
-        {"fileext", "file_extension"},
-        {"filedir", "file_directory"},
-        {"address1", "address_line1"},
-        {"addr1", "address_line1"},
-        {"address2", "address_line2"},
-        {"addr2", "address_line2"},
-        {"address", "full_address"},
-        {"fullname", "full_name"},
-        {"fname", "first_name"},
-        {"lname", "last_name"},
-        {"firstname", "first_name"},
-        {"lastname", "last_name"},
-        {"tel", "phone_number"},
-        {"telephone", "phone_number"},
-        {"mobile", "phone_number"},
-        {"cellphone", "phone_number"},
-        {"phonenumber", "phone_number"},
-        {"mail", "email"},
-        {"emailaddr", "email"},
-        {"emailaddress", "email"},
-        {"job", "job_title"},
-        {"title", "title"},
-        {"gender", "gender"},
-        {"dob", "date"},
-        {"birthdate", "date"},
-        {"dt", "datetime"},
-        {"timestamp", "datetime"},
-        {"amount", "decimal"},
-        {"price", "decimal"},
-        {"qty", "integer"},
-        {"count", "integer"},
-        {"num", "integer"},
-    };
-    return kAlias;
+    return kGeneratorAliasMap;
 }
 
 bool is_name_infer_compatible(
@@ -228,7 +206,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
         }
     }
 
-    for (const auto& meta : get_generator_catalog()) {
+    for (const auto& meta : config::get_generator_catalog()) {
         if (!is_name_infer_compatible(meta.name, family)) { continue; }
 
         const std::string normalized_generator = normalize_identifier_for_match(meta.name);
@@ -310,7 +288,7 @@ OrderedJson make_default_value_defaults() {
 void apply_supported_field_attributes(
     const database::TableMetadata&                   metadata,
     const database::ColumnMetadata&                  column,
-    const GeneratorMetadata*                         meta,
+    const config::GeneratorMetadata*                         meta,
     std::unordered_map<std::string, int>*            linkage_counter_by_generator,
     OrderedJson*                                     field
 ) {
@@ -340,7 +318,7 @@ OrderedJson infer_field_from_column(
     OrderedJson field = OrderedJson::object();
     const std::string generator_name = infer_generator_name(column);
 
-    const GeneratorMetadata* meta = find_generator_metadata(generator_name);
+    const config::GeneratorMetadata* meta = config::find_generator_metadata(generator_name);
 
     field["name"] = column.name;
     field["generator"] = generator_name;
@@ -413,7 +391,7 @@ OrderedJson build_fields_from_template(const Json& root) {
         const std::string generator_name = field.contains("generator") && field.at("generator").is_string()
                                                ? field.at("generator").get<std::string>()
                                                : "";
-        const GeneratorMetadata* meta = generator_name.empty() ? nullptr : find_generator_metadata(generator_name);
+        const config::GeneratorMetadata* meta = generator_name.empty() ? nullptr : config::find_generator_metadata(generator_name);
         database::ColumnMetadata pseudo_column;
         pseudo_column.name = field.value("name", "");
         database::TableMetadata pseudo_metadata;
@@ -435,14 +413,13 @@ OrderedJson build_fields_from_template(const Json& root) {
 int CommandInit::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator init", "Generate JSON configuration template.");
     options.add_options()
-        ("generator", "Generator name", cxxopts::value<std::string>())
-        ("output", "Output file path", cxxopts::value<std::string>())
-        ("rows", "Number of rows", cxxopts::value<int>())
-        ("destination", "Output destination (file|database)", cxxopts::value<std::string>()->default_value("file"))
-        ("file-format", "Output format for file destination (json|csv|sql)", cxxopts::value<std::string>())
-        ("database-url", "Database URL or ODBC connection string (database mode)", cxxopts::value<std::string>())
-        ("table", "Target table name (database mode / sql mode)", cxxopts::value<std::string>())
+        ("config", "Output JSON file path", cxxopts::value<std::string>())
+        ("template", "Template type (file|database)", cxxopts::value<std::string>()->default_value("file"))
+        ("format", "File format (csv|json|sql|Tab-Delimited|Custom)", cxxopts::value<std::string>())
+        ("from-database", "Database URL to infer fields (ODBC or SQLite)", cxxopts::value<std::string>())
+        ("table", "Target table name", cxxopts::value<std::string>())
         ("h,help", "Show help");
+    options.parse_positional({"config"});
 
     cxxopts::ParseResult result;
     try {
@@ -458,65 +435,98 @@ int CommandInit::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    int rows = 100;
-    if (result.count("rows")) {
-        rows = result["rows"].as<int>();
-        if (rows <= 0) {
-            std::cerr << "rows must be a positive integer.\n";
-            return exit_codes::kUsage;
-        }
-    }
-
-    std::string destination = result["destination"].as<std::string>();
-    if (destination != "file" && destination != "database") {
-        std::cerr << "--destination must be file or database\n";
+    if (!result.count("config")) {
+        std::cerr << "Missing required <json>\n";
+        std::cerr << options.help() << "\n";
         return exit_codes::kUsage;
     }
 
+    const int rows = 100;
+
+    const std::string template_type = result["template"].as<std::string>();
+    if (template_type != "file" && template_type != "database") {
+        std::cerr << "--template must be file or database\n";
+        return exit_codes::kUsage;
+    }
+    const bool is_file_template = (template_type == "file");
+    const bool is_database_template = (template_type == "database");
+
     std::string file_format = "csv";
-    if (result.count("file-format")) {
-        if (destination != "file") {
-            std::cerr << "--file-format only works with --destination file\n";
-            return exit_codes::kUsage;
-        }
-        file_format = result["file-format"].as<std::string>();
-        if (file_format != "csv" && file_format != "json" && file_format != "sql") {
+    if (result.count("format")) {
+        file_format = result["format"].as<std::string>();
+        if (file_format != "csv" &&
+            file_format != "json" &&
+            file_format != "sql" &&
+            file_format != "Tab-Delimited" &&
+            file_format != "Custom") {
             std::cerr << "Unsupported format: " << file_format << "\n";
             return exit_codes::kUsage;
         }
+        if (is_database_template) {
+            std::cerr << "Warning: --format is ignored for database templates\n";
+        }
     }
+
+    const bool has_from_database = result.count("from-database") > 0;
+    const bool has_table = result.count("table") > 0;
+    const std::string from_database_url = has_from_database ? result["from-database"].as<std::string>() : "";
+    const std::string table_name = has_table ? result["table"].as<std::string>() : "";
+
+    if (has_from_database && from_database_url.empty()) {
+        std::cerr << "--from-database must not be empty\n";
+        return exit_codes::kUsage;
+    }
+    if (has_table && table_name.empty()) {
+        std::cerr << "--table must not be empty\n";
+        return exit_codes::kUsage;
+    }
+
+    if (is_file_template && has_from_database) {
+        std::cerr << "Warning: --from-database is ignored for file templates\n";
+    }
+    if (is_file_template && has_table && file_format != "sql") {
+        std::cerr << "Warning: --table is ignored for non-sql file templates\n";
+    }
+    if (is_database_template && (has_from_database != has_table)) {
+        std::cerr << "Warning: --from-database and --table must be provided together to infer fields\n";
+    }
+
+    const bool should_infer = is_database_template && has_from_database && has_table;
 
     const std::string default_url =
         "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
     const std::string default_table = "generated_data";
 
-    const std::string database_url = result.count("database-url") ? result["database-url"].as<std::string>() : default_url;
-    const std::string table = result.count("table") ? result["table"].as<std::string>() : default_table;
+    const std::string output_url = should_infer ? from_database_url : (has_from_database ? from_database_url : default_url);
+    const std::string output_table = has_table ? table_name : default_table;
 
     OrderedJson output = OrderedJson::object();
     output["$schema"] = "./schema/data-generator.schema.json";
     output["rows"] = rows;
-    output["destination"] = destination;
-    output["null_value_string"] = "";
+
+    OrderedJson output_section = OrderedJson::object();
+    output_section["type"] = template_type;
 
     OrderedJson fields = OrderedJson::array();
 
-    if (destination == "database") {
-        output["database_url"] = database_url;
-        output["table"] = table;
-        output["database_insert_mode"] = "auto";
-        output["database_batch_size"] = 1000;
-        output["database_queue_size"] = 1024;
-        output["database_threads"] = 2;
-        output["database_transaction_mode"] = "per-batch";
-        output["database_error_policy"] = "stop";
-        output["database_rate_limit_rows_per_sec"] = 20000;
+    if (is_database_template) {
+        OrderedJson database = OrderedJson::object();
+        database["url"] = output_url;
+        database["table"] = output_table;
+        database["insert_mode"] = "auto";
+        database["batch_size"] = 1000;
+        database["queue_size"] = 1024;
+        database["threads"] = 2;
+        database["transaction_mode"] = "per-batch";
+        database["error_policy"] = "stop";
+        database["rate_limit_rows_per_sec"] = 20000;
+        output_section["database"] = std::move(database);
 
-        if (result.count("database-url") && result.count("table")) {
+        if (should_infer) {
             database::DbUrl parsed_url;
             std::string     error;
-            if (!database::parse_db_url(database_url, &parsed_url, &error)) {
-                std::cerr << "Invalid --database-url: " << error << "\n";
+            if (!database::parse_db_url(from_database_url, &parsed_url, &error)) {
+                std::cerr << "Invalid --from-database: " << error << "\n";
                 return exit_codes::kUsage;
             }
 
@@ -531,7 +541,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
             }
 
             database::TableMetadata metadata;
-            if (!driver->get_table_metadata(table, &metadata, &error)) {
+            if (!driver->get_table_metadata(table_name, &metadata, &error)) {
                 driver->disconnect();
                 std::cerr << "Failed to read table metadata: " << error << "\n";
                 return exit_codes::kRuntimeFailure;
@@ -543,50 +553,43 @@ int CommandInit::run(const std::vector<std::string>& args) {
             }
             driver->disconnect();
         }
-
-        if (fields.empty()) {
-            const Json root_template = build_project_template(rows, "csv");
-            fields = build_fields_from_template(root_template);
-        }
     } else {
-        output["file_format"] = file_format;
-        if (file_format == "sql") {
-            output["table"] = table;
+        OrderedJson file = OrderedJson::object();
+        file["format"] = file_format;
+        OrderedJson file_options = OrderedJson::object();
+        if (file_format == "csv") {
+            file_options["header"] = true;
+            file_options["line_ending"] = "LF";
+        } else if (file_format == "json") {
+            file_options["array"] = true;
+            file_options["include_null"] = true;
+        } else if (file_format == "sql") {
+            file_options["table"] = output_table;
+            file_options["create_table"] = false;
+        } else if (file_format == "Tab-Delimited") {
+            file_options["header"] = true;
+            file_options["line_ending"] = "LF";
+        } else if (file_format == "Custom") {
+            file_options["delimiter"] = ",";
+            file_options["quote"] = "\"";
+            file_options["header"] = true;
+            file_options["line_ending"] = "LF";
         }
-
-        if (result.count("generator")) {
-            const std::string        generator_name = result["generator"].as<std::string>();
-            const GeneratorMetadata* meta           = find_generator_metadata(generator_name);
-            if (!meta) {
-                std::cerr << "Unknown generator: " << generator_name << "\n";
-                return exit_codes::kUsage;
-            }
-            OrderedJson field = OrderedJson::object();
-            field["name"] = "field_1";
-            field["generator"] = meta->name;
-            field["config"] = build_ordered_config_template(*meta);
-            std::unordered_map<std::string, int> linkage_counter_by_generator;
-            database::ColumnMetadata             pseudo_column;
-            pseudo_column.name = "field_1";
-            database::TableMetadata pseudo_metadata;
-            apply_supported_field_attributes(
-                pseudo_metadata,
-                pseudo_column,
-                meta,
-                &linkage_counter_by_generator,
-                &field
-            );
-            fields.push_back(std::move(field));
-        } else {
-            const Json root_template = build_project_template(rows, file_format);
-            fields = build_fields_from_template(root_template);
+        if (!file_options.empty()) {
+            file["options"] = std::move(file_options);
         }
+        output_section["file"] = std::move(file);
     }
 
+    if (fields.empty()) {
+        const Json root_template = config::build_project_template(rows, file_format);
+        fields = build_fields_from_template(root_template);
+    }
+
+    output["output"] = std::move(output_section);
     output["fields"] = std::move(fields);
 
-    const std::string path = result.count("output") ? result["output"].as<std::string>() : default_init_output_path();
-
+    const std::string path = result["config"].as<std::string>();
     const std::string payload = output.dump(2);
     std::ofstream     out(path, std::ios::trunc);
     if (!out) {

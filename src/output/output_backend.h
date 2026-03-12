@@ -10,13 +10,13 @@
 #include <cstdint>
 #include <memory>
 
-#include "core/configuration.h"
-#include "core/executor.h"
+#include "config/configuration.h"
+#include "engine/executor.h"
 
 namespace data_generator::output {
 
 struct OutputStats {
-    core::ExecutionInfo execution_info;
+    engine::ExecutionInfo execution_info;
     std::uint64_t       rows_generated = 0;
     std::uint64_t       rows_written = 0;
 };
@@ -25,10 +25,10 @@ class IOutputBackend {
 public:
     virtual ~IOutputBackend() = default;
 
-    virtual OutputStats generate(const core::GenerationConfig& cfg, const core::ExecutionOptions& options) = 0;
+    virtual OutputStats generate(const config::GenerationConfig& cfg, const engine::ExecutionOptions& options) = 0;
 };
 
-std::unique_ptr<IOutputBackend> make_output_backend(const core::GenerationConfig& cfg);
+std::unique_ptr<IOutputBackend> make_output_backend(const config::GenerationConfig& cfg);
 
 }  // namespace data_generator::output
 

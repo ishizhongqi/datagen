@@ -13,7 +13,7 @@ namespace data_generator::output {
 
 class FileBackend final : public IOutputBackend {
 public:
-    OutputStats generate(const core::GenerationConfig& cfg, const core::ExecutionOptions& options) override;
+    OutputStats generate(const config::GenerationConfig& cfg, const engine::ExecutionOptions& options) override;
 };
 
 }  // namespace data_generator::output

@@ -6,24 +6,24 @@
 
 #include <sstream>
 
-#include "core/configuration.h"
-#include "core/executor.h"
+#include "config/configuration.h"
+#include "engine/executor.h"
 
-using namespace data_generator::core;
+using namespace data_generator;
 
 namespace {
 
 TEST(ExecutorEdgeTest, ShouldRenderNullPolicyBranches) {
-    NullPolicy p1;
+    config::NullPolicy p1;
     p1.configured = true;
     p1.null_if_empty = true;
-    EXPECT_TRUE(should_render_null(p1, ""));
-    EXPECT_FALSE(should_render_null(p1, "x"));
+    EXPECT_TRUE(engine::should_render_null(p1, ""));
+    EXPECT_FALSE(engine::should_render_null(p1, "x"));
 
-    NullPolicy p2;
+    config::NullPolicy p2;
     p2.configured = false;
     p2.null_if_empty = true;
-    EXPECT_FALSE(should_render_null(p2, ""));
+    EXPECT_FALSE(engine::should_render_null(p2, ""));
 }
 
 TEST(ExecutorEdgeTest, PreviewRowAndNullLiteralBranches) {
@@ -39,11 +39,11 @@ TEST(ExecutorEdgeTest, PreviewRowAndNullLiteralBranches) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues));
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
-    auto row = preview_row(cfg);
+    auto row = engine::preview_row(cfg);
     ASSERT_EQ(row.size(), 1U);
     ASSERT_TRUE(row[0].has_value());
     EXPECT_EQ(*row[0], "N");
@@ -61,12 +61,12 @@ TEST(ExecutorEdgeTest, GenerateSingleThreadPath) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues));
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     std::ostringstream out;
-    const auto result = generate_to_stream(cfg, ExecutionOptions{.requested_threads = 8}, out);
+    const auto result = engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 8}, out);
     EXPECT_EQ(result.info.threads_used, 1U);
 }
 
@@ -87,13 +87,13 @@ TEST(ExecutorEdgeTest, ParallelFallbackBecauseOfOverrideRule) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues));
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     std::ostringstream out;
     const auto result =
-        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4}, out);
+        engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 4}, out);
     EXPECT_TRUE(result.info.fallback_to_single_thread);
     EXPECT_NE(result.info.fallback_reason.find("override"), std::string::npos);
 }
@@ -111,28 +111,28 @@ TEST(ExecutorEdgeTest, NullIfEmptyProducesJsonNullAndSqlPathWorks) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues));
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     std::ostringstream out_json;
-    (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2}, out_json);
+    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 2}, out_json);
     EXPECT_NE(out_json.str().find("null"), std::string::npos);
 
-    cfg.format = OutputFormat::Sql;
+    cfg.format = config::OutputFormat::Sql;
     std::ostringstream out_sql;
-    (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out_sql);
+    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out_sql);
     EXPECT_NE(out_sql.str().find("INSERT INTO"), std::string::npos);
 }
 
 TEST(ExecutorEdgeTest, NormalizeEmptyValuesUsesNullLiteralWhenNullIfEmptyDisabled) {
-    GenerationConfig cfg;
+    config::GenerationConfig cfg;
     cfg.rows   = 1;
-    cfg.format = OutputFormat::Json;
+    cfg.format = config::OutputFormat::Json;
     cfg.null_policy.configured = true;
     cfg.null_policy.null_if_empty = false;
     cfg.null_policy.null_literal  = std::string("N");
-    FieldSpec field;
+    config::FieldSpec field;
     field.name         = "f";
     field.generator    = "regular_expression";
     field.raw          = nlohmann::json::parse(R"json({"config":{"pattern":""}})json");
@@ -141,7 +141,7 @@ TEST(ExecutorEdgeTest, NormalizeEmptyValuesUsesNullLiteralWhenNullIfEmptyDisable
     cfg.fields.push_back(field);
 
     std::ostringstream out;
-    (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out);
+    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out);
     EXPECT_NE(out.str().find("\"N\""), std::string::npos);
 }
 
@@ -156,15 +156,15 @@ TEST(ExecutorEdgeTest, ParallelFallbackReasonsForUniqueAndLinkage) {
   ]
 }
 )json");
-    GenerationConfig cfg_base;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root_base, ParseMode::RequireOutputSettings, &cfg_base, &issues));
+    config::GenerationConfig cfg_base;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root_base, config::ParseMode::RequireOutputSettings, &cfg_base, &issues));
 
     auto cfg_unique = cfg_base;
     cfg_unique.fields[0].unique = true;
     std::ostringstream out1;
     const auto res1 =
-        generate_to_stream(cfg_unique, ExecutionOptions{.requested_threads = 4}, out1);
+        engine::generate_to_stream(cfg_unique, engine::ExecutionOptions{.requested_threads = 4}, out1);
     EXPECT_TRUE(res1.info.fallback_to_single_thread);
     EXPECT_NE(res1.info.fallback_reason.find("unique"), std::string::npos);
 
@@ -172,7 +172,7 @@ TEST(ExecutorEdgeTest, ParallelFallbackReasonsForUniqueAndLinkage) {
     cfg_linkage.fields[0].data_linkage = std::string("num:g");
     std::ostringstream out2;
     const auto res2 =
-        generate_to_stream(cfg_linkage, ExecutionOptions{.requested_threads = 4}, out2);
+        engine::generate_to_stream(cfg_linkage, engine::ExecutionOptions{.requested_threads = 4}, out2);
     EXPECT_TRUE(res2.info.fallback_to_single_thread);
     EXPECT_NE(res2.info.fallback_reason.find("data_linkage"), std::string::npos);
 }
@@ -188,12 +188,12 @@ TEST(ExecutorEdgeTest, ParallelWorkerExceptionPath) {
   ]
 }
 )json");
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    ASSERT_TRUE(parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues));
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
     std::ostringstream out;
     EXPECT_THROW(
-        (void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4}, out),
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 4}, out),
         std::invalid_argument
     );
 }

@@ -38,9 +38,14 @@ bool should_log(const LogLevel level, const LogLevel minimum_level) {
 
 }  // namespace
 
+struct LoggerHolder {
+    Logger instance;
+};
+
+LoggerHolder logger_holder;
+
 Logger& Logger::instance() {
-    static Logger logger;
-    return logger;
+    return logger_holder.instance;
 }
 
 void Logger::set_minimum_level(const LogLevel level) {
@@ -103,6 +108,22 @@ std::string log_level_to_string(const LogLevel level) {
     case LogLevel::Error: return "ERROR";
     }
     return "INFO";
+}
+
+std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {
+    constexpr int kWidth = 20;
+    const double progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
+    const int filled = static_cast<int>(progress * static_cast<double>(kWidth));
+
+    std::string bar;
+    bar.reserve(kWidth);
+    for (int i = 0; i < kWidth; ++i) {
+        bar.push_back(i < filled ? '#' : '-');
+    }
+
+    std::ostringstream oss;
+    oss << "[" << bar << "] " << static_cast<int>(progress * 100.0) << "% (" << done << "/" << total << ")";
+    return oss.str();
 }
 
 }  // namespace data_generator::logging

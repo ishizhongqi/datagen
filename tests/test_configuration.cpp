@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "core/configuration.h"
+#include "config/configuration.h"
 
-using namespace data_generator::core;
+using namespace data_generator;
 
 namespace {
 
@@ -34,14 +34,14 @@ TEST(ConfigurationTest, ParseValidConfig) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
 
     ASSERT_TRUE(ok);
     EXPECT_TRUE(issues.empty());
     EXPECT_EQ(cfg.rows, 5);
-    EXPECT_EQ(cfg.format, OutputFormat::Json);
+    EXPECT_EQ(cfg.format, config::OutputFormat::Json);
     EXPECT_EQ(cfg.table_name, "t_orders");
     ASSERT_EQ(cfg.fields.size(), 1U);
     EXPECT_EQ(cfg.fields.front().name, "id");
@@ -59,9 +59,9 @@ TEST(ConfigurationTest, MissingFieldsReturnsError) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
 
     EXPECT_FALSE(ok);
     EXPECT_FALSE(issues.empty());
@@ -83,9 +83,9 @@ TEST(ConfigurationTest, UnknownGeneratorReturnsError) {
 }
 )json");
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
 
     EXPECT_FALSE(ok);
     ASSERT_FALSE(issues.empty());

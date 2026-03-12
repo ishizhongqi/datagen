@@ -1,18 +1,16 @@
 {
   "$schema": "../schema/data-generator.schema.json",
   "rows": 200,
-  "destination": "file",
-  "file_format": "csv",
-  "null_value_string": "",
-  "table": "customer_profile",
-  "database_url": "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;",
-  "database_insert_mode": "auto",
-  "database_batch_size": 1000,
-  "database_queue_size": 1024,
-  "database_threads": 2,
-  "database_transaction_mode": "per-batch",
-  "database_error_policy": "stop",
-  "database_rate_limit_rows_per_sec": 20000,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv",
+      "options": {
+        "header": true,
+        "line_ending": "LF"
+      }
+    }
+  },
   "fields": [
     {
       "name": "email",

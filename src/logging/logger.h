@@ -7,6 +7,7 @@
 #ifndef DATA_GENERATOR_LOGGER_H
 #define DATA_GENERATOR_LOGGER_H
 
+#include <cstdint>
 #include <fstream>
 #include <mutex>
 #include <optional>
@@ -36,6 +37,8 @@ public:
 private:
     Logger() = default;
 
+    friend struct LoggerHolder;
+
     void write(LogLevel level, const std::string& message);
 
     LogLevel                     minimum_level_ = LogLevel::Info;
@@ -46,6 +49,7 @@ private:
 };
 
 std::string log_level_to_string(LogLevel level);
+std::string format_progress_bar(std::uint64_t done, std::uint64_t total);
 
 }  // namespace data_generator::logging
 

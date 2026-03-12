@@ -11,8 +11,8 @@
 
 namespace data_generator::output {
 
-std::unique_ptr<IOutputBackend> make_output_backend(const core::GenerationConfig& cfg) {
-    if (cfg.output.destination == core::OutputDestination::Database) {
+std::unique_ptr<IOutputBackend> make_output_backend(const config::GenerationConfig& cfg) {
+    if (cfg.output.type == config::OutputType::Database) {
         return std::make_unique<DatabaseBackend>();
     }
     return std::make_unique<FileBackend>();

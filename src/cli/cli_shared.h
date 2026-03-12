@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
-#include "cli/generator_catalog.h"
-#include "core/configuration.h"
+#include "config/generator_catalog.h"
+#include "config/configuration.h"
 
 namespace data_generator::cli {
 
@@ -26,7 +26,7 @@ Json load_json_from_file(const std::string& path);
 
 OrderedJson to_ordered_json(const Json& value);
 
-OrderedJson build_ordered_config_template(const GeneratorMetadata& meta);
+OrderedJson build_ordered_config_template(const config::GeneratorMetadata& meta);
 
 /**
  * @brief Build a JSON Schema document from generator metadata.
@@ -40,9 +40,12 @@ nlohmann::json build_json_schema();
 
 cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<std::string>& args);
 
-void print_validation_issues(const std::vector<core::ValidationIssue>& issues, std::ostream& output);
+void print_validation_issues(const std::vector<config::ValidationIssue>& issues, std::ostream& output);
 
-std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta);
+std::vector<std::string> build_describe_text_lines(const config::GeneratorMetadata& meta);
+
+std::string version_string();
+void print_version(std::ostream& output);
 
 }  // namespace data_generator::cli
 

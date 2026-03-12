@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/gh/ishizhongqi/data-generator/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/data-generator)
 
-Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC 导入数据库。
+Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
 
 **构建**
 
@@ -24,62 +24,51 @@ cmake --build build
 - `help`：展示全部命令帮助。
 - `init`：生成 JSON 配置模板。
 - `preview`：生成单行预览。
-- `generate`：根据 JSON 配置生成完整数据集。
-- `describe`：查看生成器与配置说明。
-- `list`：列出可用生成器。
+- `run`：根据 JSON 配置生成完整数据集。
+- `info`：列出或查看生成器说明。
 - `drivers`：列出已安装的 ODBC 驱动。
-- `validate`：校验 JSON 配置，可选只校验数据库连接。
+- `check`：校验 JSON 配置。
 - `schema`：输出或写入 JSON Schema。
+
+全局选项：
+
+- `-h, --help`：显示帮助。
+- `-v, -V, --version`：显示版本号。
 
 **命令：`init`**
 
 参数：
 
-- `--generator <name>`：只生成一个字段的模板。支持值：下方生成器列表中的名称。
-- `--output <file>`：输出 JSON 文件路径。默认 `config_YYYYmmddHHMMSS.json`。
-- `--rows <N>`：生成行数。整数 `>= 1`。
-- `--destination <file|database>`：输出目标。`file` 或 `database`，默认 `file`。
-- `--file-format <csv|json|sql>`：文件输出格式。仅当 `destination=file` 时有效。
-- `--database-url <url>`：数据库 URL 或 ODBC 连接串。`destination=database` 时使用。
-- `--table <name>`：目标表名。`destination=database` 或 `file-format=sql` 时使用。
+- `<json>`：输出 JSON 文件路径。必填。
+- `--template <file|database>`：模板类型。默认 `file`。
+- `--format <csv|json|sql|Tab-Delimited|Custom>`：文件模板格式（仅 file 模板）。
+- `--from-database <url>`：用于推断字段的数据库 URL（ODBC 或 SQLite，仅 database 模板）。
+- `--table <name>`：目标表名（database 模板或 SQL 文件模板）。
 - `-h, --help`：显示帮助。
 
 **命令：`preview`**
 
 参数：
 
-- `--input <json>`：输入 JSON 配置文件。必填。
-- `--field <name|all>`：预览字段名。默认 `all`。
-- `--file-format <csv|json|sql>`：预览输出格式。可选覆盖。
+- `<json>`：输入 JSON 配置文件。必填。
+- `--field <name>`：预览字段名。可选。
 - `-h, --help`：显示帮助。
 
-**命令：`generate`**
+**命令：`run`**
 
 参数：
 
-- `--input <json>`：输入 JSON 配置文件。必填。
-- `--file-output <file>`：文件输出路径（目标为 file）。未指定时输出为 `dgresult_YYYYmmddHHMMSS.<format>`。
-- `--output <file>`：`--file-output` 的别名。
+- `<json>`：输入 JSON 配置文件。必填。
+- `--output <file>`：文件输出路径（file 输出）。
 - `--rows <N>`：覆盖 JSON 中的 rows。整数 `>= 1`。
-- `--file-format <csv|json|sql>`：覆盖文件格式。`destination=database` 时忽略。
-- `--destination <file|database>`：覆盖输出目标。`file` 或 `database`。
-- `--database-url <url>`：数据库 URL 或 ODBC 连接串。数据库输出且 JSON 中未提供时必填。
-- `--table <name>`：目标表名。必须非空。
-- `--threads <N>`：生成线程数。整数 `>= 1`，默认 `1`。
 - `-h, --help`：显示帮助。
 
-**命令：`describe`**
+**命令：`info`**
 
 参数：
 
-- `--generator <name>`：要描述的生成器名称。必填。
+- `<name>`：生成器名称。可选。
 - `--json`：JSON 格式输出。
-- `-h, --help`：显示帮助。
-
-**命令：`list`**
-
-参数：
-
 - `-h, --help`：显示帮助。
 
 **命令：`drivers`**
@@ -89,19 +78,18 @@ cmake --build build
 - `--json`：JSON 格式输出。
 - `-h, --help`：显示帮助。
 
-**命令：`validate`**
+**命令：`check`**
 
 参数：
 
-- `--input <json>`：输入 JSON 配置文件。必填。
-- `--db-only`：仅校验数据库连接。需要 `database_url`。
+- `<json>`：输入 JSON 配置文件。必填。
 - `-h, --help`：显示帮助。
 
 **命令：`schema`**
 
 参数：
 
-- `--output <file>`：写入文件而不是输出到 stdout。
+- `<file>`：输出 Schema 文件路径。必填。
 - `-h, --help`：显示帮助。
 
 **JSON 配置**
@@ -109,26 +97,42 @@ cmake --build build
 根级键：
 
 - `$schema`：string。JSON Schema 路径。
-- `rows`：integer。`generate` 时必填。`>= 1`。
-- `destination`：string。`file` 或 `database`，默认 `file`。
-- `file_format`：string。`destination=file` 时必填。`csv`、`json` 或 `sql`。`destination=database` 时忽略。
-- `null_value_string`：string 或 null。`null` 表示空值输出为空，字符串表示空值输出为该字面量。
-- `table`：string。`sql` 或数据库输出时必填。
-- `database_url`：string。`destination=database` 时必填。
-- `database_insert_mode`：string。`auto`、`insert`、`bulk`、`load`。
-- `database_batch_size`：integer。`>= 1`。
-- `database_queue_size`：integer。`>= 1`。
-- `database_threads`：integer。`>= 1`。
-- `database_transaction_mode`：string。`per-batch`、`per-run`、`none`。
-- `database_error_policy`：string。`stop`、`continue`、`rollback-batch`、`rollback-all`。
-- `database_rate_limit_rows_per_sec`：integer。`>= 1`。
+- `rows`：integer。`run` 时必填。`>= 1`。
+- `output`：object。输出配置。
 - `fields`：array。必填。字段数组。
+
+`output` 对象：
+
+- `type`：string。`file` 或 `database`。
+- `file`：object。`type=file` 时必填。
+  - `format`：string。`csv`、`json`、`sql`、`Tab-Delimited` 或 `Custom`。
+  - `options`：object。格式相关选项。
+    - CSV：`header`（布尔）、`line_ending`（`LF` 或 `CRLF`）。
+    - JSON：`array`（布尔）、`include_null`（布尔）。
+    - SQL：`table`（字符串）、`create_table`（布尔）。
+    - Tab-Delimited：`header`（布尔）、`line_ending`（`LF` 或 `CRLF`）。
+    - Custom：`delimiter`（字符串）、`quote`（字符串）、`header`（布尔）、`line_ending`（`LF` 或 `CRLF`）。
+- `database`：object。`type=database` 时必填。
+  - `url`：string。必填。
+  - `table`：string。必填。
+  - `insert_mode`：string。`auto`、`insert`、`bulk`、`load`。
+  - `batch_size`：integer。`>= 1`。
+  - `queue_size`：integer。`>= 1`。
+  - `threads`：integer。`>= 1`。
+  - `transaction_mode`：string。`per-batch`、`per-run`、`none`。
+  - `error_policy`：string。`stop`、`continue`、`rollback-batch`、`rollback-all`。
+  - `rate_limit_rows_per_sec`：integer。`>= 1`。
+
+SQLite URL 格式：
+
+- `sqlite:/absolute/path/to/file.db`
+- `sqlite::memory:`
 
 字段对象键：
 
 - `name`：string。字段/列名。
 - `generator`：string。见下方生成器列表。
-- `config`：object。生成器配置，使用 `data-generator describe --generator <name>` 查看。
+- `config`：object。生成器配置，使用 `data-generator info <name>` 查看。
 - `unique`：boolean。仅对支持唯一的生成器有效。
 - `data_linkage`：string。格式 `module:Group1`。
 - `default_value`：object。按比例使用固定默认值。
@@ -158,7 +162,7 @@ social_network_id, product_name, product_category, color, size, barcode, enum_it
 sequence, regular_expression
 ```
 
-使用 `data-generator describe --generator <name>` 可查看每个生成器的配置字段与支持的值。
+使用 `data-generator info <name>` 可查看每个生成器的配置字段与支持的值。
 
 **示例**
 
@@ -177,18 +181,16 @@ JSON 配置示例：
 
 ```sh
 # 校验配置
-./build/data-generator validate --input docs/example_mysql_db.json
+./build/data-generator check docs/example_mysql_db.json
 
-# 预览单行 JSON
-./build/data-generator preview --input docs/example_file.json --file-format json
+# 预览单行（格式来自 JSON 配置）
+./build/data-generator preview docs/example_file.json
 
 # 生成 CSV 文件
-./build/data-generator generate --input docs/example_file.json --file-output ./out.csv --file-format csv
+./build/data-generator run docs/example_file.json --output ./out.csv
 
 # 通过 ODBC 写入 MySQL
-./build/data-generator generate --input docs/example_mysql_db.json --destination database \
-  --database-url "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;" \
-  --table customer_profile
+./build/data-generator run docs/example_mysql_db.json
 ```
 
 **许可证**

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(data-generator CXX)
+project(data-generator VERSION 1.0.0 LANGUAGES CXX)
 
 option(DATA_GENERATOR_ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
 
@@ -27,6 +27,7 @@ target_include_directories(cxxopts INTERFACE
 add_subdirectory(src)
 
 find_package(ODBC REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 target_link_libraries(data-generator-lib
         PUBLIC
@@ -34,6 +35,12 @@ target_link_libraries(data-generator-lib
         nlohmann_json
         cxxopts
         ODBC::ODBC
+        SQLite::SQLite3
+)
+
+target_compile_definitions(data-generator-lib
+        PUBLIC
+        DATA_GENERATOR_VERSION="${PROJECT_VERSION}"
 )
 
 target_compile_features(data-generator-lib PUBLIC cxx_std_20)
@@ -44,7 +51,7 @@ set(DATA_GENERATOR_SCHEMA_FILE "${DATA_GENERATOR_SCHEMA_DIR}/data-generator.sche
 add_custom_command(
     OUTPUT "${DATA_GENERATOR_SCHEMA_FILE}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${DATA_GENERATOR_SCHEMA_DIR}"
-    COMMAND $<TARGET_FILE:data-generator> schema --output "${DATA_GENERATOR_SCHEMA_FILE}"
+    COMMAND $<TARGET_FILE:data-generator> schema "${DATA_GENERATOR_SCHEMA_FILE}"
     DEPENDS data-generator
     COMMENT "Generating JSON Schema: ${DATA_GENERATOR_SCHEMA_FILE}"
     VERBATIM

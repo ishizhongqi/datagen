@@ -6,9 +6,9 @@
 #include <optional>
 #include <string>
 
-#include "generators/generator_base.h"
-#include "generators/generator_registry.h"
-#include "generators/linkage_helper.h"
+#include "generators/core/generator_base.h"
+#include "generators/core/generator_registry.h"
+#include "generators/core/linkage_helper.h"
 
 using namespace data_generator::generator;
 

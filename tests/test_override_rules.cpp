@@ -7,7 +7,7 @@
 #include <optional>
 #include <string>
 
-#include "generators/override_rules.h"
+#include "generators/core/override_rules.h"
 
 using namespace data_generator::generator;
 

@@ -15,9 +15,10 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "core/progress_bar.h"
-#include "core/serialization.h"
 #include "logging/logger.h"
+#include "output/file/csv_writer.h"
+#include "output/file/json_writer.h"
+#include "output/file/sql_writer.h"
 
 namespace data_generator::output {
 
@@ -39,21 +40,23 @@ std::string now_compact_timestamp() {
     return oss.str();
 }
 
-std::string extension_for_format(const core::OutputFormat format) {
+std::string extension_for_format(const config::OutputFormat format) {
     switch (format) {
-    case core::OutputFormat::Csv : return "csv";
-    case core::OutputFormat::Json: return "json";
-    case core::OutputFormat::Sql : return "sql";
+    case config::OutputFormat::Csv         : return "csv";
+    case config::OutputFormat::Json        : return "json";
+    case config::OutputFormat::Sql         : return "sql";
+    case config::OutputFormat::TabDelimited: return "tsv";
+    case config::OutputFormat::Custom      : return "txt";
     }
     return "txt";
 }
 
-std::string build_default_output_path(const core::OutputFormat format) {
+std::string build_default_output_path(const config::OutputFormat format) {
     return "dgresult_" + now_compact_timestamp() + "." + extension_for_format(format);
 }
 
-std::uint64_t estimate_row_size(const core::GenerationConfig& cfg) {
-    const auto sample = core::preview_row(cfg);
+std::uint64_t estimate_row_size(const config::GenerationConfig& cfg) {
+    const auto sample = engine::preview_row(cfg);
     std::uint64_t size = 0;
     for (const auto& value : sample) {
         if (value.has_value()) {
@@ -82,54 +85,14 @@ bool prompt_large_output_if_needed(
     return answer == "y" || answer == "Y" || answer == "yes" || answer == "YES";
 }
 
-void write_csv_row(const core::Row& row, std::ostream& out) {
-    for (size_t i = 0; i < row.size(); ++i) {
-        if (i > 0) { out << ","; }
-        out << core::csv_escape(row[i].value_or(""));
-    }
-    out << "\n";
-}
-
-void write_json_row(const std::vector<std::string>& columns, const core::Row& row, std::ostream& out, const bool first) {
-    if (!first) { out << ",\n"; }
-    out << "  {";
-    for (size_t i = 0; i < columns.size(); ++i) {
-        if (i > 0) { out << ", "; }
-        out << "\"" << columns[i] << "\":";
-        if (i >= row.size() || !row[i].has_value()) {
-            out << "null";
-        } else {
-            out << "\"" << core::sql_escape(*row[i]) << "\"";
-        }
-    }
-    out << "}";
-}
-
-void write_sql_row(const std::vector<std::string>& columns, const core::Row& row, const std::string& table_name, std::ostream& out) {
-    out << "INSERT INTO " << table_name << " (";
-    for (size_t i = 0; i < columns.size(); ++i) {
-        if (i > 0) { out << ", "; }
-        out << columns[i];
-    }
-    out << ") VALUES (";
-    for (size_t i = 0; i < row.size(); ++i) {
-        if (i > 0) { out << ", "; }
-        if (!row[i].has_value()) {
-            out << "NULL";
-        } else {
-            out << "'" << core::sql_escape(*row[i]) << "'";
-        }
-    }
-    out << ");\n";
-}
-
 }  // namespace
 
-OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core::ExecutionOptions& options) {
+OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const engine::ExecutionOptions& options) {
     logging::Logger& logger = logging::Logger::instance();
 
+    const config::OutputFormat format = cfg.output.file.format;
     const std::filesystem::path output_path = cfg.output.file.path.empty()
-                                                  ? std::filesystem::path(build_default_output_path(cfg.format))
+                                                  ? std::filesystem::path(build_default_output_path(format))
                                                   : std::filesystem::path(cfg.output.file.path);
 
     const std::uint64_t estimated_row_size = estimate_row_size(cfg);
@@ -155,14 +118,31 @@ OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core:
     columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
-    if (cfg.format == core::OutputFormat::Csv) {
-        for (size_t i = 0; i < columns.size(); ++i) {
-            if (i > 0) { output_stream << ","; }
-            output_stream << core::csv_escape(columns[i]);
+    output::file::DelimitedWriterOptions delimited_options;
+    if (format == config::OutputFormat::Csv) {
+        delimited_options.delimiter = ",";
+        delimited_options.quote = "\"";
+        delimited_options.header = cfg.output.file.csv.header;
+        delimited_options.line_ending = cfg.output.file.csv.line_ending;
+        output::file::write_delimited_header(columns, output_stream, delimited_options);
+    } else if (format == config::OutputFormat::TabDelimited) {
+        delimited_options.delimiter = "\t";
+        delimited_options.quote = "\"";
+        delimited_options.header = cfg.output.file.tab_delimited.header;
+        delimited_options.line_ending = cfg.output.file.tab_delimited.line_ending;
+        output::file::write_delimited_header(columns, output_stream, delimited_options);
+    } else if (format == config::OutputFormat::Custom) {
+        delimited_options.delimiter = cfg.output.file.custom.delimiter;
+        delimited_options.quote = cfg.output.file.custom.quote;
+        delimited_options.header = cfg.output.file.custom.header;
+        delimited_options.line_ending = cfg.output.file.custom.line_ending;
+        output::file::write_delimited_header(columns, output_stream, delimited_options);
+    } else if (format == config::OutputFormat::Json) {
+        if (cfg.output.file.json.array) {
+            output::file::write_json_array_start(output_stream);
         }
-        output_stream << "\n";
-    } else if (cfg.format == core::OutputFormat::Json) {
-        output_stream << "[\n";
+    } else if (format == config::OutputFormat::Sql) {
+        output::file::write_sql(columns, {}, cfg.output.file.sql.table, cfg.output.file.sql.create_table, output_stream);
     }
 
     std::uint64_t generated = 0;
@@ -170,32 +150,40 @@ OutputStats FileBackend::generate(const core::GenerationConfig& cfg, const core:
     bool progress_printed = false;
     const auto started_at = std::chrono::steady_clock::now();
 
-    const core::GenerateResult result = core::generate_with_consumer(cfg, options, [&](core::Row&& row, std::uint64_t) {
-        if (cfg.format == core::OutputFormat::Csv) {
-            write_csv_row(row, output_stream);
-        } else if (cfg.format == core::OutputFormat::Json) {
-            write_json_row(columns, row, output_stream, generated == 0);
-        } else {
-            write_sql_row(columns, row, cfg.table_name, output_stream);
-        }
+    const engine::GenerateResult result = engine::generate_with_consumer(
+        cfg,
+        options,
+        [&](engine::Row&& row, std::uint64_t) {
+            if (format == config::OutputFormat::Csv ||
+                format == config::OutputFormat::TabDelimited ||
+                format == config::OutputFormat::Custom) {
+                output::file::write_delimited_row(row, output_stream, delimited_options);
+            } else if (format == config::OutputFormat::Json) {
+                output::file::write_json_row(columns, row, output_stream, generated == 0, cfg.output.file.json);
+            } else {
+                output::file::write_sql_row(columns, row, cfg.output.file.sql.table, output_stream);
+            }
 
-        ++generated;
-        if (generated % 2000 == 0) {
-            std::cout << "\r[Rows Generated] " << core::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows))
-                      << std::flush;
-            progress_printed = true;
-            last_printed = generated;
+            ++generated;
+            if (generated % 2000 == 0) {
+                std::cout << "\r[Rows Generated] "
+                          << logging::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows))
+                          << std::flush;
+                progress_printed = true;
+                last_printed = generated;
+            }
+            return true;
         }
-        return true;
-    });
+    );
 
     if (!progress_printed || last_printed != generated) {
-        std::cout << "\r[Rows Generated] " << core::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows));
+        std::cout << "\r[Rows Generated] "
+                  << logging::format_progress_bar(generated, static_cast<std::uint64_t>(cfg.rows));
     }
     std::cout << "\n" << std::flush;
 
-    if (cfg.format == core::OutputFormat::Json) {
-        output_stream << "\n]\n";
+    if (format == config::OutputFormat::Json && cfg.output.file.json.array) {
+        output::file::write_json_array_end(output_stream);
     }
 
     output_stream.flush();

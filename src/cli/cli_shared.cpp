@@ -14,6 +14,10 @@
 
 namespace data_generator::cli {
 
+#ifndef DATA_GENERATOR_VERSION
+#define DATA_GENERATOR_VERSION "0.0.0"
+#endif
+
 namespace {
 
 Json build_schema_for_param_type(const std::string& param_type) {
@@ -31,7 +35,7 @@ Json build_schema_for_param_type(const std::string& param_type) {
     return Json::object();
 }
 
-Json build_param_for_config_param(const ConfigParam& param) {
+Json build_param_for_config_param(const config::ConfigParam& param) {
     Json schema = build_schema_for_param_type(param.type);
     if (param.supported_values.empty()) { return schema; }
 
@@ -45,7 +49,7 @@ Json build_param_for_config_param(const ConfigParam& param) {
     return schema;
 }
 
-Json build_config_schema(const GeneratorMetadata& meta) {
+Json build_config_schema(const config::GeneratorMetadata& meta) {
     Json config_schema;
     config_schema["type"]                 = "object";
     config_schema["properties"]           = Json::object();
@@ -61,7 +65,7 @@ Json build_config_schema(const GeneratorMetadata& meta) {
     return config_schema;
 }
 
-Json build_generator_constraint(const GeneratorMetadata& meta) {
+Json build_generator_constraint(const config::GeneratorMetadata& meta) {
     Json constraint;
     constraint["if"] = Json{
         {"properties", Json{{"generator", Json{{"const", meta.name}}}}},
@@ -117,7 +121,7 @@ OrderedJson to_ordered_json(const Json& value) {
     return OrderedJson(value);
 }
 
-OrderedJson build_ordered_config_template(const GeneratorMetadata& meta) {
+OrderedJson build_ordered_config_template(const config::GeneratorMetadata& meta) {
     OrderedJson                ordered = OrderedJson::object();
     std::unordered_set<std::string> seen;
     seen.reserve(meta.config_params.size());
@@ -135,7 +139,7 @@ OrderedJson build_ordered_config_template(const GeneratorMetadata& meta) {
 }
 
 nlohmann::json build_json_schema() {
-    const auto& catalog = get_generator_catalog();
+    const auto& catalog = config::get_generator_catalog();
 
     Json generator_names = Json::array();
     for (const auto& meta : catalog) { generator_names.push_back(meta.name); }
@@ -165,21 +169,126 @@ nlohmann::json build_json_schema() {
     schema["type"]                 = "object";
     schema["additionalProperties"] = false;
     schema["patternProperties"]    = Json{{R"(^\$schema$)", Json{{"type", "string"}}}};
+    Json csv_options = Json{
+        {"type", "object"},
+        {"additionalProperties", false},
+        {"properties",
+         Json{
+             {"header", Json{{"type", "boolean"}}},
+             {"line_ending", Json{{"type", "string"}, {"enum", Json::array({"LF", "CRLF"})}}},
+         }},
+    };
+    Json json_options = Json{
+        {"type", "object"},
+        {"additionalProperties", false},
+        {"properties",
+         Json{
+             {"array", Json{{"type", "boolean"}}},
+             {"include_null", Json{{"type", "boolean"}}},
+         }},
+    };
+    Json sql_options = Json{
+        {"type", "object"},
+        {"additionalProperties", false},
+        {"properties",
+         Json{
+             {"table", Json{{"type", "string"}, {"minLength", 1}}},
+             {"create_table", Json{{"type", "boolean"}}},
+         }},
+    };
+    Json custom_options = Json{
+        {"type", "object"},
+        {"additionalProperties", false},
+        {"properties",
+         Json{
+             {"delimiter", Json{{"type", "string"}, {"minLength", 1}}},
+             {"quote", Json{{"type", "string"}}},
+             {"header", Json{{"type", "boolean"}}},
+             {"line_ending", Json{{"type", "string"}, {"enum", Json::array({"LF", "CRLF"})}}},
+         }},
+    };
+
+    Json file_schema;
+    file_schema["type"] = "object";
+    file_schema["additionalProperties"] = false;
+    file_schema["properties"] = Json{
+        {"format", Json{{"type", "string"}, {"enum", Json::array({"csv", "json", "sql", "Tab-Delimited", "Custom"})}}},
+        {"options", Json{{"type", "object"}}},
+    };
+    file_schema["required"] = Json::array({"format"});
+
+    Json file_conditionals = Json::array();
+    file_conditionals.push_back(
+        Json{
+            {"if", Json{{"properties", Json{{"format", Json{{"const", "csv"}}}}}, {"required", Json::array({"format"})}}},
+            {"then", Json{{"properties", Json{{"options", csv_options}}}}},
+        }
+    );
+    file_conditionals.push_back(
+        Json{
+            {"if", Json{{"properties", Json{{"format", Json{{"const", "Tab-Delimited"}}}}}, {"required", Json::array({"format"})}}},
+            {"then", Json{{"properties", Json{{"options", csv_options}}}}},
+        }
+    );
+    file_conditionals.push_back(
+        Json{
+            {"if", Json{{"properties", Json{{"format", Json{{"const", "json"}}}}}, {"required", Json::array({"format"})}}},
+            {"then", Json{{"properties", Json{{"options", json_options}}}}},
+        }
+    );
+    file_conditionals.push_back(
+        Json{
+            {"if", Json{{"properties", Json{{"format", Json{{"const", "sql"}}}}}, {"required", Json::array({"format"})}}},
+            {"then", Json{{"properties", Json{{"options", sql_options}}}}},
+        }
+    );
+    file_conditionals.push_back(
+        Json{
+            {"if", Json{{"properties", Json{{"format", Json{{"const", "Custom"}}}}}, {"required", Json::array({"format"})}}},
+            {"then", Json{{"properties", Json{{"options", custom_options}}}}},
+        }
+    );
+    file_schema["allOf"] = std::move(file_conditionals);
+
+    Json database_schema;
+    database_schema["type"] = "object";
+    database_schema["additionalProperties"] = false;
+    database_schema["properties"] = Json{
+        {"url", Json{{"type", "string"}, {"minLength", 1}}},
+        {"table", Json{{"type", "string"}, {"minLength", 1}}},
+        {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
+        {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"threads", Json{{"type", "integer"}, {"minimum", 1}}},
+        {"transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
+        {"error_policy",
+         Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
+        {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
+    };
+    database_schema["required"] = Json::array({"url", "table"});
+
+    Json output_schema;
+    output_schema["type"] = "object";
+    output_schema["additionalProperties"] = false;
+    output_schema["properties"] = Json{
+        {"type", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
+        {"file", std::move(file_schema)},
+        {"database", std::move(database_schema)},
+    };
+    output_schema["allOf"] = Json::array({
+        Json{
+            {"if", Json{{"properties", Json{{"type", Json{{"const", "file"}}}}}, {"required", Json::array({"type"})}}},
+            {"then", Json{{"required", Json::array({"file"})}}},
+        },
+        Json{
+            {"if", Json{{"properties", Json{{"type", Json{{"const", "database"}}}}}, {"required", Json::array({"type"})}}},
+            {"then", Json{{"required", Json::array({"database"})}}},
+        },
+    });
+
     schema["properties"] = Json{
         {"rows", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"destination", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
-        {"file_format", Json{{"type", "string"}, {"enum", Json::array({"csv", "json", "sql"})}}},
-        {"database_url", Json{{"type", "string"}, {"minLength", 1}}},
-        {"table", Json{{"type", "string"}, {"minLength", 1}}},
-        {"database_insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
-        {"database_batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"database_queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"database_threads", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"database_transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
-        {"database_error_policy",
-         Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
-        {"database_rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"null_value_string", Json{{"type", Json::array({"string", "null"})}}},
+        {"output", std::move(output_schema)},
         {"fields",
          Json{
              {"type", "array"},
@@ -205,14 +314,14 @@ cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<
     return options.parse(static_cast<int>(argv.size()), argv.data());
 }
 
-void print_validation_issues(const std::vector<core::ValidationIssue>& issues, std::ostream& output) {
+void print_validation_issues(const std::vector<config::ValidationIssue>& issues, std::ostream& output) {
     for (const auto& issue : issues) {
         output << (issue.warning ? "Validation warning: " : "Validation error: ")
                << issue.path << " " << issue.message << "\n";
     }
 }
 
-std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta) {
+std::vector<std::string> build_describe_text_lines(const config::GeneratorMetadata& meta) {
     std::vector<std::string> lines;
     lines.emplace_back("Generator: " + meta.name);
     lines.emplace_back("");
@@ -273,6 +382,14 @@ std::vector<std::string> build_describe_text_lines(const GeneratorMetadata& meta
     while (std::getline(stream, line)) { lines.push_back(std::move(line)); }
 
     return lines;
+}
+
+std::string version_string() {
+    return DATA_GENERATOR_VERSION;
+}
+
+void print_version(std::ostream& output) {
+    output << "data-generator " << version_string() << "\n";
 }
 
 }  // namespace data_generator::cli

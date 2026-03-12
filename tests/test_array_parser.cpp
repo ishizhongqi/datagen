@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include "generators/array_parser.h"
+#include "generators/core/array_parser.h"
 
 using namespace data_generator::generator;
 

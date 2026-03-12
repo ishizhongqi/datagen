@@ -8,19 +8,19 @@
 #include <string>
 #include <vector>
 
-#include "core/configuration.h"
-#include "core/executor.h"
+#include "config/configuration.h"
+#include "engine/executor.h"
 
-using namespace data_generator::core;
+using namespace data_generator;
 
 namespace {
 
-GenerationConfig parse_or_fail(const char* json_text) {
+config::GenerationConfig parse_or_fail(const char* json_text) {
     const auto root = nlohmann::json::parse(json_text);
 
-    GenerationConfig cfg;
-    std::vector<ValidationIssue> issues;
-    const bool ok = parse_generation_config(root, ParseMode::RequireOutputSettings, &cfg, &issues);
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
     EXPECT_TRUE(ok);
     EXPECT_TRUE(issues.empty());
     return cfg;
@@ -47,7 +47,7 @@ TEST(ExecutorTest, ReplacesEmptyWithGlobalNullLiteral) {
 
     std::ostringstream out;
     const auto result =
-        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 2}, out);
+        engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 2}, out);
 
     EXPECT_EQ(result.info.threads_used, 2U);
     EXPECT_FALSE(result.info.fallback_to_single_thread);
@@ -85,7 +85,7 @@ TEST(ExecutorTest, ParallelIneligibleWorkloadFallsBackToSingleThread) {
 
     std::ostringstream out;
     const auto result =
-        generate_to_stream(cfg, ExecutionOptions{.requested_threads = 4}, out);
+        engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 4}, out);
 
     EXPECT_EQ(result.info.threads_used, 1U);
     EXPECT_TRUE(result.info.fallback_to_single_thread);
@@ -113,7 +113,7 @@ TEST(ExecutorTest, GeneratesWithoutSeedOption) {
 )json");
 
     std::ostringstream out;
-    EXPECT_NO_THROW((void)generate_to_stream(cfg, ExecutionOptions{.requested_threads = 1}, out));
+    EXPECT_NO_THROW((void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out));
     EXPECT_FALSE(out.str().empty());
 }
 
