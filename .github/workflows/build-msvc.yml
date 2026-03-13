@@ -30,6 +30,8 @@ jobs:
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: efa4634bd526b87559684607d2cbbdeeec0f07d8
 
       - name: Install dependencies
         run: vcpkg install sqlite3:x64-windows
