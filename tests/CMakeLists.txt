@@ -23,6 +23,8 @@ add_executable(data-generator-tests
     test_db_schema_validator.cpp
     test_type_adapter.cpp
     test_generators_smoke.cpp
+    test_odbc_driver.cpp
+    test_odbc_registry.cpp
     test_linkage_and_registry.cpp
     test_linkage_conflicts.cpp
     test_serialization.cpp

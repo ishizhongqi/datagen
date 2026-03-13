@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -255,10 +256,35 @@ TEST(CliCommandsTest, RunErrorAndHelpBranches) {
     EXPECT_EQ(invoke_cli({"init", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"drivers", "--help"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"schema", "--help"}), cli::exit_codes::kOk);
+    EXPECT_EQ(invoke_cli({"check"}), cli::exit_codes::kUsage);
 }
 
 TEST(CliCommandsTest, DispatchUnknownCommand) {
     EXPECT_EQ(invoke_cli({"unknown-command"}), cli::exit_codes::kOk);
+}
+
+TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {
+    const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
+    if (!pg_url || std::string(pg_url).empty()) {
+        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL not set.";
+    }
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", pg_url},
+                {"table", "t_data"}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+
+    const auto path = write_json_file("dg_cli_check_db.json", root.dump(2));
+    EXPECT_EQ(invoke_cli({"check", path.string()}), cli::exit_codes::kOk);
 }
 
 }  // namespace
