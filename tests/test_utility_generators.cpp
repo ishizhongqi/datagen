@@ -26,8 +26,12 @@ TEST(UtilityGeneratorsTest, SequenceAndRegexVariants) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 8,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"seq_circle","generator":"sequence","config":{"start":1,"end":2,"step":1,"circle":true}},
     {"name":"seq_stop","generator":"sequence","config":{"start":1,"end":2,"step":1,"circle":false}},
@@ -50,8 +54,12 @@ TEST(UtilityGeneratorsTest, RegexInvalidPatternsThrow) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"[abc"}}
   ]
@@ -70,8 +78,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root1 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"+"}}
   ]
@@ -87,8 +99,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root2 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"\\\\{"}}
   ]
@@ -104,8 +120,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root3 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"a{3,1}"}}
   ]
@@ -121,8 +141,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root4 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"ok","generator":"regular_expression","config":{"pattern":"\\\\w+"}}
   ]
@@ -137,8 +161,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root5 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"ok","generator":"regular_expression","config":{"pattern":"a{2,}"}}
   ]
@@ -153,8 +181,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root5b = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"ok","generator":"regular_expression","config":{"pattern":"[\\w]{3}"}}
   ]
@@ -169,8 +201,12 @@ TEST(UtilityGeneratorsTest, RegexMoreInvalidPatternsThrow) {
     const auto root6 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"a{2,3"}}
   ]

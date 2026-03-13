@@ -117,10 +117,17 @@ TEST(CliSharedTest, BuildJsonSchemaUsesCatalogMetadata) {
 
     ASSERT_TRUE(schema.contains("properties"));
     const Json& properties = schema.at("properties");
-    ASSERT_TRUE(properties.contains("destination"));
-    EXPECT_EQ(properties.at("destination").at("type").get<std::string>(), "string");
-    ASSERT_TRUE(properties.contains("file_format"));
-    EXPECT_EQ(properties.at("file_format").at("type").get<std::string>(), "string");
+    ASSERT_TRUE(properties.contains("output"));
+    const Json& output_schema = properties.at("output");
+    ASSERT_TRUE(output_schema.contains("properties"));
+    ASSERT_TRUE(output_schema.at("properties").contains("type"));
+    EXPECT_EQ(output_schema.at("properties").at("type").at("type").get<std::string>(), "string");
+    ASSERT_TRUE(output_schema.at("properties").contains("file"));
+    ASSERT_TRUE(output_schema.at("properties").at("file").contains("properties"));
+    EXPECT_EQ(
+        output_schema.at("properties").at("file").at("properties").at("format").at("type").get<std::string>(),
+        "string"
+    );
     ASSERT_TRUE(properties.contains("fields"));
     const Json& fields_schema = properties.at("fields");
     EXPECT_EQ(fields_schema.at("type").get<std::string>(), "array");

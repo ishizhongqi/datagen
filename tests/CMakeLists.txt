@@ -19,6 +19,9 @@ add_executable(data-generator-tests
     test_executor.cpp
     test_array_parser.cpp
     test_override_rules.cpp
+    test_db_url_parser.cpp
+    test_db_schema_validator.cpp
+    test_type_adapter.cpp
     test_generators_smoke.cpp
     test_linkage_and_registry.cpp
     test_linkage_conflicts.cpp
@@ -27,6 +30,9 @@ add_executable(data-generator-tests
     test_executor_edge.cpp
     test_cli_shared.cpp
     test_cli_commands.cpp
+    test_file_backend.cpp
+    test_database_backend.cpp
+    test_workspace.cpp
     test_run.cpp
 )
 

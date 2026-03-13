@@ -37,7 +37,8 @@ jobs:
             ninja-build \
             gcc-13 \
             g++-13 \
-            unixodbc-dev
+            unixodbc-dev \
+            libsqlite3-dev
 
       - name: Configure
         run: |
@@ -55,8 +56,6 @@ jobs:
       - name: Smoke test
         run: |
           ./build/src/data-generator help >/dev/null
-          ./build/src/data-generator generate \
-            --input docs/input_example.json \
+          ./build/src/data-generator run docs/input_example.json \
             --rows 5 \
-            --threads 1 \
-            --file-output build/output.csv
+            --output build/output.csv

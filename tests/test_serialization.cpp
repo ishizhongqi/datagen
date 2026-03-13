@@ -16,9 +16,10 @@ using namespace data_generator;
 namespace {
 
 TEST(SerializationTest, EscapeHelpers) {
-    EXPECT_EQ(output::file::csv_escape("abc"), "abc");
-    EXPECT_EQ(output::file::csv_escape("a,b"), "\"a,b\"");
-    EXPECT_EQ(output::file::csv_escape("a\"b"), "\"a\"\"b\"");
+    output::file::DelimitedWriterOptions options;
+    EXPECT_EQ(output::file::escape_delimited_value("abc", options), "abc");
+    EXPECT_EQ(output::file::escape_delimited_value("a,b", options), "\"a,b\"");
+    EXPECT_EQ(output::file::escape_delimited_value("a\"b", options), "\"a\"\"b\"");
 
     EXPECT_EQ(output::file::sql_escape("abc"), "abc");
     EXPECT_EQ(output::file::sql_escape("a'b"), "a''b");
@@ -32,17 +33,21 @@ TEST(SerializationTest, WriteCsvJsonSql) {
     };
 
     std::ostringstream csv;
-    output::file::write_csv(columns, rows, csv);
+    output::file::DelimitedWriterOptions options;
+    output::file::write_delimited(columns, rows, csv, options);
     EXPECT_NE(csv.str().find("c1,c2"), std::string::npos);
     EXPECT_NE(csv.str().find("\"a,b\""), std::string::npos);
 
     std::ostringstream json;
-    output::file::write_json(columns, rows, json);
+    config::JsonOptions json_options;
+    json_options.array = true;
+    json_options.include_null = true;
+    output::file::write_json(columns, rows, json, json_options);
     EXPECT_NE(json.str().find("\"c1\""), std::string::npos);
     EXPECT_NE(json.str().find("null"), std::string::npos);
 
     std::ostringstream sql_out;
-    output::file::write_sql(columns, rows, "t1", sql_out);
+    output::file::write_sql(columns, rows, "t1", false, sql_out);
     EXPECT_EQ(sql_out.str().find("CREATE TABLE"), std::string::npos);
     EXPECT_NE(sql_out.str().find("INSERT INTO t1"), std::string::npos);
     EXPECT_NE(sql_out.str().find("x''y"), std::string::npos);

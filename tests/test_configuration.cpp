@@ -17,10 +17,16 @@ TEST(ConfigurationTest, ParseValidConfig) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 5,
-  "destination": "file",
-  "file_format": "json",
-  "null_value_string": "<NULL>",
-  "table": "t_orders",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json",
+      "options": {
+        "array": true,
+        "include_null": true
+      }
+    }
+  },
   "fields": [
     {
       "name": "id",
@@ -41,21 +47,24 @@ TEST(ConfigurationTest, ParseValidConfig) {
     ASSERT_TRUE(ok);
     EXPECT_TRUE(issues.empty());
     EXPECT_EQ(cfg.rows, 5);
-    EXPECT_EQ(cfg.format, config::OutputFormat::Json);
-    EXPECT_EQ(cfg.table_name, "t_orders");
+    EXPECT_EQ(cfg.output.type, config::OutputType::File);
+    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Json);
+    EXPECT_TRUE(cfg.output.file.json.array);
+    EXPECT_TRUE(cfg.output.file.json.include_null);
     ASSERT_EQ(cfg.fields.size(), 1U);
     EXPECT_EQ(cfg.fields.front().name, "id");
-    ASSERT_TRUE(cfg.null_policy.configured);
-    ASSERT_TRUE(cfg.null_policy.null_literal.has_value());
-    EXPECT_EQ(*cfg.null_policy.null_literal, "<NULL>");
 }
 
 TEST(ConfigurationTest, MissingFieldsReturnsError) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 5,
-  "destination": "file",
-  "file_format": "csv"
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  }
 }
 )json");
 
@@ -71,8 +80,12 @@ TEST(ConfigurationTest, UnknownGeneratorReturnsError) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 3,
-  "destination": "file",
-  "file_format": "csv",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
   "fields": [
     {
       "name": "f1",
@@ -90,6 +103,49 @@ TEST(ConfigurationTest, UnknownGeneratorReturnsError) {
     EXPECT_FALSE(ok);
     ASSERT_FALSE(issues.empty());
     EXPECT_NE(issues.front().message.find("unknown generator"), std::string::npos);
+}
+
+TEST(ConfigurationTest, ParseCustomFileOptions) {
+    const auto root = nlohmann::json::parse(R"json(
+{
+  "rows": 2,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "Custom",
+      "options": {
+        "delimiter": "|",
+        "quote": "'",
+        "header": false,
+        "line_ending": "CRLF"
+      }
+    }
+  },
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 2
+      }
+    }
+  ]
+}
+)json");
+
+    config::GenerationConfig cfg;
+    std::vector<config::ValidationIssue> issues;
+    const bool ok = config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues);
+
+    ASSERT_TRUE(ok);
+    EXPECT_TRUE(issues.empty());
+    EXPECT_EQ(cfg.output.type, config::OutputType::File);
+    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Custom);
+    EXPECT_EQ(cfg.output.file.custom.delimiter, "|");
+    EXPECT_EQ(cfg.output.file.custom.quote, "'");
+    EXPECT_FALSE(cfg.output.file.custom.header);
+    EXPECT_EQ(cfg.output.file.custom.line_ending, config::LineEnding::CRLF);
 }
 
 }  // namespace

@@ -16,11 +16,8 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     config::GenerationConfig cfg;
     std::vector<config::ValidationIssue> issues;
 
-    EXPECT_FALSE(config::parse_generation_config(nlohmann::json::array(), config::ParseMode::RequireOutputSettings, &cfg, &issues));
-    EXPECT_FALSE(issues.empty());
-
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":"x","file_format":1,"fields":[]})json"),
+        nlohmann::json::array(),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -28,7 +25,22 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     EXPECT_FALSE(issues.empty());
 
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"file_format":"bad","fields":[]})json"),
+        nlohmann::json::parse(R"json({"rows":"x","output":1,"fields":[]})json"),
+        config::ParseMode::RequireOutputSettings,
+        &cfg,
+        &issues
+    ));
+    EXPECT_FALSE(issues.empty());
+
+    EXPECT_FALSE(config::parse_generation_config(
+        nlohmann::json::parse(R"json({"rows":1,"output":{"type":"bad"},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
+        config::ParseMode::RequireOutputSettings,
+        &cfg,
+        &issues
+    ));
+
+    EXPECT_FALSE(config::parse_generation_config(
+        nlohmann::json::parse(R"json({"rows":1,"output":{"type":"file","file":{"format":"bad"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -36,7 +48,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"destination":"file","file_format":"csv","unknown_root":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unknown_field":1}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"},"unknown":1},"unknown_root":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unknown_field":1}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -45,7 +57,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
 
     EXPECT_TRUE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"destination":"file","file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -53,13 +65,13 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
     ));
 
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
+        nlohmann::json::parse(R"json({"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":0,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
+        nlohmann::json::parse(R"json({"rows":0,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -71,14 +83,14 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
         &issues
     ));
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"file_format":"csv","fields":{}})json"),
+        nlohmann::json::parse(R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":{}})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
 
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"destination":"file","file_format":"csv","fields":[{"name":"f","generator":"date","unique":true,"config":{"start_date":"2024-01-01","end_date":"2024-01-31"}}]})json"),
+        nlohmann::json::parse(R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"date","unique":true,"config":{"start_date":"2024-01-01","end_date":"2024-01-31"}}]})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -90,7 +102,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
     std::vector<config::ValidationIssue> issues;
 
     EXPECT_FALSE(config::parse_generation_config(
-        nlohmann::json::parse(R"json({"rows":1,"file_format":"csv","fields":[1]})json"),
+        nlohmann::json::parse(R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[1]})json"),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
@@ -98,7 +110,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"file_format":"csv","fields":[{"name":1,"generator":2,"config":3}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":1,"generator":2,"config":3}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -107,7 +119,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unique":"x"}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"unique":"x"}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -116,7 +128,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"data_linkage":123}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"data_linkage":123}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -125,7 +137,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"file_format":"csv","table":"","null_value_string":1,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"null_value":1,"default_value":1}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2,"bad":1},"default_value":1}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -134,7 +146,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_TRUE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"file_format":"csv","fields":[{"name":"f","generator":"date","config":{"end_date":"2024-01-01"}}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"date","config":{"end_date":"2024-01-01"}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -154,44 +166,47 @@ TEST(ConfigurationEdgeTest, AllowMissingOutputModeSucceedsWithDefaults) {
         &issues
     ));
     EXPECT_EQ(cfg.rows, 100);
-    EXPECT_EQ(cfg.format, config::OutputFormat::Csv);
-
-    EXPECT_TRUE(config::parse_generation_config(
-        nlohmann::json::parse(
-            R"json({"null_value_string":null,"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
-        ),
-        config::ParseMode::AllowMissingOutputSettings,
-        &cfg,
-        &issues
-    ));
-    EXPECT_TRUE(cfg.null_policy.configured);
-    EXPECT_TRUE(cfg.null_policy.null_if_empty);
+    EXPECT_EQ(cfg.output.type, config::OutputType::File);
+    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Csv);
 }
 
 TEST(ConfigurationEdgeTest, ApplyOverridesAndFormatRoundtrip) {
     EXPECT_EQ(config::parse_output_format("csv"), config::OutputFormat::Csv);
     EXPECT_EQ(config::parse_output_format("json"), config::OutputFormat::Json);
     EXPECT_EQ(config::parse_output_format("sql"), config::OutputFormat::Sql);
+    EXPECT_EQ(config::parse_output_format("Tab-Delimited"), config::OutputFormat::TabDelimited);
+    EXPECT_EQ(config::parse_output_format("Custom"), config::OutputFormat::Custom);
     EXPECT_FALSE(config::parse_output_format("x").has_value());
 
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Csv), "csv");
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Json), "json");
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Sql), "sql");
+    EXPECT_EQ(config::output_format_to_string(config::OutputFormat::TabDelimited), "Tab-Delimited");
+    EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Custom), "Custom");
     EXPECT_EQ(config::output_format_to_string(static_cast<config::OutputFormat>(99)), "csv");
+
+    EXPECT_EQ(config::parse_output_type("file"), config::OutputType::File);
+    EXPECT_EQ(config::parse_output_type("database"), config::OutputType::Database);
+    EXPECT_FALSE(config::parse_output_type("x").has_value());
 
     config::GenerationConfig cfg;
     cfg.rows = 10;
-    cfg.format = config::OutputFormat::Csv;
-    cfg.table_name = "t";
+    cfg.output.file.format = config::OutputFormat::Csv;
+    cfg.output.database.table = "t";
 
     config::CliOverrides overrides;
     overrides.rows = 20;
     overrides.format = config::OutputFormat::Sql;
     overrides.table_name = std::string("t2");
+    overrides.type = config::OutputType::Database;
+    overrides.output_path = std::string("out.csv");
     apply_cli_overrides(&cfg, overrides);
     EXPECT_EQ(cfg.rows, 20);
-    EXPECT_EQ(cfg.format, config::OutputFormat::Sql);
-    EXPECT_EQ(cfg.table_name, "t2");
+    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Sql);
+    EXPECT_EQ(cfg.output.database.table, "t2");
+    EXPECT_EQ(cfg.output.file.sql.table, "t2");
+    EXPECT_EQ(cfg.output.type, config::OutputType::Database);
+    EXPECT_EQ(cfg.output.file.path, "out.csv");
 }
 
 }  // namespace

@@ -19,6 +19,20 @@ jobs:
   coverage:
     name: ci_ubuntu-24.04_clang-18_coverage
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: dg
+          POSTGRES_PASSWORD: dgpass
+          POSTGRES_DB: dgdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U dg -d dgdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout
@@ -34,7 +48,9 @@ jobs:
             ninja-build \
             clang-18 \
             llvm-18 \
-            unixodbc-dev
+            unixodbc-dev \
+            odbc-postgresql \
+            libsqlite3-dev
 
       - name: Configure
         run: |
@@ -51,6 +67,7 @@ jobs:
 
       - name: Run tests
         run: |
+          DATA_GENERATOR_TEST_PG_URL='odbc:postgresql:DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;PORT=5432;DATABASE=dgdb;UID=dg;PWD=dgpass;' \
           LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/data-generator-tests
 
       - name: Export LCOV

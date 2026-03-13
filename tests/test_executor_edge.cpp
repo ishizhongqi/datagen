@@ -13,28 +13,19 @@ using namespace data_generator;
 
 namespace {
 
-TEST(ExecutorEdgeTest, ShouldRenderNullPolicyBranches) {
-    config::NullPolicy p1;
-    p1.configured = true;
-    p1.null_if_empty = true;
-    EXPECT_TRUE(engine::should_render_null(p1, ""));
-    EXPECT_FALSE(engine::should_render_null(p1, "x"));
-
-    config::NullPolicy p2;
-    p2.configured = false;
-    p2.null_if_empty = true;
-    EXPECT_FALSE(engine::should_render_null(p2, ""));
-}
-
-TEST(ExecutorEdgeTest, PreviewRowAndNullLiteralBranches) {
+TEST(ExecutorEdgeTest, PreviewRowMatchesFieldCount) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
-  "null_value_string": "N",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
   "fields": [
-    {"name":"f","generator":"regular_expression","config":{"pattern":""}}
+    {"name":"f1","generator":"integer","config":{"start":1,"end":2}},
+    {"name":"f2","generator":"integer","config":{"start":1,"end":2}}
   ]
 }
 )json");
@@ -44,17 +35,19 @@ TEST(ExecutorEdgeTest, PreviewRowAndNullLiteralBranches) {
     ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
 
     auto row = engine::preview_row(cfg);
-    ASSERT_EQ(row.size(), 1U);
-    ASSERT_TRUE(row[0].has_value());
-    EXPECT_EQ(*row[0], "N");
+    ASSERT_EQ(row.size(), 2U);
 }
 
 TEST(ExecutorEdgeTest, GenerateSingleThreadPath) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "csv",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
   "fields": [
     {"name":"f","generator":"integer","config":{"start":1,"end":9}}
   ]
@@ -74,8 +67,12 @@ TEST(ExecutorEdgeTest, ParallelFallbackBecauseOfOverrideRule) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 16,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {
       "name":"v",
@@ -98,59 +95,16 @@ TEST(ExecutorEdgeTest, ParallelFallbackBecauseOfOverrideRule) {
     EXPECT_NE(result.info.fallback_reason.find("override"), std::string::npos);
 }
 
-TEST(ExecutorEdgeTest, NullIfEmptyProducesJsonNullAndSqlPathWorks) {
-    const auto root = nlohmann::json::parse(R"json(
-{
-  "rows": 2,
-  "destination": "file",
-  "file_format": "json",
-  "null_value_string": null,
-  "fields": [
-    {"name":"f","generator":"regular_expression","config":{"pattern":""}}
-  ]
-}
-)json");
-
-    config::GenerationConfig cfg;
-    std::vector<config::ValidationIssue> issues;
-    ASSERT_TRUE(config::parse_generation_config(root, config::ParseMode::RequireOutputSettings, &cfg, &issues));
-
-    std::ostringstream out_json;
-    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 2}, out_json);
-    EXPECT_NE(out_json.str().find("null"), std::string::npos);
-
-    cfg.format = config::OutputFormat::Sql;
-    std::ostringstream out_sql;
-    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out_sql);
-    EXPECT_NE(out_sql.str().find("INSERT INTO"), std::string::npos);
-}
-
-TEST(ExecutorEdgeTest, NormalizeEmptyValuesUsesNullLiteralWhenNullIfEmptyDisabled) {
-    config::GenerationConfig cfg;
-    cfg.rows   = 1;
-    cfg.format = config::OutputFormat::Json;
-    cfg.null_policy.configured = true;
-    cfg.null_policy.null_if_empty = false;
-    cfg.null_policy.null_literal  = std::string("N");
-    config::FieldSpec field;
-    field.name         = "f";
-    field.generator    = "regular_expression";
-    field.raw          = nlohmann::json::parse(R"json({"config":{"pattern":""}})json");
-    field.data_linkage = std::nullopt;
-    field.unique       = false;
-    cfg.fields.push_back(field);
-
-    std::ostringstream out;
-    (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out);
-    EXPECT_NE(out.str().find("\"N\""), std::string::npos);
-}
-
 TEST(ExecutorEdgeTest, ParallelFallbackReasonsForUniqueAndLinkage) {
     const auto root_base = nlohmann::json::parse(R"json(
 {
   "rows": 16,
-  "destination": "file",
-  "file_format": "csv",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
   "fields": [
     {"name":"u","generator":"integer","config":{"start":1,"end":100}}
   ]
@@ -181,8 +135,12 @@ TEST(ExecutorEdgeTest, ParallelWorkerExceptionPath) {
     const auto root = nlohmann::json::parse(R"json(
 {
   "rows": 8,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"bad","generator":"regular_expression","config":{"pattern":"["}}
   ]

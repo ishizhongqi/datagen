@@ -27,8 +27,12 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
     const auto cfg = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"data_linkage":"person:x"},
     {"name":"f2","generator":"last_name","config":{"languages":["Japanese"],"use_translation":false},"data_linkage":"person:x"}
@@ -44,8 +48,12 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
     const auto cfg_gender = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"data_linkage":"person:g"},
     {"name":"f2","generator":"first_name","config":{"languages":["English"],"genders":["F"],"use_translation":false},"data_linkage":"person:g"}
@@ -63,8 +71,12 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     const auto cfg_regions = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"p1","generator":"phone_number","config":{"regions":["United States"]},"data_linkage":"person:r"},
     {"name":"p2","generator":"phone_number","config":{"regions":["China"]},"data_linkage":"person:r"}
@@ -80,8 +92,12 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     const auto cfg_domains = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:d"},
     {"name":"e2","generator":"email","unique":true,"config":{"languages":["English"],"domains":["b.com"]},"data_linkage":"person:d"}
@@ -97,8 +113,12 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     const auto cfg_unique = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:u"},
     {"name":"e2","generator":"email","unique":false,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:u"}
@@ -113,8 +133,12 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
     const auto cfg = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"c1","generator":"card_type","config":{"languages":["English"],"card_types":["Visa"]},"data_linkage":"payment:x"},
     {"name":"c2","generator":"card_type","config":{"languages":["Japanese"],"card_types":["Visa"]},"data_linkage":"payment:x"}
@@ -130,8 +154,12 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
     const auto cfg_card_types = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"n1","generator":"card_number","config":{"card_types":["Visa"]},"data_linkage":"payment:c"},
     {"name":"n2","generator":"card_number","config":{"card_types":["MasterCard"]},"data_linkage":"payment:c"}
@@ -153,8 +181,12 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     const auto cfg_start = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"data_linkage":"payment:s"},
     {"name":"d2","generator":"card_date","config":{"start_month":"02/20","end_month":"12/30"},"data_linkage":"payment:s"}
@@ -170,8 +202,12 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     const auto cfg_end = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"11/30"},"data_linkage":"payment:e"},
     {"name":"d2","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"data_linkage":"payment:e"}
@@ -187,8 +223,12 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     const auto cfg_unique = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"n1","generator":"card_number","unique":true,"config":{"card_types":["Visa"]},"data_linkage":"payment:u"},
     {"name":"n2","generator":"card_number","unique":false,"config":{"card_types":["Visa"]},"data_linkage":"payment:u"}
@@ -203,8 +243,12 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     const auto cfg1 = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"l1","generator":"address_line1","config":{"regions":["United States"],"use_translation":false},"data_linkage":"location:x"},
     {"name":"l2","generator":"city","config":{"regions":["China"],"use_translation":false},"data_linkage":"location:x"}
@@ -220,8 +264,12 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     const auto cfg2 = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:x"},
     {"name":"f2","generator":"file_name","config":{"extensions":["csv"]},"data_linkage":"file:x"}
@@ -237,8 +285,12 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     const auto cfg3 = cfg_from_json(R"json(
 {
   "rows": 2,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:os"},
     {"name":"f2","generator":"file_path","config":{"operating_systems":["Linux"],"extensions":["txt"]},"data_linkage":"file:os"}
@@ -259,8 +311,12 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     const auto root1 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"u","generator":"url","config":{"subdomains":["www"]}}
   ]
@@ -271,8 +327,12 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     const auto root2 = nlohmann::json::parse(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"h","generator":"hostname","config":{"subdomains":["www"]}}
   ]
@@ -283,8 +343,12 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     const auto cfg_invalid_url = cfg_from_json(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"u","generator":"url","config":{"subdomains":["www"],"tlds":[]}}
   ]
@@ -303,8 +367,12 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     const auto cfg_invalid_host = cfg_from_json(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"h","generator":"hostname","config":{"subdomains":["www"],"tlds":[]}}
   ]
@@ -323,8 +391,12 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     const auto cfg3 = cfg_from_json(R"json(
 {
   "rows": 1,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"d","generator":"file_directory","config":{"operating_systems":["Windows"]},"data_linkage":"file:missing"}
   ]
@@ -341,8 +413,12 @@ TEST(LinkageConflictTest, FileExtensionLinkagePath) {
     const auto cfg = cfg_from_json(R"json(
 {
   "rows": 3,
-  "destination": "file",
-  "file_format": "json",
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
   "fields": [
     {"name":"p","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:ext"},
     {"name":"e","generator":"file_extension","config":{"extensions":["txt"]},"data_linkage":"file:ext"}
