@@ -29,8 +29,12 @@ jobs:
       - name: Install dependencies
         shell: pwsh
         run: |
-          $vcpkg = \"$env:VCPKG_ROOT\\vcpkg.exe\"
+          $vcpkgRoot = $env:VCPKG_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
+          $vcpkg = Join-Path $vcpkgRoot "vcpkg.exe"
+          if (-not (Test-Path $vcpkg)) { Write-Error "vcpkg not found at $vcpkg"; exit 1 }
           & $vcpkg install sqlite3:x64-windows
+          "VCPKG_ROOT=$vcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Configure
         run: |
