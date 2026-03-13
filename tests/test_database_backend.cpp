@@ -248,6 +248,162 @@ TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
     EXPECT_EQ(continue_stats.rows_written, 0u);
 }
 
+TEST(DatabaseBackendTest, InvalidUrlAndMissingTableThrow) {
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", "not-a-valid-url"},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 2}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+
+    cfg.output.database.url = std::string("sqlite:") + std::filesystem::temp_directory_path().string() + "/tmp.db";
+    cfg.output.database.table.clear();
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, SchemaValidationFailureThrows) {
+    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_schema.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(db_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (id INTEGER);",
+                            &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", std::string("sqlite:") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"},
+             {"generator", "date"},
+             {"config", {{"start_date", "2020-01-01"}, {"end_date", "2020-12-31"}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, StopPolicyThrowsOnConversionError) {
+    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_stop.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(db_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (id INTEGER);",
+                            &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", std::string("sqlite:") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"},
+             {"generator", "integer"},
+             {"config", {{"start", 1}, {"end", 9}}},
+             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "bad"}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, RollbackBatchPolicyContinuesOnConversionError) {
+    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_rollback_batch.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(db_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (id INTEGER);",
+                            &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 2},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", std::string("sqlite:") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 2},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "per-batch"},
+                {"error_policy", "rollback-batch"},
+                {"rate_limit_rows_per_sec", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"},
+             {"generator", "integer"},
+             {"config", {{"start", 1}, {"end", 9}}},
+             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "bad"}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    const auto stats = backend.generate(cfg, options);
+    EXPECT_EQ(stats.rows_generated, 2u);
+}
+
 TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
     const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
     if (!pg_url || std::string(pg_url).empty()) {

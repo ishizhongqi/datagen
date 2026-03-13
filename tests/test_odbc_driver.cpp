@@ -34,6 +34,14 @@ TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
     ASSERT_TRUE(driver.execute("TRUNCATE TABLE odbc_test;", &error)) << error;
     ASSERT_TRUE(driver.execute("INSERT INTO odbc_test (id, name) VALUES (1, 'alpha');", &error)) << error;
 
+    ASSERT_TRUE(driver.execute("CREATE TABLE IF NOT EXISTS odbc_parent (id INT PRIMARY KEY);", &error)) << error;
+    ASSERT_TRUE(driver.execute(
+        "CREATE TABLE IF NOT EXISTS odbc_child ("
+        "id INT PRIMARY KEY, parent_id INT REFERENCES odbc_parent(id), name TEXT);",
+        &error
+    )) << error;
+    ASSERT_TRUE(driver.execute("CREATE INDEX IF NOT EXISTS idx_child_name ON odbc_child(name);", &error)) << error;
+
     std::vector<std::vector<std::string>> rows;
     ASSERT_TRUE(driver.query("SELECT id, name FROM odbc_test ORDER BY id;", &rows, &error)) << error;
     ASSERT_FALSE(rows.empty());
@@ -44,8 +52,27 @@ TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
     EXPECT_EQ(metadata.table_name, "odbc_test");
     EXPECT_FALSE(metadata.columns.empty());
 
+    data_generator::database::TableMetadata child_meta;
+    ASSERT_TRUE(driver.get_table_metadata("public.odbc_child", &child_meta, &error)) << error;
+    EXPECT_FALSE(child_meta.columns.empty());
+    EXPECT_FALSE(child_meta.indexes.empty());
+
     EXPECT_FALSE(driver.query("SELECT 1", nullptr, &error));
     EXPECT_FALSE(error.empty());
 
     driver.disconnect();
+}
+
+TEST(OdbcDriverTest, ReturnsErrorsWhenDisconnected) {
+    OdbcDriver driver(data_generator::database::DbType::Postgresql);
+    std::string error;
+    std::vector<std::vector<std::string>> rows;
+    data_generator::database::TableMetadata metadata;
+
+    EXPECT_FALSE(driver.test_connection(&error));
+    EXPECT_FALSE(driver.execute("SELECT 1;", &error));
+    EXPECT_FALSE(driver.query("SELECT 1;", &rows, &error));
+    EXPECT_FALSE(driver.get_table_metadata("t", &metadata, &error));
+    EXPECT_FALSE(driver.query("SELECT 1;", nullptr, &error));
+    EXPECT_FALSE(driver.get_table_metadata("t", nullptr, &error));
 }
