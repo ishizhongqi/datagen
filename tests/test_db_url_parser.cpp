@@ -77,6 +77,10 @@ TEST(DbUrlParserTest, ParsesLegacyAndInferenceUrls) {
 
     EXPECT_FALSE(parse_db_url("postgresql://user:pass@localhost:badport/db", &parsed, &error));
     EXPECT_FALSE(error.empty());
+
+    EXPECT_TRUE(parse_db_url("postgresql://user@localhost:5432/db", &parsed, &error)) << error;
+    EXPECT_EQ(parsed.username, "user");
+    EXPECT_TRUE(parsed.password.empty());
 }
 
 TEST(DbUrlParserTest, BuildsDbUrlForSqliteAndPostgres) {
@@ -91,4 +95,28 @@ TEST(DbUrlParserTest, BuildsDbUrlForSqliteAndPostgres) {
     const std::string pg_url = build_db_url(DbType::Postgresql, "user", "pass", "localhost", 5433, "demo");
     EXPECT_FALSE(pg_url.empty());
     EXPECT_TRUE(pg_url.rfind("odbc:postgresql:", 0) == 0);
+}
+
+TEST(DbUrlParserTest, RejectsInvalidSqliteAndUnknownStrings) {
+    DbUrl parsed;
+    std::string error;
+
+    EXPECT_FALSE(parse_db_url("sqlite:", &parsed, &error));
+    EXPECT_FALSE(error.empty());
+
+    EXPECT_FALSE(parse_db_url("not-a-valid-connection-string", &parsed, &error));
+    EXPECT_FALSE(error.empty());
+}
+
+TEST(DbUrlParserTest, ParsesLegacyUrlsWithDefaultPorts) {
+    DbUrl parsed;
+    std::string error;
+
+    EXPECT_TRUE(parse_db_url("mysql://user:pass@localhost/db", &parsed, &error)) << error;
+    EXPECT_EQ(parsed.type, DbType::Mysql);
+    EXPECT_EQ(parsed.port, 3306);
+
+    EXPECT_TRUE(parse_db_url("oracle://user:pass@localhost/db", &parsed, &error)) << error;
+    EXPECT_EQ(parsed.type, DbType::Oracle);
+    EXPECT_EQ(parsed.port, 1521);
 }

@@ -76,6 +76,18 @@ bool create_sqlite_table(const std::filesystem::path& db_path, std::string* erro
     return true;
 }
 
+bool create_empty_sqlite_db(const std::filesystem::path& db_path, std::string* error_message) {
+    sqlite3* db = nullptr;
+    const int rc = sqlite3_open_v2(db_path.string().c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+    if (rc != SQLITE_OK) {
+        if (error_message) { *error_message = db ? sqlite3_errmsg(db) : "sqlite open failed"; }
+        if (db) { sqlite3_close(db); }
+        return false;
+    }
+    sqlite3_close(db);
+    return true;
+}
+
 const char* kValidConfigJson = R"json({
   "rows": 2,
   "output": {
@@ -261,6 +273,207 @@ TEST(CliCommandsTest, RunErrorAndHelpBranches) {
 
 TEST(CliCommandsTest, DispatchUnknownCommand) {
     EXPECT_EQ(invoke_cli({"unknown-command"}), cli::exit_codes::kOk);
+}
+
+TEST(CliCommandsTest, CheckWarningsAndFailures) {
+    nlohmann::json warn_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", nlohmann::json::object()}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+    const auto warn_path = write_json_file("dg_cli_check_warn.json", warn_root.dump(2));
+    EXPECT_EQ(invoke_cli({"check", warn_path.string()}), cli::exit_codes::kOk);
+
+    nlohmann::json bad_regex_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "csv"},
+                {"options", {{"header", true}, {"line_ending", "LF"}}}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "regular_expression"}, {"config", {{"pattern", "["}}}}
+        })}
+    };
+    const auto bad_regex_path = write_json_file("dg_cli_check_bad_regex.json", bad_regex_root.dump(2));
+    EXPECT_EQ(invoke_cli({"check", bad_regex_path.string()}), cli::exit_codes::kRuntimeFailure);
+
+    nlohmann::json bad_db_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", "odbc:postgresql:DRIVER={Missing Driver};SERVER=127.0.0.1;PORT=5432;DATABASE=demo;"},
+                {"table", "t_data"}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+    const auto bad_db_path = write_json_file("dg_cli_check_bad_db.json", bad_db_root.dump(2));
+    EXPECT_EQ(invoke_cli({"check", bad_db_path.string()}), cli::exit_codes::kRuntimeFailure);
+}
+
+TEST(CliCommandsTest, PreviewFormatsAndDatabasePreview) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+
+    nlohmann::json db_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", nlohmann::json::object()}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+    const auto db_path = write_json_file("dg_cli_preview_db.json", db_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", db_path.string()}), cli::exit_codes::kOk);
+
+    nlohmann::json tab_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "Tab-Delimited"},
+                {"options", {{"header", true}, {"line_ending", "CRLF"}}}
+            }}
+        }},
+        {"fields", db_root["fields"]}
+    };
+    const auto tab_path = write_json_file("dg_cli_preview_tab.json", tab_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", tab_path.string()}), cli::exit_codes::kOk);
+
+    nlohmann::json custom_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "Custom"},
+                {"options", {{"delimiter", "|"}, {"quote", "'"}, {"header", true}, {"line_ending", "LF"}}}
+            }}
+        }},
+        {"fields", db_root["fields"]}
+    };
+    const auto custom_path = write_json_file("dg_cli_preview_custom.json", custom_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", custom_path.string()}), cli::exit_codes::kOk);
+
+    nlohmann::json json_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "json"},
+                {"options", {{"array", false}, {"include_null", true}}}
+            }}
+        }},
+        {"fields", db_root["fields"]}
+    };
+    const auto json_path = write_json_file("dg_cli_preview_json.json", json_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", json_path.string()}), cli::exit_codes::kOk);
+
+    nlohmann::json sql_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "sql"},
+                {"options", {{"create_table", false}}}
+            }}
+        }},
+        {"fields", db_root["fields"]}
+    };
+    const auto sql_path = write_json_file("dg_cli_preview_sql.json", sql_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", sql_path.string()}), cli::exit_codes::kOk);
+
+    const auto invalid_path = write_json_file("dg_cli_preview_invalid.json", "{");
+    EXPECT_EQ(invoke_cli({"preview", invalid_path.string()}), cli::exit_codes::kRuntimeFailure);
+}
+
+TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+
+    const auto file_db_out = temp_dir / "dg_init_file_db_warn.json";
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            file_db_out.string(),
+            "--template",
+            "file",
+            "--format",
+            "csv",
+            "--from-database",
+            "sqlite:/tmp/ignored.db",
+            "--table",
+            "t_data"
+        }),
+        cli::exit_codes::kOk
+    );
+
+    const auto db_missing_table_out = temp_dir / "dg_init_db_missing_table.json";
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            db_missing_table_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            "sqlite:/tmp/ignored.db"
+        }),
+        cli::exit_codes::kOk
+    );
+
+    const auto invalid_url_out = temp_dir / "dg_init_db_invalid_url.json";
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            invalid_url_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            "bad",
+            "--table",
+            "t_data"
+        }),
+        cli::exit_codes::kUsage
+    );
+
+    const auto sqlite_path = temp_dir / "dg_init_missing_table.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+    std::string error;
+    ASSERT_TRUE(create_empty_sqlite_db(sqlite_path, &error)) << error;
+
+    const auto missing_table_out = temp_dir / "dg_init_db_missing_table_fail.json";
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            missing_table_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            std::string("sqlite:") + sqlite_path.string(),
+            "--table",
+            "missing_table"
+        }),
+        cli::exit_codes::kRuntimeFailure
+    );
+}
+
+TEST(CliCommandsTest, SchemaOutputPathFailure) {
+    const auto dir_path = std::filesystem::temp_directory_path() / "dg_schema_dir";
+    std::error_code ec;
+    std::filesystem::create_directories(dir_path, ec);
+
+    EXPECT_EQ(invoke_cli({"schema", dir_path.string()}), cli::exit_codes::kCliError);
 }
 
 TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {
