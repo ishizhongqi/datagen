@@ -32,9 +32,9 @@ std::string db_type_to_string(const DbType type) {
     case DbType::Postgresql: return "postgresql";
     case DbType::Oracle    : return "oracle";
     case DbType::Sqlite    : return "sqlite";
-    case DbType::Unknown   : return "unknown";
+    default:
+        return "unknown";
     }
-    return "unknown";
 }
 
 ColumnTypeFamily classify_column_type(const ColumnMetadata& column) {

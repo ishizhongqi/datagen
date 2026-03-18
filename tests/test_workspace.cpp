@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <optional>
 #include <string>
 
@@ -53,4 +54,51 @@ TEST(WorkspaceTest, EnsuresWorkspaceLayoutCreatesDirectories) {
     EXPECT_TRUE(std::filesystem::exists(layout.ui_dir));
 
     std::filesystem::remove_all(base, ec);
+}
+
+TEST(WorkspaceTest, ReportsDirectoryCreationFailures) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    std::error_code ec;
+
+    const auto root_as_file = temp_dir / "dg_workspace_root_file";
+    {
+        std::ofstream out(root_as_file, std::ios::trunc);
+        out << "file";
+    }
+
+    std::string error;
+    auto layout = ensure_workspace_layout(std::optional<std::string>(root_as_file.string()), &error);
+    EXPECT_TRUE(layout.root.empty());
+    EXPECT_NE(error.find("failed to create log directory"), std::string::npos);
+
+    const auto tmp_failure_root = temp_dir / "dg_workspace_tmp_failure";
+    std::filesystem::remove_all(tmp_failure_root, ec);
+    std::filesystem::create_directories(tmp_failure_root / "log", ec);
+    {
+        std::ofstream out(tmp_failure_root / "tmp", std::ios::trunc);
+        out << "file";
+    }
+
+    error.clear();
+    layout = ensure_workspace_layout(std::optional<std::string>(tmp_failure_root.string()), &error);
+    EXPECT_TRUE(layout.root.empty());
+    EXPECT_NE(error.find("failed to create tmp directory"), std::string::npos);
+
+    const auto ui_failure_root = temp_dir / "dg_workspace_ui_failure";
+    std::filesystem::remove_all(ui_failure_root, ec);
+    std::filesystem::create_directories(ui_failure_root / "log", ec);
+    std::filesystem::create_directories(ui_failure_root / "tmp", ec);
+    {
+        std::ofstream out(ui_failure_root / "ui", std::ios::trunc);
+        out << "file";
+    }
+
+    error.clear();
+    layout = ensure_workspace_layout(std::optional<std::string>(ui_failure_root.string()), &error);
+    EXPECT_TRUE(layout.root.empty());
+    EXPECT_NE(error.find("failed to create ui directory"), std::string::npos);
+
+    std::filesystem::remove(root_as_file, ec);
+    std::filesystem::remove_all(tmp_failure_root, ec);
+    std::filesystem::remove_all(ui_failure_root, ec);
 }

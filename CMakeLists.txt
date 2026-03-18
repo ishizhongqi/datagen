@@ -9,10 +9,10 @@ set(FAKER_BUILD_EXAMPLE OFF CACHE BOOL "faker example build" FORCE)
 set(FAKER_BUILD_TESTS OFF CACHE BOOL "faker test build" FORCE)
 set(FAKER_CODE_COVERAGE OFF CACHE BOOL "faker coverage build" FORCE)
 
-# faker
+# faker version 1.0.0 https://github.com/ishizhongqi/faker
 add_subdirectory(third_party/faker)
 
-# nlohmann/json
+# nlohmann/json version 3.12.0 https://github.com/nlohmann/json
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nlohmann/include

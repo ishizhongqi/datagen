@@ -2,12 +2,14 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <optional>
 
 #include "output/database/type_adapter.h"
 
 using data_generator::database::ColumnMetadata;
 using data_generator::database::DefaultTypeAdapter;
+using data_generator::database::ITypeAdapter;
 
 namespace {
 
@@ -94,4 +96,13 @@ TEST(TypeAdapterTest, AdaptsNullValues) {
     EXPECT_TRUE(result.ok);
     EXPECT_TRUE(result.is_null);
     EXPECT_EQ(result.sql_literal, "NULL");
+}
+
+TEST(TypeAdapterTest, SupportsPolymorphicDeletion) {
+    std::unique_ptr<ITypeAdapter> adapter = std::make_unique<DefaultTypeAdapter>();
+    ColumnMetadata column = make_column("value", "text");
+
+    const auto result = adapter->adapt(column, std::optional<std::string>("abc"));
+    EXPECT_TRUE(result.ok);
+    EXPECT_EQ(result.sql_literal, "'abc'");
 }

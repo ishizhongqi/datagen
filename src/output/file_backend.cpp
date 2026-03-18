@@ -46,9 +46,9 @@ std::string extension_for_format(const config::OutputFormat format) {
     case config::OutputFormat::Json        : return "json";
     case config::OutputFormat::Sql         : return "sql";
     case config::OutputFormat::TabDelimited: return "tsv";
-    case config::OutputFormat::Custom      : return "txt";
+    default:
+        return "txt";
     }
-    return "txt";
 }
 
 std::string build_default_output_path(const config::OutputFormat format) {

@@ -6,10 +6,15 @@
 #include <string>
 #include <vector>
 
+#include "output/database/drivers/idatabase_driver.h"
+#include "output/database/drivers/odbc_driver.h"
 #include "output/database/drivers/sqlite_driver.h"
 
 using data_generator::database::DbType;
 using data_generator::database::DbUrl;
+using data_generator::database::IDatabaseDriver;
+using data_generator::database::make_database_driver;
+using data_generator::database::OdbcDriver;
 using data_generator::database::SqliteDriver;
 using data_generator::database::TableMetadata;
 
@@ -79,4 +84,22 @@ TEST(SqliteDriverTest, ConnectionAndMetadataCoverage) {
 
     std::vector<std::vector<std::string>> rows;
     EXPECT_FALSE(driver.query("SELECT 1", &rows, &error));
+}
+
+TEST(SqliteDriverTest, FactoryCreatesExpectedDriverKinds) {
+    std::unique_ptr<IDatabaseDriver> sqlite_driver = make_database_driver(DbType::Sqlite);
+    ASSERT_NE(sqlite_driver, nullptr);
+    EXPECT_EQ(sqlite_driver->type(), DbType::Sqlite);
+    EXPECT_FALSE(sqlite_driver->supports_load_mode());
+    EXPECT_NE(dynamic_cast<SqliteDriver*>(sqlite_driver.get()), nullptr);
+
+    for (const DbType type : {DbType::Mysql, DbType::Postgresql, DbType::Oracle}) {
+        std::unique_ptr<IDatabaseDriver> driver = make_database_driver(type);
+        ASSERT_NE(driver, nullptr);
+        EXPECT_EQ(driver->type(), type);
+        EXPECT_EQ(driver->supports_load_mode(), type != DbType::Oracle);
+        EXPECT_NE(dynamic_cast<OdbcDriver*>(driver.get()), nullptr);
+    }
+
+    EXPECT_EQ(make_database_driver(DbType::Unknown), nullptr);
 }

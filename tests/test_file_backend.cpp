@@ -178,3 +178,50 @@ TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
     );
     std::filesystem::remove_all(base_dir, ec);
 }
+
+TEST(FileBackendTest, UsesGeneratedDefaultOutputPathWhenEmpty) {
+    const auto base_dir = std::filesystem::temp_directory_path() / "dg_file_backend_default";
+    std::error_code ec;
+    std::filesystem::remove_all(base_dir, ec);
+    std::filesystem::create_directories(base_dir, ec);
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "json"},
+                {"options", {{"array", false}, {"include_null", true}}}
+            }}
+        }},
+        {"fields", base_fields()}
+    };
+
+    auto cfg = parse_or_fail(root);
+    cfg.output.file.path.clear();
+
+    const auto original_cwd = std::filesystem::current_path();
+    std::filesystem::current_path(base_dir, ec);
+    ASSERT_FALSE(ec);
+
+    data_generator::output::FileBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    const auto stats = backend.generate(cfg, options);
+    EXPECT_EQ(stats.rows_generated, 1U);
+
+    std::filesystem::current_path(original_cwd, ec);
+    ASSERT_FALSE(ec);
+
+    std::size_t generated_file_count = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(base_dir)) {
+        if (!entry.is_regular_file()) { continue; }
+        const std::string filename = entry.path().filename().string();
+        if (filename.rfind("dgresult_", 0) == 0 && entry.path().extension() == ".json") {
+            ++generated_file_count;
+        }
+    }
+    EXPECT_EQ(generated_file_count, 1U);
+
+    std::filesystem::remove_all(base_dir, ec);
+}

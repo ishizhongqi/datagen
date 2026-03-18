@@ -8,8 +8,6 @@
 
 #include <faker/faker.h>
 
-#include <iomanip>
-#include <sstream>
 #include <string>
 
 #include "generators/core/generator_base.h"
@@ -37,50 +35,6 @@ public:
 private:
     int64_t       start_;
     int64_t       end_;
-    OverrideState overrides_;
-};
-
-class UnsignedIntegerGenerator : public IGenerator {
-public:
-    UnsignedIntegerGenerator(uint64_t start, uint64_t end, OverrideState overrides) :
-        start_(start), end_(end), overrides_(std::move(overrides)) {}
-
-    std::string generate() override {
-        if (auto overridden = apply_override(overrides_)) { return *overridden; }
-        return std::to_string(faker::number::unsigned_integer<uint64_t>(start_, end_));
-    }
-
-    void next() override {
-        next_row(overrides_);
-    }
-
-private:
-    uint64_t      start_;
-    uint64_t      end_;
-    OverrideState overrides_;
-};
-
-class DecimalGenerator : public IGenerator {
-public:
-    DecimalGenerator(double start, double end, int decimal_places, OverrideState overrides) :
-        start_(start), end_(end), decimal_places_(decimal_places), overrides_(std::move(overrides)) {}
-
-    std::string generate() override {
-        if (auto overridden = apply_override(overrides_)) { return *overridden; }
-        const auto         value = faker::number::decimal<double>(start_, end_, decimal_places_);
-        std::ostringstream oss;
-        oss << std::fixed << std::setprecision(decimal_places_) << value;
-        return oss.str();
-    }
-
-    void next() override {
-        next_row(overrides_);
-    }
-
-private:
-    double        start_;
-    double        end_;
-    int           decimal_places_;
     OverrideState overrides_;
 };
 
@@ -116,25 +70,6 @@ void register_number_generators(GeneratorRegistry& registry) {
         return std::make_unique<IntegerGenerator>(start, end, overrides);
     });
 
-    // Disabled from external use: keep implementation for potential future re-enable.
-    // registry.register_generator("unsigned_integer", [](const Json& filed) {
-    //     const Json&    config    = filed.at("config");
-    //     const auto     overrides = parse_overrides(filed);
-    //     const uint64_t start     = config.value("start", 0ull);
-    //     const uint64_t end       = config.value("end", 100ull);
-    //     return std::make_unique<UnsignedIntegerGenerator>(start, end, overrides);
-    // });
-    //
-    // Disabled from external use: keep implementation for potential future re-enable.
-    // registry.register_generator("decimal", [](const Json& filed) {
-    //     const Json&  config         = filed.at("config");
-    //     const auto   overrides      = parse_overrides(filed);
-    //     const double start          = config.value("start", 0.0);
-    //     const double end            = config.value("end", 100.0);
-    //     const int    decimal_places = config.value("decimal_places", 2);
-    //     return std::make_unique<DecimalGenerator>(start, end, decimal_places, overrides);
-    // });
-
     registry.register_generator("decimal", [](const Json& filed) {
         const Json&  config         = filed.at("config");
         const auto   overrides      = parse_overrides(filed);
@@ -143,16 +78,6 @@ void register_number_generators(GeneratorRegistry& registry) {
         const int    decimal_places = config.value("decimal_places", 2);
         return std::make_unique<DecimalStringGenerator>(start, end, decimal_places, overrides);
     });
-
-    // Disabled from external use (renamed to "decimal"):
-    // registry.register_generator("decimal_string", [](const Json& filed) {
-    //     const Json&  config         = filed.at("config");
-    //     const auto   overrides      = parse_overrides(filed);
-    //     const double start          = config.value("start", 0.0);
-    //     const double end            = config.value("end", 100.0);
-    //     const int    decimal_places = config.value("decimal_places", 2);
-    //     return std::make_unique<DecimalStringGenerator>(start, end, decimal_places, overrides);
-    // });
 }
 
 }  // namespace data_generator::generator

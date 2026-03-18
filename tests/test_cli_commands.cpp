@@ -1,5 +1,7 @@
 /// @file test_cli_commands.cpp
 
+#include <algorithm>
+
 #include <gtest/gtest.h>
 
 #include <nlohmann/json.hpp>
@@ -51,6 +53,14 @@ nlohmann::json read_json_file(const std::filesystem::path& path) {
     return value;
 }
 
+const nlohmann::json* find_field_by_name(const nlohmann::json& fields, const std::string& name) {
+    const auto it = std::find_if(fields.begin(), fields.end(), [&](const nlohmann::json& field) {
+        return field.value("name", "") == name;
+    });
+    if (it == fields.end()) { return nullptr; }
+    return &(*it);
+}
+
 bool create_sqlite_table(const std::filesystem::path& db_path, std::string* error_message) {
     sqlite3* db = nullptr;
     const int rc = sqlite3_open_v2(db_path.string().c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
@@ -84,6 +94,41 @@ bool create_empty_sqlite_db(const std::filesystem::path& db_path, std::string* e
         if (db) { sqlite3_close(db); }
         return false;
     }
+    sqlite3_close(db);
+    return true;
+}
+
+bool create_inference_sqlite_table(const std::filesystem::path& db_path, std::string* error_message) {
+    sqlite3* db = nullptr;
+    const int rc = sqlite3_open_v2(db_path.string().c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+    if (rc != SQLITE_OK) {
+        if (error_message) { *error_message = db ? sqlite3_errmsg(db) : "sqlite open failed"; }
+        if (db) { sqlite3_close(db); }
+        return false;
+    }
+
+    const char* sql =
+        "CREATE TABLE IF NOT EXISTS t_infer ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "firstName TEXT,"
+        "emailAddress TEXT UNIQUE,"
+        "amount DECIMAL(10,3),"
+        "birthDate DATE,"
+        "is_active BOOLEAN,"
+        "summary VARCHAR(5),"
+        "postal_code TEXT"
+        ");";
+    char* error_text = nullptr;
+    const int exec_rc = sqlite3_exec(db, sql, nullptr, nullptr, &error_text);
+    if (exec_rc != SQLITE_OK) {
+        if (error_message) {
+            *error_message = error_text ? error_text : sqlite3_errmsg(db);
+        }
+        if (error_text) { sqlite3_free(error_text); }
+        sqlite3_close(db);
+        return false;
+    }
+
     sqlite3_close(db);
     return true;
 }
@@ -446,6 +491,34 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
         cli::exit_codes::kUsage
     );
 
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            (temp_dir / "dg_init_db_empty_url.json").string(),
+            "--template",
+            "database",
+            "--from-database",
+            "",
+            "--table",
+            "t_data"
+        }),
+        cli::exit_codes::kUsage
+    );
+
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            (temp_dir / "dg_init_db_empty_table.json").string(),
+            "--template",
+            "database",
+            "--from-database",
+            "sqlite:/tmp/ignored.db",
+            "--table",
+            ""
+        }),
+        cli::exit_codes::kUsage
+    );
+
     const auto sqlite_path = temp_dir / "dg_init_missing_table.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -468,12 +541,127 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
     );
 }
 
+TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto sqlite_path = temp_dir / "dg_init_infer_rich.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(create_inference_sqlite_table(sqlite_path, &error)) << error;
+
+    const auto infer_out = temp_dir / "dg_init_infer_rich.json";
+    ASSERT_EQ(
+        invoke_cli({
+            "init",
+            infer_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            std::string("sqlite:") + sqlite_path.string(),
+            "--table",
+            "t_infer"
+        }),
+        cli::exit_codes::kOk
+    );
+
+    const auto inferred_json = read_json_file(infer_out);
+    ASSERT_TRUE(inferred_json.contains("fields"));
+    const auto& fields = inferred_json["fields"];
+
+    const nlohmann::json* id_field = find_field_by_name(fields, "id");
+    ASSERT_NE(id_field, nullptr);
+    EXPECT_EQ((*id_field)["generator"], "sequence");
+    EXPECT_EQ((*id_field)["config"]["circle"], false);
+    EXPECT_FALSE(id_field->contains("unique"));
+
+    const nlohmann::json* first_name_field = find_field_by_name(fields, "firstName");
+    ASSERT_NE(first_name_field, nullptr);
+    EXPECT_EQ((*first_name_field)["generator"], "first_name");
+    EXPECT_TRUE(first_name_field->contains("data_linkage"));
+    EXPECT_TRUE(first_name_field->contains("default_value"));
+    EXPECT_TRUE(first_name_field->contains("null_value"));
+
+    const nlohmann::json* email_field = find_field_by_name(fields, "emailAddress");
+    ASSERT_NE(email_field, nullptr);
+    EXPECT_EQ((*email_field)["generator"], "email");
+    EXPECT_EQ((*email_field)["unique"], true);
+
+    const nlohmann::json* amount_field = find_field_by_name(fields, "amount");
+    ASSERT_NE(amount_field, nullptr);
+    EXPECT_EQ((*amount_field)["generator"], "decimal");
+    EXPECT_EQ((*amount_field)["config"]["decimal_places"], 3);
+
+    const nlohmann::json* birth_date_field = find_field_by_name(fields, "birthDate");
+    ASSERT_NE(birth_date_field, nullptr);
+    EXPECT_EQ((*birth_date_field)["generator"], "date");
+
+    const nlohmann::json* active_field = find_field_by_name(fields, "is_active");
+    ASSERT_NE(active_field, nullptr);
+    EXPECT_EQ((*active_field)["generator"], "enum_item");
+    EXPECT_EQ((*active_field)["config"]["enums"], nlohmann::json::array({"1", "0"}));
+
+    const nlohmann::json* summary_field = find_field_by_name(fields, "summary");
+    ASSERT_NE(summary_field, nullptr);
+    EXPECT_EQ((*summary_field)["generator"], "text");
+    EXPECT_EQ((*summary_field)["config"]["number_of_chars_end"], 5);
+
+    const nlohmann::json* postal_code_field = find_field_by_name(fields, "postal_code");
+    ASSERT_NE(postal_code_field, nullptr);
+    EXPECT_EQ((*postal_code_field)["generator"], "postcode");
+}
+
 TEST(CliCommandsTest, SchemaOutputPathFailure) {
     const auto dir_path = std::filesystem::temp_directory_path() / "dg_schema_dir";
     std::error_code ec;
     std::filesystem::create_directories(dir_path, ec);
 
     EXPECT_EQ(invoke_cli({"schema", dir_path.string()}), cli::exit_codes::kCliError);
+}
+
+TEST(CliCommandsTest, SchemaAndDriversRejectInvalidArguments) {
+    EXPECT_EQ(invoke_cli({"schema"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"schema", "--bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"drivers", "--bad"}), cli::exit_codes::kUsage);
+}
+
+TEST(CliCommandsTest, RunCoversDatabaseOverrideAndArgumentFailures) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto sqlite_path = temp_dir / "dg_cli_run.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(create_sqlite_table(sqlite_path, &error)) << error;
+
+    nlohmann::json db_root = {
+        {"rows", 2},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", std::string("sqlite:") + sqlite_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 2},
+                {"queue_size", 2},
+                {"threads", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+    const auto db_config_path = write_json_file("dg_cli_run_db.json", db_root.dump(2));
+    EXPECT_EQ(
+        invoke_cli({"run", db_config_path.string(), "--output", (temp_dir / "ignored.csv").string()}),
+        cli::exit_codes::kOk
+    );
+
+    const auto invalid_input = write_json_file("dg_cli_run_invalid.json", "{");
+    EXPECT_EQ(invoke_cli({"run", invalid_input.string()}), cli::exit_codes::kRuntimeFailure);
+
+    const auto valid_input = write_json_file("dg_cli_run_parse_error.json", kValidConfigJson);
+    EXPECT_EQ(invoke_cli({"run", valid_input.string(), "--rows", "bad"}), cli::exit_codes::kUsage);
 }
 
 TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {

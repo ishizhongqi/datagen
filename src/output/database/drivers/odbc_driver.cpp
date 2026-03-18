@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -38,9 +39,8 @@ std::string escape_sql_literal(const std::string& value) {
 
 std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDLE handle) {
     std::ostringstream message;
-    SQLSMALLINT        rec_number = 1;
 
-    while (true) {
+    for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
         SQLCHAR     state[6] = {0};
         SQLINTEGER  native_error = 0;
         SQLCHAR     text[kOdbcTextBufferSize] = {0};
@@ -48,7 +48,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDL
         const SQLRETURN rc = SQLGetDiagRec(
             handle_type,
             handle,
-            rec_number,
+            static_cast<SQLSMALLINT>(rec_number),
             state,
             &native_error,
             text,
@@ -64,7 +64,6 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDL
         if (rec_number > 1) { message << " | "; }
         message << "[" << reinterpret_cast<const char*>(state) << "] "
                 << reinterpret_cast<const char*>(text);
-        ++rec_number;
     }
 
     const std::string result = message.str();
@@ -305,9 +304,7 @@ bool OdbcDriver::run_query(
         return false;
     }
 
-    while (true) {
-        const SQLRETURN fetch_rc = SQLFetch(stmt);
-        if (fetch_rc == SQL_NO_DATA) { break; }
+    for (SQLRETURN fetch_rc = SQLFetch(stmt); fetch_rc != SQL_NO_DATA; fetch_rc = SQLFetch(stmt)) {
         if (!SQL_SUCCEEDED(fetch_rc)) {
             if (error_message) { *error_message = parse_odbc_diagnostics(SQL_HANDLE_STMT, stmt); }
             (void)SQLFreeHandle(SQL_HANDLE_STMT, stmt);
@@ -319,7 +316,8 @@ bool OdbcDriver::run_query(
 
         for (SQLUSMALLINT col = 1; col <= static_cast<SQLUSMALLINT>(col_count); ++col) {
             std::string value;
-            while (true) {
+            bool        read_complete = false;
+            while (!read_complete) {
                 SQLCHAR     buffer[kOdbcTextBufferSize] = {0};
                 SQLLEN      indicator = 0;
                 const SQLRETURN data_rc = SQLGetData(
@@ -333,7 +331,8 @@ bool OdbcDriver::run_query(
 
                 if (indicator == SQL_NULL_DATA) {
                     value.clear();
-                    break;
+                    read_complete = true;
+                    continue;
                 }
 
                 if (!SQL_SUCCEEDED(data_rc) && data_rc != SQL_SUCCESS_WITH_INFO) {
@@ -343,7 +342,7 @@ bool OdbcDriver::run_query(
                 }
 
                 value += reinterpret_cast<const char*>(buffer);
-                if (data_rc == SQL_SUCCESS) { break; }
+                if (data_rc == SQL_SUCCESS) { read_complete = true; }
             }
             row.push_back(std::move(value));
         }

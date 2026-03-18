@@ -19,9 +19,9 @@ std::unique_ptr<IDatabaseDriver> make_database_driver(const DbType type) {
         return std::make_unique<OdbcDriver>(type);
     case DbType::Sqlite:
         return std::make_unique<SqliteDriver>();
-    case DbType::Unknown   : return nullptr;
+    default:
+        return nullptr;
     }
-    return nullptr;
 }
 
 }  // namespace data_generator::database

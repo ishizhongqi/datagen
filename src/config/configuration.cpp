@@ -614,8 +614,9 @@ std::string output_format_to_string(const OutputFormat format) {
     case OutputFormat::Sql         : return "sql";
     case OutputFormat::TabDelimited: return "Tab-Delimited";
     case OutputFormat::Custom      : return "Custom";
+    default:
+        return "csv";
     }
-    return "csv";
 }
 
 std::optional<OutputType> parse_output_type(const std::string& value) {
@@ -628,8 +629,9 @@ std::string output_type_to_string(const OutputType type) {
     switch (type) {
     case OutputType::File    : return "file";
     case OutputType::Database: return "database";
+    default:
+        return "file";
     }
-    return "file";
 }
 
 std::optional<LineEnding> parse_line_ending(const std::string& value) {
@@ -642,8 +644,9 @@ std::string line_ending_to_string(const LineEnding ending) {
     switch (ending) {
     case LineEnding::LF  : return "LF";
     case LineEnding::CRLF: return "CRLF";
+    default:
+        return "LF";
     }
-    return "LF";
 }
 
 std::optional<InsertMode> parse_insert_mode(const std::string& value) {
@@ -660,8 +663,9 @@ std::string insert_mode_to_string(const InsertMode mode) {
     case InsertMode::Insert: return "insert";
     case InsertMode::Bulk  : return "bulk";
     case InsertMode::Load  : return "load";
+    default:
+        return "auto";
     }
-    return "auto";
 }
 
 std::optional<TransactionMode> parse_transaction_mode(const std::string& value) {
@@ -676,8 +680,9 @@ std::string transaction_mode_to_string(const TransactionMode mode) {
     case TransactionMode::PerBatch: return "per-batch";
     case TransactionMode::PerRun  : return "per-run";
     case TransactionMode::None    : return "none";
+    default:
+        return "per-batch";
     }
-    return "per-batch";
 }
 
 std::optional<ErrorPolicy> parse_error_policy(const std::string& value) {
@@ -694,8 +699,9 @@ std::string error_policy_to_string(const ErrorPolicy policy) {
     case ErrorPolicy::Continue     : return "continue";
     case ErrorPolicy::RollbackBatch: return "rollback-batch";
     case ErrorPolicy::RollbackAll  : return "rollback-all";
+    default:
+        return "stop";
     }
-    return "stop";
 }
 
 bool parse_generation_config(

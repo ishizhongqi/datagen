@@ -199,8 +199,9 @@ std::string validation_level_to_string(const ValidationLevel level) {
     case ValidationLevel::Info : return "INFO";
     case ValidationLevel::Warn : return "WARN";
     case ValidationLevel::Error: return "ERROR";
+    default:
+        return "INFO";
     }
-    return "INFO";
 }
 
 }  // namespace data_generator::database

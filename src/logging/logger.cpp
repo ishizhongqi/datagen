@@ -106,8 +106,9 @@ std::string log_level_to_string(const LogLevel level) {
     case LogLevel::Info : return "INFO";
     case LogLevel::Warn : return "WARN";
     case LogLevel::Error: return "ERROR";
+    default:
+        return "INFO";
     }
-    return "INFO";
 }
 
 std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {

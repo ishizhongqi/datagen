@@ -16,6 +16,7 @@
 #include <sql.h>
 #include <sqlext.h>
 
+#include <limits>
 #include <sstream>
 
 namespace data_generator::database {
@@ -26,9 +27,8 @@ constexpr std::size_t kBufferSize = 4096;
 
 std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDLE handle) {
     std::ostringstream message;
-    SQLSMALLINT        rec_number = 1;
 
-    while (true) {
+    for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
         SQLCHAR     state[6] = {0};
         SQLINTEGER  native_error = 0;
         SQLCHAR     text[kBufferSize] = {0};
@@ -36,7 +36,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDL
         const SQLRETURN rc = SQLGetDiagRec(
             handle_type,
             handle,
-            rec_number,
+            static_cast<SQLSMALLINT>(rec_number),
             state,
             &native_error,
             text,
@@ -52,7 +52,6 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDL
         if (rec_number > 1) { message << " | "; }
         message << "[" << reinterpret_cast<const char*>(state) << "] "
                 << reinterpret_cast<const char*>(text);
-        ++rec_number;
     }
 
     const std::string result = message.str();
@@ -86,9 +85,8 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
     SQLSMALLINT  desc_length = 0;
     SQLCHAR      attrs[kBufferSize] = {0};
     SQLSMALLINT  attrs_length = 0;
-    SQLUSMALLINT direction = SQL_FETCH_FIRST;
 
-    while (true) {
+    for (SQLUSMALLINT direction = SQL_FETCH_FIRST; rc != SQL_NO_DATA; direction = SQL_FETCH_NEXT) {
         rc = SQLDrivers(
             env,
             direction,
@@ -111,7 +109,6 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
             .name = reinterpret_cast<const char*>(desc),
             .attributes = reinterpret_cast<const char*>(attrs),
         });
-        direction = SQL_FETCH_NEXT;
     }
 
     (void)SQLFreeHandle(SQL_HANDLE_ENV, env);

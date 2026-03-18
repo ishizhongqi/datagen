@@ -41,9 +41,9 @@ std::string db_type_to_url_scheme(const DbType type) {
     case DbType::Postgresql: return "postgresql";
     case DbType::Oracle    : return "oracle";
     case DbType::Sqlite    : return "sqlite";
-    case DbType::Unknown   : return "";
+    default:
+        return "";
     }
-    return "";
 }
 
 std::string percent_decode(const std::string& encoded) {
@@ -95,11 +95,9 @@ std::string odbc_driver_name_for_db_type(const DbType type) {
         return utils::get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_POSTGRESQL", kDefaultPostgresqlOdbcDriver);
     case DbType::Oracle:
         return utils::get_env_or_default("DATA_GENERATOR_ODBC_DRIVER_ORACLE", kDefaultOracleOdbcDriver);
-    case DbType::Sqlite:
-    case DbType::Unknown:
+    default:
         return "";
     }
-    return "";
 }
 
 std::string build_odbc_connection_string(

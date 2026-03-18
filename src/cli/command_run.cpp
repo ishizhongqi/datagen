@@ -115,10 +115,6 @@ int CommandRun::run(const std::vector<std::string>& args) {
         auto backend = output::make_output_backend(cfg);
         const output::OutputStats stats = backend->generate(cfg, exec_opts);
 
-        if (stats.execution_info.fallback_to_single_thread) {
-            logger.warn("parallel generation fallback to single thread: " + stats.execution_info.fallback_reason);
-        }
-
         logger.info(
             "run completed rows_generated=" + std::to_string(stats.rows_generated) +
             " rows_imported=" + std::to_string(stats.rows_written)

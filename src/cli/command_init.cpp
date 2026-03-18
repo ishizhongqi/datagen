@@ -264,9 +264,9 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
     case database::ColumnTypeFamily::Boolean : return "enum_item";
     case database::ColumnTypeFamily::String  :
     case database::ColumnTypeFamily::Binary  :
-    case database::ColumnTypeFamily::Unknown : return "text";
+    default:
+        return "text";
     }
-    return "text";
 }
 
 bool is_unique_column(const database::TableMetadata& metadata, const std::string& column_name) {

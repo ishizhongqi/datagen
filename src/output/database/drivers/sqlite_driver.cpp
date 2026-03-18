@@ -209,9 +209,7 @@ bool SqliteDriver::run_query(
     }
 
     const int column_count = sqlite3_column_count(stmt);
-    while (true) {
-        const int step_rc = sqlite3_step(stmt);
-        if (step_rc == SQLITE_DONE) { break; }
+    for (int step_rc = sqlite3_step(stmt); step_rc != SQLITE_DONE; step_rc = sqlite3_step(stmt)) {
         if (step_rc != SQLITE_ROW) {
             if (error_message) { *error_message = sqlite3_errmsg(db_); }
             sqlite3_finalize(stmt);
