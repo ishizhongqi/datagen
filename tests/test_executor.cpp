@@ -4,6 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <atomic>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -175,6 +177,218 @@ TEST(ExecutorTest, GeneratesWithoutSeedOption) {
     std::ostringstream out;
     EXPECT_NO_THROW((void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out));
     EXPECT_FALSE(out.str().empty());
+}
+
+TEST(ExecutorTest, ParallelGenerateWithConsumerCountsGeneratedRows) {
+    const auto cfg = parse_or_fail(R"json(
+{
+  "rows": 24,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 1000
+      }
+    }
+  ]
+}
+)json");
+
+    std::mutex seen_mutex;
+    std::vector<bool> seen(static_cast<std::size_t>(cfg.rows), false);
+    std::atomic<bool> saw_missing_value = false;
+
+    const auto result = engine::generate_with_consumer(
+        cfg,
+        engine::ExecutionOptions{.requested_threads = 4},
+        [&](engine::Row&& row, const std::uint64_t row_index) {
+            if (row.empty() || !row.front().has_value()) {
+                saw_missing_value.store(true);
+                return true;
+            }
+
+            std::lock_guard lock(seen_mutex);
+            seen.at(static_cast<std::size_t>(row_index)) = true;
+            return true;
+        }
+    );
+
+    EXPECT_GE(result.info.threads_used, 2U);
+    EXPECT_FALSE(result.info.fallback_to_single_thread);
+    EXPECT_EQ(result.rows_generated, static_cast<std::uint64_t>(cfg.rows));
+    EXPECT_FALSE(saw_missing_value.load());
+    for (const bool row_seen : seen) {
+        EXPECT_TRUE(row_seen);
+    }
+}
+
+TEST(ExecutorTest, ParallelGenerateWithConsumerStopsWhenConsumerCancels) {
+    const auto cfg = parse_or_fail(R"json(
+{
+  "rows": 24,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 1000
+      }
+    }
+  ]
+}
+)json");
+
+    std::atomic<int> callback_count = 0;
+
+    const auto result = engine::generate_with_consumer(
+        cfg,
+        engine::ExecutionOptions{.requested_threads = 4},
+        [&](engine::Row&&, const std::uint64_t) {
+            return callback_count.fetch_add(1) != 0;
+        }
+    );
+
+    EXPECT_GE(result.info.threads_used, 2U);
+    EXPECT_FALSE(result.info.fallback_to_single_thread);
+    EXPECT_GE(callback_count.load(), 1);
+    EXPECT_LT(result.rows_generated, static_cast<std::uint64_t>(cfg.rows));
+}
+
+TEST(ExecutorTest, SequentialGenerateWithConsumerStopsWhenConsumerCancels) {
+    const auto cfg = parse_or_fail(R"json(
+{
+  "rows": 8,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 1000
+      }
+    }
+  ]
+}
+)json");
+
+    std::atomic<int> callback_count = 0;
+
+    const auto result = engine::generate_with_consumer(
+        cfg,
+        engine::ExecutionOptions{.requested_threads = 1},
+        [&](engine::Row&&, const std::uint64_t) {
+            return callback_count.fetch_add(1) != 0;
+        }
+    );
+
+    EXPECT_EQ(result.info.threads_used, 1U);
+    EXPECT_FALSE(result.info.fallback_to_single_thread);
+    EXPECT_EQ(callback_count.load(), 1);
+    EXPECT_EQ(result.rows_generated, 0U);
+}
+
+TEST(ExecutorTest, GenerateToStreamSupportsTabDelimitedCustomAndSqlFormats) {
+    auto tab_cfg = parse_or_fail(R"json(
+{
+  "rows": 2,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "Tab-Delimited",
+      "options": {
+        "header": true,
+        "line_ending": "LF"
+      }
+    }
+  },
+  "fields": [
+    {"name": "id", "generator": "integer", "config": {"start": 1, "end": 9}},
+    {"name": "name", "generator": "regular_expression", "config": {"pattern": "ab"}}
+  ]
+}
+)json");
+
+    std::ostringstream tab_out;
+    const auto tab_result =
+        engine::generate_to_stream(tab_cfg, engine::ExecutionOptions{.requested_threads = 1}, tab_out);
+    EXPECT_EQ(tab_result.rows_generated, 2U);
+    EXPECT_NE(tab_out.str().find("id\tname"), std::string::npos);
+
+    auto custom_cfg = parse_or_fail(R"json(
+{
+  "rows": 2,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "Custom",
+      "options": {
+        "delimiter": "|",
+        "quote": "'",
+        "header": true,
+        "line_ending": "LF"
+      }
+    }
+  },
+  "fields": [
+    {"name": "id", "generator": "integer", "config": {"start": 1, "end": 9}},
+    {"name": "name", "generator": "regular_expression", "config": {"pattern": "ab"}}
+  ]
+}
+)json");
+
+    std::ostringstream custom_out;
+    const auto custom_result =
+        engine::generate_to_stream(custom_cfg, engine::ExecutionOptions{.requested_threads = 1}, custom_out);
+    EXPECT_EQ(custom_result.rows_generated, 2U);
+    EXPECT_NE(custom_out.str().find("id|name"), std::string::npos);
+
+    auto sql_cfg = parse_or_fail(R"json(
+{
+  "rows": 2,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "sql",
+      "options": {
+        "table": "t_people",
+        "create_table": true
+      }
+    }
+  },
+  "fields": [
+    {"name": "id", "generator": "integer", "config": {"start": 1, "end": 9}},
+    {"name": "name", "generator": "regular_expression", "config": {"pattern": "ab"}}
+  ]
+}
+)json");
+
+    std::ostringstream sql_out;
+    const auto sql_result =
+        engine::generate_to_stream(sql_cfg, engine::ExecutionOptions{.requested_threads = 1}, sql_out);
+    EXPECT_EQ(sql_result.rows_generated, 2U);
+    EXPECT_NE(sql_out.str().find("CREATE TABLE IF NOT EXISTS t_people"), std::string::npos);
+    EXPECT_NE(sql_out.str().find("INSERT INTO t_people"), std::string::npos);
 }
 
 }  // namespace

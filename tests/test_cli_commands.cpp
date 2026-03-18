@@ -316,6 +316,12 @@ TEST(CliCommandsTest, RunErrorAndHelpBranches) {
     EXPECT_EQ(invoke_cli({"check"}), cli::exit_codes::kUsage);
 }
 
+TEST(CliCommandsTest, CheckAndPreviewRejectInvalidArguments) {
+    EXPECT_EQ(invoke_cli({"check", "--bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"preview", "--bad"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"preview"}), cli::exit_codes::kUsage);
+}
+
 TEST(CliCommandsTest, DispatchUnknownCommand) {
     EXPECT_EQ(invoke_cli({"unknown-command"}), cli::exit_codes::kOk);
 }
@@ -365,6 +371,31 @@ TEST(CliCommandsTest, CheckWarningsAndFailures) {
     };
     const auto bad_db_path = write_json_file("dg_cli_check_bad_db.json", bad_db_root.dump(2));
     EXPECT_EQ(invoke_cli({"check", bad_db_path.string()}), cli::exit_codes::kRuntimeFailure);
+}
+
+TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionTest) {
+    const auto sqlite_path = std::filesystem::temp_directory_path() / "dg_cli_check_warn.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(create_empty_sqlite_db(sqlite_path, &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"url", std::string("sqlite:") + sqlite_path.string()}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 3}}}}
+        })}
+    };
+
+    const auto path = write_json_file("dg_cli_check_warn_sqlite.json", root.dump(2));
+    EXPECT_EQ(invoke_cli({"check", path.string()}), cli::exit_codes::kOk);
 }
 
 TEST(CliCommandsTest, PreviewFormatsAndDatabasePreview) {
@@ -441,6 +472,32 @@ TEST(CliCommandsTest, PreviewFormatsAndDatabasePreview) {
 
     const auto invalid_path = write_json_file("dg_cli_preview_invalid.json", "{");
     EXPECT_EQ(invoke_cli({"preview", invalid_path.string()}), cli::exit_codes::kRuntimeFailure);
+}
+
+TEST(CliCommandsTest, PreviewHandlesNullFieldAndInvalidConfig) {
+    nlohmann::json null_field_root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "file"},
+            {"file", {
+                {"format", "json"},
+                {"options", {{"array", true}, {"include_null", true}}}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {
+                {"name", "nickname"},
+                {"generator", "regular_expression"},
+                {"config", {{"pattern", "x"}}},
+                {"null_value", {{"enabled", true}, {"percent", 100}}}
+            }
+        })}
+    };
+    const auto null_path = write_json_file("dg_cli_preview_null_field.json", null_field_root.dump(2));
+    EXPECT_EQ(invoke_cli({"preview", null_path.string(), "--field", "nickname"}), cli::exit_codes::kOk);
+
+    const auto invalid_schema_path = write_json_file("dg_cli_preview_invalid_schema.json", kInvalidConfigJson);
+    EXPECT_EQ(invoke_cli({"preview", invalid_schema_path.string()}), cli::exit_codes::kRuntimeFailure);
 }
 
 TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
