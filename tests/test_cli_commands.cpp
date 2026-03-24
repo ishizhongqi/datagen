@@ -16,6 +16,7 @@
 
 #include "app/run.h"
 #include "cli/exit_codes.h"
+#include "output/database/db_url_parser.h"
 
 using namespace data_generator;
 
@@ -738,6 +739,12 @@ TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {
     const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
     if (!pg_url || std::string(pg_url).empty()) {
         GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL not set.";
+    }
+
+    data_generator::database::DbUrl parsed;
+    std::string error;
+    if (!data_generator::database::parse_db_connection(pg_url, &parsed, &error)) {
+        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL is not in the new connection format: " << error;
     }
 
     nlohmann::json root = {
