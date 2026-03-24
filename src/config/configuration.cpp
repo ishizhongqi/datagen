@@ -37,7 +37,7 @@ constexpr auto kKeyFileOptionCreateTable       = "create_table";
 constexpr auto kKeyFileOptionDelimiter         = "delimiter";
 constexpr auto kKeyFileOptionQuote             = "quote";
 
-constexpr auto kKeyDatabaseUrl                 = "url";
+constexpr auto kKeyDatabaseConnection          = "connection";
 constexpr auto kKeyDatabaseTable               = "table";
 constexpr auto kKeyDatabaseInsertMode          = "insert_mode";
 constexpr auto kKeyDatabaseBatchSize           = "batch_size";
@@ -76,7 +76,7 @@ const std::unordered_set<std::string> kKnownFileKeys = {
 };
 
 const std::unordered_set<std::string> kKnownDatabaseKeys = {
-    kKeyDatabaseUrl,
+    kKeyDatabaseConnection,
     kKeyDatabaseTable,
     kKeyDatabaseInsertMode,
     kKeyDatabaseBatchSize,
@@ -374,7 +374,14 @@ bool parse_database_output(
     const Json& database = output.at(kKeyOutputDatabase);
     validate_known_object_keys(database, kKnownDatabaseKeys, base_path, issues);
 
-    (void)parse_optional_string(database, kKeyDatabaseUrl, &cfg->output.database.url, issues, base_path, true);
+    (void)parse_optional_string(
+        database,
+        kKeyDatabaseConnection,
+        &cfg->output.database.connection,
+        issues,
+        base_path,
+        true
+    );
     (void)parse_optional_string(database, kKeyDatabaseTable, &cfg->output.database.table, issues, base_path, true);
 
     if (database.contains(kKeyDatabaseInsertMode)) {
@@ -436,11 +443,11 @@ bool parse_database_output(
         false
     );
 
-    if (cfg->output.database.url.empty()) {
+    if (cfg->output.database.connection.empty()) {
         add_issue(
             issues,
-            base_path + ".url",
-            "database output requires URL/ODBC connection string",
+            base_path + ".connection",
+            "database output requires connection in odbc://... or sqlite://... format",
             mode == ParseMode::AllowMissingOutputSettings
         );
     }
@@ -751,7 +758,9 @@ void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides) {
     }
     if (overrides.type.has_value()) { cfg->output.type = *overrides.type; }
     if (overrides.output_path.has_value()) { cfg->output.file.path = *overrides.output_path; }
-    if (overrides.database_url.has_value()) { cfg->output.database.url = *overrides.database_url; }
+    if (overrides.database_connection.has_value()) {
+        cfg->output.database.connection = *overrides.database_connection;
+    }
 }
 
 }  // namespace data_generator::config

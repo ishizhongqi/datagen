@@ -14,6 +14,7 @@
 namespace data_generator::database {
 
 enum class DbType {
+    Odbc,
     Mysql,
     Postgresql,
     Oracle,

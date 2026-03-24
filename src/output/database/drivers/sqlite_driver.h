@@ -22,6 +22,8 @@ public:
     ~SqliteDriver() override;
 
     [[nodiscard]] DbType type() const override;
+    [[nodiscard]] std::string dbms_name() const override;
+    [[nodiscard]] std::string dbms_version() const override;
 
     bool connect(const DbUrl& url, std::string* error_message) override;
     void disconnect() override;

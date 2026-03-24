@@ -99,7 +99,7 @@ struct FileOutputConfig {
 };
 
 struct DatabaseOutputConfig {
-    std::string     url;
+    std::string     connection;
     std::string     table = "generated_data";
     InsertMode      insert_mode = InsertMode::Auto;
     int             batch_size = 1000;
@@ -158,7 +158,7 @@ struct CliOverrides {
     std::optional<std::string>      table_name;
     std::optional<OutputType>        type;
     std::optional<std::string>      output_path;
-    std::optional<std::string>      database_url;
+    std::optional<std::string>      database_connection;
 };
 
 void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides);

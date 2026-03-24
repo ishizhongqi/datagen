@@ -22,18 +22,18 @@ namespace data_generator::cli {
 
 namespace {
 
-bool validate_database_connection(const config::GenerationConfig& cfg, std::string* error_message) {
+bool validate_database_connection(const config::GenerationConfig& cfg, std::string& error_message) {
     database::DbUrl parsed_url;
-    if (!database::parse_db_url(cfg.output.database.url, &parsed_url, error_message)) { return false; }
+    if (!database::parse_db_connection(cfg.output.database.connection, &parsed_url, &error_message)) { return false; }
 
     const auto driver = database::make_database_driver(parsed_url.type);
     if (!driver) {
-        if (error_message) { *error_message = "unsupported database type"; }
+        error_message = "unsupported database type";
         return false;
     }
-    if (!driver->connect(parsed_url, error_message)) { return false; }
+    if (!driver->connect(parsed_url, &error_message)) { return false; }
 
-    const bool ok = driver->test_connection(error_message);
+    const bool ok = driver->test_connection(&error_message);
     driver->disconnect();
     return ok;
 }
@@ -80,18 +80,18 @@ int CommandCheck::run(const std::vector<std::string>& args) {
 
         std::vector<config::ValidationIssue> warnings;
         if (cfg.output.type == config::OutputType::Database) {
-            if (cfg.output.database.url.empty()) {
+            if (cfg.output.database.connection.empty()) {
                 warnings.push_back(config::ValidationIssue{
                     .warning = true,
-                    .path = "$.output.database.url",
-                    .message = "database generate requires URL/ODBC connection string (CLI can override)",
+                    .path = "$.output.database.connection",
+                    .message = "database output requires connection in odbc://... or sqlite://... format",
                 });
             }
             if (cfg.output.database.table.empty()) {
                 warnings.push_back(config::ValidationIssue{
                     .warning = true,
                     .path = "$.output.database.table",
-                    .message = "database generate requires target table name",
+                    .message = "database output requires target table name",
                 });
             }
         }
@@ -105,9 +105,9 @@ int CommandCheck::run(const std::vector<std::string>& args) {
             return exit_codes::kRuntimeFailure;
         }
 
-        if (cfg.output.type == config::OutputType::Database && !cfg.output.database.url.empty()) {
+        if (cfg.output.type == config::OutputType::Database && !cfg.output.database.connection.empty()) {
             std::string db_error;
-            if (!validate_database_connection(cfg, &db_error)) {
+            if (!validate_database_connection(cfg, db_error)) {
                 std::cerr << "Validation error: database connection check failed: " << db_error << "\n";
                 return exit_codes::kRuntimeFailure;
             }

@@ -28,6 +28,7 @@ bool contains(const std::string& text, const std::string& pattern) {
 
 std::string db_type_to_string(const DbType type) {
     switch (type) {
+    case DbType::Odbc      : return "odbc";
     case DbType::Mysql     : return "mysql";
     case DbType::Postgresql: return "postgresql";
     case DbType::Oracle    : return "oracle";

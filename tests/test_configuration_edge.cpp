@@ -200,6 +200,7 @@ TEST(ConfigurationEdgeTest, ApplyOverridesAndFormatRoundtrip) {
     overrides.table_name = std::string("t2");
     overrides.type = config::OutputType::Database;
     overrides.output_path = std::string("out.csv");
+    overrides.database_connection = std::string("sqlite://:memory:");
     apply_cli_overrides(&cfg, overrides);
     EXPECT_EQ(cfg.rows, 20);
     EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Sql);
@@ -207,6 +208,7 @@ TEST(ConfigurationEdgeTest, ApplyOverridesAndFormatRoundtrip) {
     EXPECT_EQ(cfg.output.file.sql.table, "t2");
     EXPECT_EQ(cfg.output.type, config::OutputType::Database);
     EXPECT_EQ(cfg.output.file.path, "out.csv");
+    EXPECT_EQ(cfg.output.database.connection, "sqlite://:memory:");
 }
 
 }  // namespace

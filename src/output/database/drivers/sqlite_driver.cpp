@@ -52,15 +52,14 @@ std::optional<int> parse_int(const std::string& value) {
 }
 
 void parse_type_details(
-    const std::string&       type_name,
-    std::optional<int>*      character_length,
-    std::optional<int>*      numeric_precision,
-    std::optional<int>*      numeric_scale
+    const std::string& type_name,
+    std::optional<int>& character_length,
+    std::optional<int>& numeric_precision,
+    std::optional<int>& numeric_scale
 ) {
-    if (!character_length || !numeric_precision || !numeric_scale) { return; }
-    character_length->reset();
-    numeric_precision->reset();
-    numeric_scale->reset();
+    character_length.reset();
+    numeric_precision.reset();
+    numeric_scale.reset();
 
     const std::size_t open = type_name.find('(');
     const std::size_t close = type_name.find(')', open);
@@ -74,17 +73,17 @@ void parse_type_details(
         const std::string lower = to_lower(type_name);
         if (lower.find("char") != std::string::npos || lower.find("clob") != std::string::npos ||
             lower.find("text") != std::string::npos) {
-            *character_length = parsed;
+            character_length = parsed;
         } else {
-            *numeric_precision = parsed;
+            numeric_precision = parsed;
         }
         return;
     }
 
     const auto precision = parse_int(inside.substr(0, comma));
     const auto scale = parse_int(inside.substr(comma + 1));
-    if (precision.has_value()) { *numeric_precision = precision; }
-    if (scale.has_value()) { *numeric_scale = scale; }
+    if (precision.has_value()) { numeric_precision = precision; }
+    if (scale.has_value()) { numeric_scale = scale; }
 }
 
 }  // namespace
@@ -97,15 +96,23 @@ DbType SqliteDriver::type() const {
     return DbType::Sqlite;
 }
 
+std::string SqliteDriver::dbms_name() const {
+    return "SQLite";
+}
+
+std::string SqliteDriver::dbms_version() const {
+    return sqlite3_libversion();
+}
+
 bool SqliteDriver::connect(const DbUrl& url, std::string* error_message) {
     disconnect();
 
     if (url.type != DbType::Sqlite) {
-        if (error_message) { *error_message = "sqlite driver requires sqlite url"; }
+        if (error_message) { *error_message = "sqlite driver requires sqlite connection"; }
         return false;
     }
     if (url.database.empty()) {
-        if (error_message) { *error_message = "sqlite url missing path"; }
+        if (error_message) { *error_message = "sqlite connection missing path"; }
         return false;
     }
 
@@ -278,7 +285,7 @@ bool SqliteDriver::load_table_metadata(
         if (!create_sql.empty() && create_sql.find("autoincrement") != std::string::npos) {
             column.auto_increment = is_pk && lower_type.find("int") != std::string::npos;
         }
-        parse_type_details(lower_type, &column.character_length, &column.numeric_precision, &column.numeric_scale);
+        parse_type_details(lower_type, column.character_length, column.numeric_precision, column.numeric_scale);
         metadata->columns.push_back(std::move(column));
     }
 

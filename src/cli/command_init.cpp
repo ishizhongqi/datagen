@@ -6,6 +6,7 @@
 
 #include "cli/command_init.h"
 
+#include <algorithm>
 #include <cxxopts.hpp>
 #include <cctype>
 #include <fstream>
@@ -267,11 +268,9 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
 }
 
 bool is_unique_column(const database::TableMetadata& metadata, const std::string& column_name) {
-    for (const auto& index : metadata.indexes) {
-        if (!index.unique) { continue; }
-        if (index.columns.size() == 1 && index.columns.front() == column_name) { return true; }
-    }
-    return false;
+    return std::ranges::any_of(metadata.indexes, [&](const database::IndexMetadata& index) {
+        return index.unique && index.columns.size() == 1 && index.columns.front() == column_name;
+    });
 }
 
 OrderedJson make_null_value_defaults() {
@@ -283,28 +282,26 @@ OrderedJson make_default_value_defaults() {
 }
 
 void apply_supported_field_attributes(
-    const database::TableMetadata&                   metadata,
-    const database::ColumnMetadata&                  column,
-    const config::GeneratorMetadata*                         meta,
-    std::unordered_map<std::string, int>*            linkage_counter_by_generator,
-    OrderedJson*                                     field
+    const database::TableMetadata& metadata,
+    const database::ColumnMetadata& column,
+    const config::GeneratorMetadata& meta,
+    std::unordered_map<std::string, int>& linkage_counter_by_generator,
+    OrderedJson& field
 ) {
-    if (!meta || !field) { return; }
-
-    if (meta->supports_unique) {
+    if (meta.supports_unique) {
         const bool unique = column.auto_increment || is_unique_column(metadata, column.name);
-        (*field)["unique"] = unique;
+        field["unique"] = unique;
     }
 
-    if (meta->supports_data_linkage && linkage_counter_by_generator) {
-        const std::string module = meta->linkage_module.empty() ? meta->module : meta->linkage_module;
-        const std::string group_module = module.empty() ? meta->name : module;
-        const int group_id = ++(*linkage_counter_by_generator)[meta->name];
-        (*field)["data_linkage"] = group_module + ":Group" + std::to_string(group_id);
+    if (meta.supports_data_linkage) {
+        const std::string module = meta.linkage_module.empty() ? meta.module : meta.linkage_module;
+        const std::string group_module = module.empty() ? meta.name : module;
+        const int group_id = ++linkage_counter_by_generator[meta.name];
+        field["data_linkage"] = group_module + ":Group" + std::to_string(group_id);
     }
 
-    (*field)["default_value"] = make_default_value_defaults();
-    (*field)["null_value"] = make_null_value_defaults();
+    field["default_value"] = make_default_value_defaults();
+    field["null_value"] = make_null_value_defaults();
 }
 
 OrderedJson infer_field_from_column(
@@ -369,7 +366,9 @@ OrderedJson infer_field_from_column(
         field["config"]["enums"] = std::move(enums);
     }
 
-    apply_supported_field_attributes(metadata, column, meta, linkage_counter_by_generator, &field);
+    if (meta && linkage_counter_by_generator) {
+        apply_supported_field_attributes(metadata, column, *meta, *linkage_counter_by_generator, field);
+    }
 
     return field;
 }
@@ -392,13 +391,15 @@ OrderedJson build_fields_from_template(const Json& root) {
         database::ColumnMetadata pseudo_column;
         pseudo_column.name = field.value("name", "");
         database::TableMetadata pseudo_metadata;
-        apply_supported_field_attributes(
-            pseudo_metadata,
-            pseudo_column,
-            meta,
-            &linkage_counter_by_generator,
-            &ordered_field
-        );
+        if (meta) {
+            apply_supported_field_attributes(
+                pseudo_metadata,
+                pseudo_column,
+                *meta,
+                linkage_counter_by_generator,
+                ordered_field
+            );
+        }
         fields.push_back(std::move(ordered_field));
     }
 
@@ -413,7 +414,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
         ("config", "Output JSON file path", cxxopts::value<std::string>())
         ("template", "Template type (file|database)", cxxopts::value<std::string>()->default_value("file"))
         ("format", "File format (csv|json|sql|Tab-Delimited|Custom)", cxxopts::value<std::string>())
-        ("from-database", "Database URL to infer fields (ODBC or SQLite)", cxxopts::value<std::string>())
+        ("from-database", "Database connection in odbc://... or sqlite://... format to infer fields", cxxopts::value<std::string>())
         ("table", "Target table name", cxxopts::value<std::string>())
         ("h,help", "Show help");
     options.parse_positional({"config"});
@@ -466,10 +467,10 @@ int CommandInit::run(const std::vector<std::string>& args) {
 
     const bool has_from_database = result.count("from-database") > 0;
     const bool has_table = result.count("table") > 0;
-    const std::string from_database_url = has_from_database ? result["from-database"].as<std::string>() : "";
+    const std::string from_database_connection = has_from_database ? result["from-database"].as<std::string>() : "";
     const std::string table_name = has_table ? result["table"].as<std::string>() : "";
 
-    if (has_from_database && from_database_url.empty()) {
+    if (has_from_database && from_database_connection.empty()) {
         std::cerr << "--from-database must not be empty\n";
         return exit_codes::kUsage;
     }
@@ -490,11 +491,13 @@ int CommandInit::run(const std::vector<std::string>& args) {
 
     const bool should_infer = is_database_template && has_from_database && has_table;
 
-    const std::string default_url =
-        "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
+    const std::string default_connection =
+        "odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
     const std::string default_table = "generated_data";
 
-    const std::string output_url = should_infer ? from_database_url : (has_from_database ? from_database_url : default_url);
+    const std::string output_connection =
+        should_infer ? from_database_connection
+                     : (has_from_database ? from_database_connection : default_connection);
     const std::string output_table = has_table ? table_name : default_table;
 
     OrderedJson output = OrderedJson::object();
@@ -508,7 +511,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
 
     if (is_database_template) {
         OrderedJson database = OrderedJson::object();
-        database["url"] = output_url;
+        database["connection"] = output_connection;
         database["table"] = output_table;
         database["insert_mode"] = "auto";
         database["batch_size"] = 1000;
@@ -522,14 +525,14 @@ int CommandInit::run(const std::vector<std::string>& args) {
         if (should_infer) {
             database::DbUrl parsed_url;
             std::string     error;
-            if (!database::parse_db_url(from_database_url, &parsed_url, &error)) {
+            if (!database::parse_db_connection(from_database_connection, &parsed_url, &error)) {
                 std::cerr << "Invalid --from-database: " << error << "\n";
                 return exit_codes::kUsage;
             }
 
             auto driver = database::make_database_driver(parsed_url.type);
             if (!driver) {
-                std::cerr << "Unsupported db type in URL\n";
+                std::cerr << "Unsupported database connection type\n";
                 return exit_codes::kUsage;
             }
             if (!driver->connect(parsed_url, &error)) {

@@ -175,6 +175,13 @@ TEST(CliCommandsTest, InfoDriversAndVersion) {
     EXPECT_EQ(invoke_cli({"info", "integer", "--json"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"info", "not_exist"}), cli::exit_codes::kUsage);
 
+    testing::internal::CaptureStdout();
+    EXPECT_EQ(invoke_cli({"info", "company_name"}), cli::exit_codes::kOk);
+    const std::string info_output = testing::internal::GetCapturedStdout();
+    EXPECT_NE(info_output.find("Generator: company_name"), std::string::npos);
+    EXPECT_NE(info_output.find("Advanced Settings:"), std::string::npos);
+    EXPECT_NE(info_output.find("\"generator\": \"company_name\""), std::string::npos);
+
     EXPECT_EQ(invoke_cli({"drivers"}), cli::exit_codes::kOk);
     EXPECT_EQ(invoke_cli({"drivers", "--json"}), cli::exit_codes::kOk);
 
@@ -206,6 +213,12 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
     const auto schema_out = std::filesystem::temp_directory_path() / "dg_cli_schema.json";
     EXPECT_EQ(invoke_cli({"schema", schema_out.string()}), cli::exit_codes::kOk);
     EXPECT_TRUE(std::filesystem::exists(schema_out));
+
+    const auto schema_json = read_json_file(schema_out);
+    ASSERT_EQ(schema_json["$schema"], "https://json-schema.org/draft/2020-12/schema");
+    ASSERT_TRUE(schema_json["properties"].contains("fields"));
+    ASSERT_TRUE(schema_json["properties"]["output"]["properties"].contains("database"));
+    ASSERT_TRUE(schema_json["properties"]["fields"]["items"].contains("allOf"));
 }
 
 TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
@@ -257,7 +270,7 @@ TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
 
     const auto db_warn_out = temp_dir / "dg_init_db_warn.json";
     EXPECT_EQ(
-        invoke_cli({"init", db_warn_out.string(), "--template", "database", "--from-database", "odbc:postgresql:DRIVER={PostgreSQL 17 ODBC driver};"}),
+        invoke_cli({"init", db_warn_out.string(), "--template", "database", "--from-database", "odbc://DRIVER={PostgreSQL 17 ODBC driver};"}),
         cli::exit_codes::kOk
     );
 
@@ -281,7 +294,7 @@ TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
             "--template",
             "database",
             "--from-database",
-            std::string("sqlite:") + sqlite_path.string(),
+            std::string("sqlite://") + sqlite_path.string(),
             "--table",
             "t_data"
         }),
@@ -361,7 +374,7 @@ TEST(CliCommandsTest, CheckWarningsAndFailures) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", "odbc:postgresql:DRIVER={Missing Driver};SERVER=127.0.0.1;PORT=5432;DATABASE=demo;"},
+                {"connection", "odbc://DRIVER={Missing Driver};SERVER=127.0.0.1;PORT=5432;DATABASE=demo;"},
                 {"table", "t_data"}
             }}
         }},
@@ -386,7 +399,7 @@ TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionT
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + sqlite_path.string()}
+                {"connection", std::string("sqlite://") + sqlite_path.string()}
             }}
         }},
         {"fields", nlohmann::json::array({
@@ -513,7 +526,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--format",
             "csv",
             "--from-database",
-            "sqlite:/tmp/ignored.db",
+            "sqlite:///tmp/ignored.db",
             "--table",
             "t_data"
         }),
@@ -528,7 +541,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--template",
             "database",
             "--from-database",
-            "sqlite:/tmp/ignored.db"
+            "sqlite:///tmp/ignored.db"
         }),
         cli::exit_codes::kOk
     );
@@ -569,7 +582,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--template",
             "database",
             "--from-database",
-            "sqlite:/tmp/ignored.db",
+            "sqlite:///tmp/ignored.db",
             "--table",
             ""
         }),
@@ -590,7 +603,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--template",
             "database",
             "--from-database",
-            std::string("sqlite:") + sqlite_path.string(),
+            std::string("sqlite://") + sqlite_path.string(),
             "--table",
             "missing_table"
         }),
@@ -615,7 +628,7 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
             "--template",
             "database",
             "--from-database",
-            std::string("sqlite:") + sqlite_path.string(),
+            std::string("sqlite://") + sqlite_path.string(),
             "--table",
             "t_infer"
         }),
@@ -696,7 +709,7 @@ TEST(CliCommandsTest, RunCoversDatabaseOverrideAndArgumentFailures) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + sqlite_path.string()},
+                {"connection", std::string("sqlite://") + sqlite_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 2},
@@ -732,7 +745,7 @@ TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", pg_url},
+                {"connection", pg_url},
                 {"table", "t_data"}
             }}
         }},

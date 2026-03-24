@@ -7,23 +7,13 @@
 #ifndef DATA_GENERATOR_DB_URL_PARSER_H
 #define DATA_GENERATOR_DB_URL_PARSER_H
 
-#include <optional>
 #include <string>
 
 #include "output/database/db_metadata.h"
 
 namespace data_generator::database {
 
-bool parse_db_url(const std::string& url, DbUrl* parsed, std::string* error_message);
-
-std::string build_db_url(
-    DbType                   type,
-    const std::string&       user,
-    const std::string&       password,
-    const std::string&       host,
-    const std::optional<int>& port,
-    const std::string&       database
-);
+bool parse_db_connection(const std::string& connection, DbUrl* parsed, std::string* error_message);
 
 }  // namespace data_generator::database
 

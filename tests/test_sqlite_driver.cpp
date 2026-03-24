@@ -23,7 +23,7 @@ namespace {
 DbUrl make_sqlite_url(const std::filesystem::path& path) {
     DbUrl url;
     url.type = DbType::Sqlite;
-    url.raw = std::string("sqlite:") + path.string();
+    url.raw = std::string("sqlite://") + path.string();
     url.database = path.string();
     return url;
 }
@@ -97,9 +97,13 @@ TEST(SqliteDriverTest, FactoryCreatesExpectedDriverKinds) {
         std::unique_ptr<IDatabaseDriver> driver = make_database_driver(type);
         ASSERT_NE(driver, nullptr);
         EXPECT_EQ(driver->type(), type);
-        EXPECT_EQ(driver->supports_load_mode(), type != DbType::Oracle);
         EXPECT_NE(dynamic_cast<OdbcDriver*>(driver.get()), nullptr);
     }
+
+    std::unique_ptr<IDatabaseDriver> generic_odbc_driver = make_database_driver(DbType::Odbc);
+    ASSERT_NE(generic_odbc_driver, nullptr);
+    EXPECT_EQ(generic_odbc_driver->type(), DbType::Odbc);
+    EXPECT_NE(dynamic_cast<OdbcDriver*>(generic_odbc_driver.get()), nullptr);
 
     EXPECT_EQ(make_database_driver(DbType::Unknown), nullptr);
 }

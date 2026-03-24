@@ -25,7 +25,7 @@ namespace {
 
 constexpr std::size_t kBufferSize = 4096;
 
-std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDLE handle) {
+std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE handle) {
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {

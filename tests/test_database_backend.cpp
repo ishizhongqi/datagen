@@ -112,7 +112,7 @@ TEST(DatabaseBackendTest, InsertAndBulkModesWithSqlite) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "auto"},
                 {"batch_size", 1},
@@ -161,7 +161,7 @@ TEST(DatabaseBackendTest, LoadModeUnsupportedRespectsContinuePolicy) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "load"},
                 {"batch_size", 2},
@@ -206,7 +206,7 @@ TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 2},
@@ -254,7 +254,7 @@ TEST(DatabaseBackendTest, InvalidUrlAndMissingTableThrow) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", "not-a-valid-url"},
+                {"connection", "not-a-valid-connection"},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 1},
@@ -276,7 +276,7 @@ TEST(DatabaseBackendTest, InvalidUrlAndMissingTableThrow) {
 
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 
-    cfg.output.database.url = std::string("sqlite:") + std::filesystem::temp_directory_path().string() + "/tmp.db";
+    cfg.output.database.connection = std::string("sqlite://") + std::filesystem::temp_directory_path().string() + "/tmp.db";
     cfg.output.database.table.clear();
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 }
@@ -296,7 +296,7 @@ TEST(DatabaseBackendTest, SchemaValidationFailureThrows) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 1},
@@ -336,7 +336,7 @@ TEST(DatabaseBackendTest, StopPolicyThrowsOnConversionError) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 1},
@@ -377,7 +377,7 @@ TEST(DatabaseBackendTest, RollbackBatchPolicyContinuesOnConversionError) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", std::string("sqlite:") + db_path.string()},
+                {"connection", std::string("sqlite://") + db_path.string()},
                 {"table", "t_data"},
                 {"insert_mode", "insert"},
                 {"batch_size", 2},
@@ -412,7 +412,7 @@ TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
 
     data_generator::database::DbUrl parsed;
     std::string error;
-    ASSERT_TRUE(data_generator::database::parse_db_url(pg_url, &parsed, &error)) << error;
+    ASSERT_TRUE(data_generator::database::parse_db_connection(pg_url, &parsed, &error)) << error;
 
     auto driver = data_generator::database::make_database_driver(parsed.type);
     ASSERT_TRUE(driver);
@@ -431,7 +431,7 @@ TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
         {"output", {
             {"type", "database"},
             {"database", {
-                {"url", pg_url},
+                {"connection", pg_url},
                 {"table", "t_data"},
                 {"insert_mode", "bulk"},
                 {"batch_size", 2},

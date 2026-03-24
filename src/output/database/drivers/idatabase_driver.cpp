@@ -13,6 +13,7 @@ namespace data_generator::database {
 
 std::unique_ptr<IDatabaseDriver> make_database_driver(const DbType type) {
     switch (type) {
+    case DbType::Odbc:
     case DbType::Mysql:
     case DbType::Postgresql:
     case DbType::Oracle:

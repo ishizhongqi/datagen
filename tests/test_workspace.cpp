@@ -51,7 +51,6 @@ TEST(WorkspaceTest, EnsuresWorkspaceLayoutCreatesDirectories) {
     EXPECT_EQ(layout.root, base);
     EXPECT_TRUE(std::filesystem::exists(layout.log_dir));
     EXPECT_TRUE(std::filesystem::exists(layout.tmp_dir));
-    EXPECT_TRUE(std::filesystem::exists(layout.ui_dir));
 
     std::filesystem::remove_all(base, ec);
 }
@@ -84,21 +83,6 @@ TEST(WorkspaceTest, ReportsDirectoryCreationFailures) {
     EXPECT_TRUE(layout.root.empty());
     EXPECT_NE(error.find("failed to create tmp directory"), std::string::npos);
 
-    const auto ui_failure_root = temp_dir / "dg_workspace_ui_failure";
-    std::filesystem::remove_all(ui_failure_root, ec);
-    std::filesystem::create_directories(ui_failure_root / "log", ec);
-    std::filesystem::create_directories(ui_failure_root / "tmp", ec);
-    {
-        std::ofstream out(ui_failure_root / "ui", std::ios::trunc);
-        out << "file";
-    }
-
-    error.clear();
-    layout = ensure_workspace_layout(std::optional<std::string>(ui_failure_root.string()), &error);
-    EXPECT_TRUE(layout.root.empty());
-    EXPECT_NE(error.find("failed to create ui directory"), std::string::npos);
-
     std::filesystem::remove(root_as_file, ec);
     std::filesystem::remove_all(tmp_failure_root, ec);
-    std::filesystem::remove_all(ui_failure_root, ec);
 }

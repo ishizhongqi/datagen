@@ -2776,6 +2776,10 @@
               "minimum": 1,
               "type": "integer"
             },
+            "connection": {
+              "minLength": 1,
+              "type": "string"
+            },
             "error_policy": {
               "enum": [
                 "stop",
@@ -2817,14 +2821,10 @@
                 "none"
               ],
               "type": "string"
-            },
-            "url": {
-              "minLength": 1,
-              "type": "string"
             }
           },
           "required": [
-            "url",
+            "connection",
             "table"
           ],
           "type": "object"

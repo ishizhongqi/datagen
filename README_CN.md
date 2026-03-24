@@ -33,7 +33,7 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 - `<json>`：输出 JSON 文件路径。必填。
 - `--template <file|database>`：模板类型。默认 `file`。
 - `--format <csv|json|sql|Tab-Delimited|Custom>`：文件模板格式（仅 file 模板）。
-- `--from-database <url>`：用于推断字段的数据库 URL（ODBC 或 SQLite，仅 database 模板）。
+- `--from-database <connection>`：用于推断字段的数据库连接，格式为 `odbc://...` 或 `sqlite://...`（仅 database 模板）。
 - `--table <name>`：目标表名（database 模板或 SQL 文件模板）。
 - `-h, --help`：显示帮助。
 
@@ -104,7 +104,7 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
     - Tab-Delimited：`header`（布尔）、`line_ending`（`LF` 或 `CRLF`）。
     - Custom：`delimiter`（字符串）、`quote`（字符串）、`header`（布尔）、`line_ending`（`LF` 或 `CRLF`）。
 - `database`：object。`type=database` 时必填。
-  - `url`：string。必填。
+  - `connection`：string。必填。使用 `odbc://...` 或 `sqlite://...`。
   - `table`：string。必填。
   - `insert_mode`：string。`auto`、`insert`、`bulk`、`load`。
   - `batch_size`：integer。`>= 1`。
@@ -114,10 +114,13 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
   - `error_policy`：string。`stop`、`continue`、`rollback-batch`、`rollback-all`。
   - `rate_limit_rows_per_sec`：integer。`>= 1`。
 
-SQLite URL 格式：
+连接格式：
 
-- `sqlite:/absolute/path/to/file.db`
-- `sqlite::memory:`
+- ODBC：`odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=test;UID=root;PWD=123456;`
+- SQLite 文件：`sqlite:///absolute/path/to/file.db`
+- SQLite 内存库：`sqlite://:memory:`
+
+对于 ODBC，`odbc://` 之后的内容会原样传给 `SQLDriverConnect`。
 
 字段对象键：
 

@@ -4,7 +4,7 @@
   "output": {
     "type": "database",
     "database": {
-      "url": "odbc:mysql:DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;",
+      "connection": "odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;",
       "table": "customer_profile",
       "insert_mode": "auto",
       "batch_size": 1000,

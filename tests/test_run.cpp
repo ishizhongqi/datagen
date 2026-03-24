@@ -154,7 +154,7 @@ TEST(RunTest, RunSQLiteDatabaseOutput) {
     root["output"] = {
         {"type", "database"},
         {"database", {
-            {"url", std::string("sqlite:") + db_path.string()},
+            {"connection", std::string("sqlite://") + db_path.string()},
             {"table", "t_data"},
             {"insert_mode", "insert"},
             {"batch_size", 2},

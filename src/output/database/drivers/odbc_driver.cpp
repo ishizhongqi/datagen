@@ -37,7 +37,7 @@ std::string escape_sql_literal(const std::string& value) {
     return escaped;
 }
 
-std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDLE handle) {
+std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE handle) {
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
@@ -85,13 +85,31 @@ std::optional<int> try_parse_optional_int(const std::string& value) {
     }
 }
 
+bool load_info_string(SQLHDBC dbc, const SQLUSMALLINT info_type, std::string* value) {
+    if (!value) { return false; }
+    SQLCHAR buffer[kOdbcTextBufferSize] = {0};
+    SQLSMALLINT output_length = 0;
+    const SQLRETURN rc = SQLGetInfo(dbc, info_type, buffer, sizeof(buffer), &output_length);
+    if (!SQL_SUCCEEDED(rc)) { return false; }
+    *value = reinterpret_cast<const char*>(buffer);
+    return true;
+}
+
+DbType infer_db_type_from_dbms_name(const std::string& dbms_name) {
+    const std::string lower = to_lower_ascii(dbms_name);
+    if (lower.find("mysql") != std::string::npos || lower.find("mariadb") != std::string::npos) {
+        return DbType::Mysql;
+    }
+    if (lower.find("postgres") != std::string::npos) { return DbType::Postgresql; }
+    if (lower.find("oracle") != std::string::npos) { return DbType::Oracle; }
+    return DbType::Unknown;
+}
+
 void load_index_metadata(
     const std::vector<std::vector<std::string>>& rows,
-    TableMetadata* metadata,
+    TableMetadata& metadata,
     const std::unordered_map<std::string, std::size_t>& index_name_to_pos
 ) {
-    if (!metadata) { return; }
-
     std::unordered_map<std::string, std::size_t> name_to_index = index_name_to_pos;
     for (const auto& row : rows) {
         if (row.size() < 3) { continue; }
@@ -103,10 +121,10 @@ void load_index_metadata(
             index.name = index_name;
             index.unique = (row[1] == "0");
             index.columns.push_back(row[2]);
-            metadata->indexes.push_back(std::move(index));
-            name_to_index.emplace(index_name, metadata->indexes.size() - 1);
+            metadata.indexes.push_back(std::move(index));
+            name_to_index.emplace(index_name, metadata.indexes.size() - 1);
         } else {
-            metadata->indexes[it->second].columns.push_back(row[2]);
+            metadata.indexes[it->second].columns.push_back(row[2]);
         }
     }
 }
@@ -123,6 +141,14 @@ DbType OdbcDriver::type() const {
     return db_type_;
 }
 
+std::string OdbcDriver::dbms_name() const {
+    return dbms_name_;
+}
+
+std::string OdbcDriver::dbms_version() const {
+    return dbms_version_;
+}
+
 bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
     disconnect();
 
@@ -132,6 +158,9 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
     }
 
     connection_ = url;
+    db_type_ = url.type;
+    dbms_name_.clear();
+    dbms_version_.clear();
 
     SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env_);
     if (!SQL_SUCCEEDED(rc)) {
@@ -171,6 +200,21 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
         return false;
     }
 
+    if (!load_info_string(dbc_, SQL_DBMS_NAME, &dbms_name_)) {
+        if (error_message) { *error_message = "failed to query SQL_DBMS_NAME via SQLGetInfo"; }
+        disconnect();
+        return false;
+    }
+    (void)load_info_string(dbc_, SQL_DBMS_VER, &dbms_version_);
+
+    const DbType detected_type = infer_db_type_from_dbms_name(dbms_name_);
+    if (detected_type == DbType::Unknown) {
+        if (error_message) { *error_message = "unsupported database type reported by SQLGetInfo: " + dbms_name_; }
+        disconnect();
+        return false;
+    }
+    db_type_ = detected_type;
+
     connected_ = true;
     return true;
 }
@@ -188,6 +232,9 @@ void OdbcDriver::disconnect() {
     }
 
     connected_ = false;
+    db_type_ = DbType::Unknown;
+    dbms_name_.clear();
+    dbms_version_.clear();
 }
 
 bool OdbcDriver::test_connection(std::string* error_message) {
@@ -414,7 +461,7 @@ bool OdbcDriver::load_mysql_metadata(
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 
     const std::unordered_map<std::string, std::size_t> empty_map;
-    load_index_metadata(rows, metadata, empty_map);
+    load_index_metadata(rows, *metadata, empty_map);
 
     rows.clear();
     const std::string trigger_sql =
@@ -513,7 +560,7 @@ bool OdbcDriver::load_postgresql_metadata(
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 
     const std::unordered_map<std::string, std::size_t> empty_map;
-    load_index_metadata(rows, metadata, empty_map);
+    load_index_metadata(rows, *metadata, empty_map);
 
     return true;
 }
@@ -580,7 +627,7 @@ bool OdbcDriver::load_oracle_metadata(
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 
     const std::unordered_map<std::string, std::size_t> empty_map;
-    load_index_metadata(rows, metadata, empty_map);
+    load_index_metadata(rows, *metadata, empty_map);
 
     return true;
 }

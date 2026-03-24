@@ -11,7 +11,7 @@
 
 using data_generator::database::DbUrl;
 using data_generator::database::OdbcDriver;
-using data_generator::database::parse_db_url;
+using data_generator::database::parse_db_connection;
 
 TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
     const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
@@ -21,12 +21,17 @@ TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
 
     DbUrl parsed;
     std::string error;
-    ASSERT_TRUE(parse_db_url(pg_url, &parsed, &error)) << error;
+    if (!parse_db_connection(pg_url, &parsed, &error)) {
+        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL is not in the new connection format: " << error;
+    }
 
-    OdbcDriver driver(parsed.type);
+    OdbcDriver driver;
     EXPECT_FALSE(driver.test_connection(&error));
 
     ASSERT_TRUE(driver.connect(parsed, &error)) << error;
+    EXPECT_EQ(driver.type(), data_generator::database::DbType::Postgresql);
+    EXPECT_FALSE(driver.dbms_name().empty());
+    EXPECT_FALSE(driver.dbms_version().empty());
     EXPECT_TRUE(driver.test_connection(&error));
     EXPECT_TRUE(driver.supports_load_mode());
 

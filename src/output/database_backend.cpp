@@ -587,8 +587,8 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
 
     database::DbUrl db_url;
     std::string     error;
-    if (!database::parse_db_url(cfg.output.database.url, &db_url, &error)) {
-        throw std::runtime_error("invalid database URL: " + error);
+    if (!database::parse_db_connection(cfg.output.database.connection, &db_url, &error)) {
+        throw std::runtime_error("invalid database connection: " + error);
     }
 
     auto driver = database::make_database_driver(db_url.type);
@@ -609,7 +609,11 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         throw std::runtime_error("failed to load table metadata: " + error);
     }
 
-    logger.info("Database type=" + database::db_type_to_string(db_url.type));
+    const database::DbType db_type = driver->type();
+
+    logger.info("Database type=" + database::db_type_to_string(db_type));
+    logger.info("DBMS name=" + driver->dbms_name());
+    logger.info("DBMS version=" + driver->dbms_version());
     logger.info(build_connection_info_line(db_url));
     logger.info("Insert mode=" + config::insert_mode_to_string(cfg.output.database.insert_mode));
     logger.info("Batch size=" + std::to_string(cfg.output.database.batch_size));
@@ -650,10 +654,10 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
             throw std::runtime_error("column not found in metadata: " + field.name);
         }
         columns.push_back(field.name);
-        sql_columns.push_back(quote_identifier_path(db_url.type, field.name));
+        sql_columns.push_back(quote_identifier_path(db_type, field.name));
         mapped_columns.push_back(column_map.at(field.name));
     }
-    const std::string sql_table_name = quote_identifier_path(db_url.type, table_name);
+    const std::string sql_table_name = quote_identifier_path(db_type, table_name);
 
     const int total_rows = cfg.rows;
     const int batch_size = std::max(1, cfg.output.database.batch_size);
@@ -664,7 +668,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         logger.warn("transaction_mode=per-run only supports db_threads=1, forcing db_threads=1");
         db_threads = 1;
     }
-    if (db_url.type == database::DbType::Sqlite && db_threads > 1) {
+    if (db_type == database::DbType::Sqlite && db_threads > 1) {
         logger.warn("SQLite supports a single writer; forcing db_threads=1");
         db_threads = 1;
     }
@@ -790,7 +794,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
 
             const bool per_run_tx = (cfg.output.database.transaction_mode == config::TransactionMode::PerRun);
             if (per_run_tx) {
-                if (!begin_transaction(db_url.type, worker_driver.get(), &worker_error)) {
+                if (!begin_transaction(db_type, worker_driver.get(), &worker_error)) {
                     register_error("worker failed to start transaction: " + worker_error);
                     stop.store(true);
                     return;
@@ -826,7 +830,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                                    cfg.output.database.error_policy == config::ErrorPolicy::RollbackBatch;
                         }
                         std::string sql_literal = adapted.sql_literal;
-                        if (db_url.type == database::DbType::Oracle && !adapted.is_null) {
+                        if (db_type == database::DbType::Oracle && !adapted.is_null) {
                             const database::ColumnTypeFamily family = database::classify_column_type(*mapped_columns[i]);
                             if (family == database::ColumnTypeFamily::DateTime ||
                                 family == database::ColumnTypeFamily::Date ||
@@ -855,7 +859,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
 
                 const bool per_batch_tx = (cfg.output.database.transaction_mode == config::TransactionMode::PerBatch);
                 if (per_batch_tx) {
-                    if (!begin_transaction(db_url.type, worker_driver.get(), &worker_error)) {
+                    if (!begin_transaction(db_type, worker_driver.get(), &worker_error)) {
                         register_error("failed to start batch transaction: " + worker_error);
                         stop.store(true);
                         return false;
@@ -866,7 +870,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 if (resolved_mode == config::InsertMode::Insert) {
                     for (const auto& row_values : sql_rows) {
                         if (!execute_sql(build_insert_sql(
-                                db_url.type,
+                                db_type,
                                 sql_table_name,
                                 sql_columns,
                                 {row_values},
@@ -877,10 +881,10 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                         }
                     }
                 } else if (resolved_mode == config::InsertMode::Bulk) {
-                    if (!supports_multi_row_values(db_url.type)) {
+                    if (!supports_multi_row_values(db_type)) {
                         for (const auto& row_values : sql_rows) {
                             if (!execute_sql(build_insert_sql(
-                                    db_url.type,
+                                    db_type,
                                     sql_table_name,
                                     sql_columns,
                                     {row_values},
@@ -892,7 +896,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                         }
                     } else {
                         ok = execute_sql(build_insert_sql(
-                            db_url.type,
+                            db_type,
                             sql_table_name,
                             sql_columns,
                             sql_rows,
@@ -917,14 +921,14 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                             std::lock_guard lock(temp_files_mutex);
                             temp_files.push_back(load_file);
                         }
-                        const std::string load_sql = build_load_sql(db_url.type, sql_table_name, sql_columns, load_file.string());
+                        const std::string load_sql = build_load_sql(db_type, sql_table_name, sql_columns, load_file.string());
                         if (load_sql.empty()) {
                             ok = false;
                             register_error("load mode is not supported for current database type");
                             handle_policy(cfg.output.database.error_policy, "load mode not supported");
                         } else if (!worker_driver->execute(load_sql, &worker_error)) {
                             const bool can_fallback_to_bulk =
-                                db_url.type == database::DbType::Mysql && is_load_data_disabled_error(worker_error);
+                                db_type == database::DbType::Mysql && is_load_data_disabled_error(worker_error);
                             if (can_fallback_to_bulk) {
                                 bool expected = false;
                                 if (load_fallback_warned.compare_exchange_strong(expected, true)) {
@@ -934,7 +938,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                                     );
                                 }
                                 ok = execute_sql(build_insert_sql(
-                                    db_url.type,
+                                    db_type,
                                     sql_table_name,
                                     sql_columns,
                                     sql_rows,

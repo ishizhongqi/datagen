@@ -33,7 +33,7 @@ Options:
 - `<json>`: Output JSON file path. Required.
 - `--template <file|database>`: Template type. Default `file`.
 - `--format <csv|json|sql|Tab-Delimited|Custom>`: File template format (file template only).
-- `--from-database <url>`: Database URL for schema inference (ODBC or SQLite, database template only).
+- `--from-database <connection>`: Database connection in `odbc://...` or `sqlite://...` format for schema inference (database template only).
 - `--table <name>`: Target table for database templates or SQL file templates.
 - `-h, --help`: Show help.
 
@@ -104,7 +104,7 @@ Root keys:
     - Tab-Delimited: `header` (boolean), `line_ending` (`LF` or `CRLF`).
     - Custom: `delimiter` (string), `quote` (string), `header` (boolean), `line_ending` (`LF` or `CRLF`).
 - `database`: object. Required when `type=database`.
-  - `url`: string. Required.
+  - `connection`: string. Required. Use `odbc://...` or `sqlite://...`.
   - `table`: string. Required.
   - `insert_mode`: string. `auto`, `insert`, `bulk`, `load`.
   - `batch_size`: integer. `>= 1`.
@@ -114,10 +114,13 @@ Root keys:
   - `error_policy`: string. `stop`, `continue`, `rollback-batch`, `rollback-all`.
   - `rate_limit_rows_per_sec`: integer. `>= 1`.
 
-SQLite URL format:
+Connection format:
 
-- `sqlite:/absolute/path/to/file.db`
-- `sqlite::memory:`
+- ODBC: `odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=test;UID=root;PWD=123456;`
+- SQLite file: `sqlite:///absolute/path/to/file.db`
+- SQLite memory: `sqlite://:memory:`
+
+For ODBC, everything after `odbc://` is passed directly to `SQLDriverConnect`.
 
 Field object keys:
 

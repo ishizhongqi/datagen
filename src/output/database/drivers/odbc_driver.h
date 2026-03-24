@@ -29,10 +29,12 @@ namespace data_generator::database {
 
 class OdbcDriver final : public IDatabaseDriver {
 public:
-    explicit OdbcDriver(DbType db_type);
+    explicit OdbcDriver(DbType db_type = DbType::Odbc);
     ~OdbcDriver() override;
 
     [[nodiscard]] DbType type() const override;
+    [[nodiscard]] std::string dbms_name() const override;
+    [[nodiscard]] std::string dbms_version() const override;
 
     bool connect(const DbUrl& url, std::string* error_message) override;
     void disconnect() override;
@@ -70,6 +72,8 @@ private:
 
     DbType       db_type_ = DbType::Unknown;
     DbUrl        connection_;
+    std::string  dbms_name_;
+    std::string  dbms_version_;
     bool         connected_ = false;
     SQLHENV      env_ = SQL_NULL_HENV;
     SQLHDBC      dbc_ = SQL_NULL_HDBC;

@@ -20,6 +20,8 @@ public:
     virtual ~IDatabaseDriver() = default;
 
     [[nodiscard]] virtual DbType type() const = 0;
+    [[nodiscard]] virtual std::string dbms_name() const = 0;
+    [[nodiscard]] virtual std::string dbms_version() const = 0;
 
     virtual bool connect(const DbUrl& url, std::string* error_message) = 0;
     virtual void disconnect() = 0;
