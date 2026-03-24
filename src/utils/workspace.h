@@ -17,7 +17,6 @@ struct WorkspaceLayout {
     std::filesystem::path root;
     std::filesystem::path log_dir;
     std::filesystem::path tmp_dir;
-    std::filesystem::path ui_dir;
     std::filesystem::path generate_log_file;
     std::filesystem::path error_log_file;
 };

@@ -118,7 +118,7 @@ OrderedJson to_ordered_json(const Json& value) {
         for (const auto& item : value) { array.push_back(to_ordered_json(item)); }
         return array;
     }
-    return OrderedJson(value);
+    return value;
 }
 
 OrderedJson build_ordered_config_template(const config::GeneratorMetadata& meta) {
@@ -389,7 +389,7 @@ std::string version_string() {
 }
 
 void print_version(std::ostream& output) {
-    output << "data-generator " << version_string() << "\n";
+    output << "data-generator " << DATA_GENERATOR_VERSION << "\n";
 }
 
 }  // namespace data_generator::cli

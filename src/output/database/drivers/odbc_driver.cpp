@@ -269,7 +269,7 @@ bool OdbcDriver::supports_load_mode() const {
     return db_type_ == DbType::Mysql || db_type_ == DbType::Postgresql;
 }
 
-bool OdbcDriver::execute_statement(SQLHSTMT stmt, const std::string& sql, std::string* error_message) const {
+bool OdbcDriver::execute_statement(const SQLHSTMT stmt, const std::string& sql, std::string* error_message) {
     const SQLRETURN exec_rc = SQLExecDirect(stmt, reinterpret_cast<SQLCHAR*>(const_cast<char*>(sql.c_str())), SQL_NTS);
     if (!SQL_SUCCEEDED(exec_rc) && exec_rc != SQL_NO_DATA) {
         if (error_message) { *error_message = parse_odbc_diagnostics(SQL_HANDLE_STMT, stmt); }
@@ -358,7 +358,7 @@ bool OdbcDriver::load_mysql_metadata(
     const std::string& table_name,
     TableMetadata*     metadata,
     std::string*       error_message
-) {
+) const {
     std::vector<std::vector<std::string>> rows;
 
     const std::string escaped_table_name = escape_sql_literal(table_name);
@@ -443,7 +443,7 @@ bool OdbcDriver::load_postgresql_metadata(
     const std::string& table_name,
     TableMetadata*     metadata,
     std::string*       error_message
-) {
+) const {
     std::vector<std::vector<std::string>> rows;
     const auto [schema_name, base_table_name] = split_schema_table(table_name);
 
@@ -522,7 +522,7 @@ bool OdbcDriver::load_oracle_metadata(
     const std::string& table_name,
     TableMetadata*     metadata,
     std::string*       error_message
-) {
+) const {
     std::vector<std::vector<std::string>> rows;
     const auto [schema_name, base_table_name] = split_schema_table(table_name);
     const std::string table = escape_sql_literal(base_table_name);

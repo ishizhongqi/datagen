@@ -29,9 +29,9 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, const SQLHANDL
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
-        SQLCHAR     state[6] = {0};
+        SQLCHAR     state[6] = {};
         SQLINTEGER  native_error = 0;
-        SQLCHAR     text[kBufferSize] = {0};
+        SQLCHAR     text[kBufferSize] = {};
         SQLSMALLINT text_length = 0;
         const SQLRETURN rc = SQLGetDiagRec(
             handle_type,
@@ -91,10 +91,10 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
             env,
             direction,
             desc,
-            static_cast<SQLSMALLINT>(sizeof(desc)),
+            sizeof(desc),
             &desc_length,
             attrs,
-            static_cast<SQLSMALLINT>(sizeof(attrs)),
+            sizeof(attrs),
             &attrs_length
         );
 

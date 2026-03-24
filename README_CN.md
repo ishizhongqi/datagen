@@ -4,15 +4,6 @@
 
 Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
 
-**构建**
-
-```sh
-cmake -S . -B build
-cmake --build build
-```
-
-生成的可执行文件名为 `data-generator`。若按上面的方式构建，可使用 `./build/data-generator` 运行，或将其加入 `PATH`。
-
 **使用方法**
 
 **CLI**
@@ -181,16 +172,16 @@ JSON 配置示例：
 
 ```sh
 # 校验配置
-./build/data-generator check docs/example_mysql_db.json
+data-generator check docs/example_mysql_db.json
 
 # 预览单行（格式来自 JSON 配置）
-./build/data-generator preview docs/example_file.json
+data-generator preview docs/example_file.json
 
 # 生成 CSV 文件
-./build/data-generator run docs/example_file.json --output ./out.csv
+data-generator run docs/example_file.json --output ./out.csv
 
 # 通过 ODBC 写入 MySQL
-./build/data-generator run docs/example_mysql_db.json
+data-generator run docs/example_mysql_db.json
 ```
 
 **许可证**

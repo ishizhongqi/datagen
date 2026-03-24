@@ -125,7 +125,7 @@ bool can_parallelize_safely(const config::GenerationConfig& cfg, std::string& re
     return true;
 }
 
-Row materialize_row(std::vector<RuntimeField>* runtime_fields) {
+Row materialize_row(const std::vector<RuntimeField>* runtime_fields) {
     Row row;
     row.reserve(runtime_fields->size());
     for (const auto& generator : *runtime_fields) {
@@ -145,7 +145,7 @@ GenerateResult generate_sequential(
     const RowConsumer&      consumer,
     std::atomic<bool>*      cancelled
 ) {
-    auto runtime_fields = build_runtime_fields(cfg, cfg.rows);
+    const auto runtime_fields = build_runtime_fields(cfg, cfg.rows);
 
     GenerateResult result;
     result.info.threads_used = 1;
@@ -191,7 +191,7 @@ GenerateResult generate_parallel(
 
         workers.emplace_back([&, begin, count] {
             try {
-                auto       runtime_fields = build_runtime_fields(cfg, count);
+                const auto       runtime_fields = build_runtime_fields(cfg, count);
                 const auto row_offset     = static_cast<std::uint64_t>(begin);
                 for (std::uint64_t i = 0; i < static_cast<std::uint64_t>(count); ++i) {
                     if (cancelled->load()) { break; }
@@ -296,7 +296,7 @@ GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const Exe
 }
 
 std::vector<std::optional<std::string>> preview_row(const config::GenerationConfig& cfg) {
-    auto runtime_fields = build_runtime_fields(cfg, 1);
+    const auto runtime_fields = build_runtime_fields(cfg, 1);
     auto row            = materialize_row(&runtime_fields);
     return row;
 }

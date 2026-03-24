@@ -82,7 +82,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
         for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
         std::vector<engine::Row> rows = {row};
-        const bool use_csv_preview = (cfg.output.type == config::OutputType::Database);
+        const bool use_csv_preview = cfg.output.type == config::OutputType::Database;
         const config::OutputFormat format = use_csv_preview ? config::OutputFormat::Csv : cfg.output.file.format;
         output::file::DelimitedWriterOptions delimited_options;
         switch (format) {

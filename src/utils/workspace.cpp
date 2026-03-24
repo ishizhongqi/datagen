@@ -25,7 +25,7 @@ std::filesystem::path home_directory() {
     }
 #else
     if (const auto home = get_env_value("HOME"); home.has_value()) {
-        return std::filesystem::path(*home);
+        return *home;
     }
 #endif
     return std::filesystem::current_path();
@@ -69,7 +69,6 @@ WorkspaceLayout ensure_workspace_layout(
     layout.root = resolve_workspace_root(configured_workspace);
     layout.log_dir = layout.root / "log";
     layout.tmp_dir = layout.root / "tmp";
-    layout.ui_dir = layout.root / "ui";
     layout.generate_log_file = layout.log_dir / "generate.log";
     layout.error_log_file = layout.log_dir / "error.log";
 
@@ -83,12 +82,6 @@ WorkspaceLayout ensure_workspace_layout(
     std::filesystem::create_directories(layout.tmp_dir, ec);
     if (ec) {
         if (error_message) { *error_message = "failed to create tmp directory: " + ec.message(); }
-        return WorkspaceLayout{};
-    }
-
-    std::filesystem::create_directories(layout.ui_dir, ec);
-    if (ec) {
-        if (error_message) { *error_message = "failed to create ui directory: " + ec.message(); }
         return WorkspaceLayout{};
     }
 

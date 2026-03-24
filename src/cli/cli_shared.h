@@ -45,6 +45,7 @@ void print_validation_issues(const std::vector<config::ValidationIssue>& issues,
 std::vector<std::string> build_describe_text_lines(const config::GeneratorMetadata& meta);
 
 std::string version_string();
+
 void print_version(std::ostream& output);
 
 }  // namespace data_generator::cli

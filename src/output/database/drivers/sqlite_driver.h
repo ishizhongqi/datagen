@@ -21,7 +21,7 @@ public:
     SqliteDriver() = default;
     ~SqliteDriver() override;
 
-    DbType type() const override;
+    [[nodiscard]] DbType type() const override;
 
     bool connect(const DbUrl& url, std::string* error_message) override;
     void disconnect() override;
@@ -42,7 +42,7 @@ public:
         std::string*       error_message
     ) override;
 
-    bool supports_load_mode() const override;
+    [[nodiscard]] bool supports_load_mode() const override;
 
 private:
     bool run_query(
@@ -55,7 +55,7 @@ private:
         const std::string& table_name,
         TableMetadata*     metadata,
         std::string*       error_message
-    );
+    ) const;
 
     sqlite3*    db_ = nullptr;
     bool        connected_ = false;

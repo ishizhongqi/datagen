@@ -44,8 +44,8 @@ int CommandDrivers::run(const std::vector<std::string>& args) {
 
     if (result.count("json")) {
         Json output = Json::array();
-        for (const auto& driver : drivers) {
-            output.push_back(Json{{"name", driver.name}, {"attributes", driver.attributes}});
+        for (const auto& [name, attributes] : drivers) {
+            output.push_back(Json{{"name", name}, {"attributes", attributes}});
         }
         std::cout << output.dump(2) << "\n";
         return exit_codes::kOk;

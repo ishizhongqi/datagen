@@ -17,33 +17,35 @@ namespace data_generator::config {
 
 namespace {
 
-constexpr const char* kKeyRows = "rows";
-constexpr const char* kKeyOutput = "output";
-constexpr const char* kKeyOutputType = "type";
-constexpr const char* kKeyOutputFile = "file";
-constexpr const char* kKeyOutputDatabase = "database";
-constexpr const char* kKeyOutputFormat = "format";
-constexpr const char* kKeyOutputOptions = "options";
-constexpr const char* kKeyFields = "fields";
+constexpr auto kKeyRows                        = "rows";
 
-constexpr const char* kKeyFileOptionHeader = "header";
-constexpr const char* kKeyFileOptionLineEnding = "line_ending";
-constexpr const char* kKeyFileOptionArray = "array";
-constexpr const char* kKeyFileOptionIncludeNull = "include_null";
-constexpr const char* kKeyFileOptionTable = "table";
-constexpr const char* kKeyFileOptionCreateTable = "create_table";
-constexpr const char* kKeyFileOptionDelimiter = "delimiter";
-constexpr const char* kKeyFileOptionQuote = "quote";
+constexpr auto kKeyOutput                      = "output";
+constexpr auto kKeyOutputType                  = "type";
+constexpr auto kKeyOutputFile                  = "file";
+constexpr auto kKeyOutputDatabase              = "database";
+constexpr auto kKeyOutputFormat                = "format";
+constexpr auto kKeyOutputOptions               = "options";
 
-constexpr const char* kKeyDatabaseUrl = "url";
-constexpr const char* kKeyDatabaseTable = "table";
-constexpr const char* kKeyDatabaseInsertMode = "insert_mode";
-constexpr const char* kKeyDatabaseBatchSize = "batch_size";
-constexpr const char* kKeyDatabaseQueueSize = "queue_size";
-constexpr const char* kKeyDatabaseThreads = "threads";
-constexpr const char* kKeyDatabaseTransactionMode = "transaction_mode";
-constexpr const char* kKeyDatabaseErrorPolicy = "error_policy";
-constexpr const char* kKeyDatabaseRateLimitRowsPerSec = "rate_limit_rows_per_sec";
+constexpr auto kKeyFields                      = "fields";
+
+constexpr auto kKeyFileOptionHeader            = "header";
+constexpr auto kKeyFileOptionLineEnding        = "line_ending";
+constexpr auto kKeyFileOptionArray             = "array";
+constexpr auto kKeyFileOptionIncludeNull       = "include_null";
+constexpr auto kKeyFileOptionTable             = "table";
+constexpr auto kKeyFileOptionCreateTable       = "create_table";
+constexpr auto kKeyFileOptionDelimiter         = "delimiter";
+constexpr auto kKeyFileOptionQuote             = "quote";
+
+constexpr auto kKeyDatabaseUrl                 = "url";
+constexpr auto kKeyDatabaseTable               = "table";
+constexpr auto kKeyDatabaseInsertMode          = "insert_mode";
+constexpr auto kKeyDatabaseBatchSize           = "batch_size";
+constexpr auto kKeyDatabaseQueueSize           = "queue_size";
+constexpr auto kKeyDatabaseThreads             = "threads";
+constexpr auto kKeyDatabaseTransactionMode     = "transaction_mode";
+constexpr auto kKeyDatabaseErrorPolicy         = "error_policy";
+constexpr auto kKeyDatabaseRateLimitRowsPerSec = "rate_limit_rows_per_sec";
 
 const std::unordered_set<std::string> kKnownRootKeys = {
     "$schema",
@@ -107,25 +109,28 @@ const std::unordered_set<std::string> kKnownCustomOptionKeys = {
     kKeyFileOptionLineEnding,
 };
 
-void add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message, const bool warning = false) {
+void
+    add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message, const bool warning = false) {
     issues.emplace_back(ValidationIssue{.warning = warning, .path = std::move(path), .message = std::move(message)});
 }
 
 bool parse_positive_int(
-    const Json& root,
-    const char* key,
-    int* out,
+    const Json&                   root,
+    const char*                   key,
+    int*                          out,
     std::vector<ValidationIssue>& issues,
-    const int min_value,
-    const bool required,
-    const bool warning_if_missing = false
+    const int                     min_value,
+    const bool                    required,
+    const bool                    warning_if_missing = false
 ) {
     if (!root.contains(key)) {
         if (required) {
             add_issue(issues, std::string("$.") + key, "missing required integer");
             return false;
         }
-        if (warning_if_missing) { add_issue(issues, std::string("$.") + key, "not specified, default will be used", true); }
+        if (warning_if_missing) {
+            add_issue(issues, std::string("$.") + key, "not specified, default will be used", true);
+        }
         return true;
     }
     if (!root.at(key).is_number_integer()) {
@@ -134,11 +139,7 @@ bool parse_positive_int(
     }
     const int value = root.at(key).get<int>();
     if (value < min_value) {
-        add_issue(
-            issues,
-            std::string("$.") + key,
-            "must be >= " + std::to_string(min_value)
-        );
+        add_issue(issues, std::string("$.") + key, "must be >= " + std::to_string(min_value));
         return false;
     }
     *out = value;
@@ -150,7 +151,12 @@ bool parse_rows(const Json& root, const ParseMode mode, int* rows, std::vector<V
     return parse_positive_int(root, kKeyRows, rows, issues, 1, required, !required);
 }
 
-bool parse_line_ending_value(const Json& value, LineEnding* ending, std::vector<ValidationIssue>& issues, const std::string& path) {
+bool parse_line_ending_value(
+    const Json&                   value,
+    LineEnding*                   ending,
+    std::vector<ValidationIssue>& issues,
+    const std::string&            path
+) {
     if (!value.is_string()) {
         add_issue(issues, path, "must be a string (LF|CRLF)");
         return false;
@@ -175,10 +181,10 @@ void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& is
 }
 
 void validate_known_object_keys(
-    const Json&                         object,
+    const Json&                            object,
     const std::unordered_set<std::string>& known,
-    const std::string&                  path,
-    std::vector<ValidationIssue>&       issues
+    const std::string&                     path,
+    std::vector<ValidationIssue>&          issues
 ) {
     if (!object.is_object()) { return; }
     for (auto it = object.begin(); it != object.end(); ++it) {
@@ -300,7 +306,7 @@ bool parse_file_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    const std::string base_path = "$.output.file";
+    constexpr std::string base_path = "$.output.file";
     if (!output.contains(kKeyOutputFile)) {
         add_issue(
             issues,
@@ -323,11 +329,7 @@ bool parse_file_output(
         } else {
             const auto parsed = parse_output_format(file.at(kKeyOutputFormat).get<std::string>());
             if (!parsed.has_value()) {
-                add_issue(
-                    issues,
-                    base_path + ".format",
-                    "must be one of: csv, json, sql, Tab-Delimited, Custom"
-                );
+                add_issue(issues, base_path + ".format", "must be one of: csv, json, sql, Tab-Delimited, Custom");
             } else {
                 cfg->output.file.format = *parsed;
             }
@@ -355,7 +357,7 @@ bool parse_database_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    const std::string base_path = "$.output.database";
+    constexpr std::string base_path = "$.output.database";
     if (!output.contains(kKeyOutputDatabase)) {
         add_issue(
             issues,
@@ -403,7 +405,11 @@ bool parse_database_output(
 
     if (database.contains(kKeyDatabaseErrorPolicy)) {
         if (!database.at(kKeyDatabaseErrorPolicy).is_string()) {
-            add_issue(issues, base_path + ".error_policy", "must be a string (stop|continue|rollback-batch|rollback-all)");
+            add_issue(
+                issues,
+                base_path + ".error_policy",
+                "must be a string (stop|continue|rollback-batch|rollback-all)"
+            );
         } else {
             const auto parsed = parse_error_policy(database.at(kKeyDatabaseErrorPolicy).get<std::string>());
             if (!parsed.has_value()) {
@@ -488,9 +494,7 @@ bool parse_output_settings(
         add_issue(issues, "$.output.type", "missing required output type");
     }
 
-    if (cfg->output.type == OutputType::Database) {
-        return parse_database_output(output, mode, cfg, issues);
-    }
+    if (cfg->output.type == OutputType::Database) { return parse_database_output(output, mode, cfg, issues); }
 
     return parse_file_output(output, mode, cfg, issues);
 }
@@ -591,7 +595,7 @@ void validate_and_collect_fields(
         spec.generator    = generator;
         spec.raw          = field;
         spec.data_linkage = linkage;
-        spec.unique       = field.contains("unique") && field.at("unique").is_boolean() && field.at("unique").get<bool>();
+        spec.unique = field.contains("unique") && field.at("unique").is_boolean() && field.at("unique").get<bool>();
         fields->emplace_back(std::move(spec));
     }
 }
@@ -614,8 +618,7 @@ std::string output_format_to_string(const OutputFormat format) {
     case OutputFormat::Sql         : return "sql";
     case OutputFormat::TabDelimited: return "Tab-Delimited";
     case OutputFormat::Custom      : return "Custom";
-    default:
-        return "csv";
+    default                        : return "csv";
     }
 }
 
@@ -629,8 +632,7 @@ std::string output_type_to_string(const OutputType type) {
     switch (type) {
     case OutputType::File    : return "file";
     case OutputType::Database: return "database";
-    default:
-        return "file";
+    default                  : return "file";
     }
 }
 
@@ -644,8 +646,7 @@ std::string line_ending_to_string(const LineEnding ending) {
     switch (ending) {
     case LineEnding::LF  : return "LF";
     case LineEnding::CRLF: return "CRLF";
-    default:
-        return "LF";
+    default              : return "LF";
     }
 }
 
@@ -663,8 +664,7 @@ std::string insert_mode_to_string(const InsertMode mode) {
     case InsertMode::Insert: return "insert";
     case InsertMode::Bulk  : return "bulk";
     case InsertMode::Load  : return "load";
-    default:
-        return "auto";
+    default                : return "auto";
     }
 }
 
@@ -680,8 +680,7 @@ std::string transaction_mode_to_string(const TransactionMode mode) {
     case TransactionMode::PerBatch: return "per-batch";
     case TransactionMode::PerRun  : return "per-run";
     case TransactionMode::None    : return "none";
-    default:
-        return "per-batch";
+    default                       : return "per-batch";
     }
 }
 
@@ -699,8 +698,7 @@ std::string error_policy_to_string(const ErrorPolicy policy) {
     case ErrorPolicy::Continue     : return "continue";
     case ErrorPolicy::RollbackBatch: return "rollback-batch";
     case ErrorPolicy::RollbackAll  : return "rollback-all";
-    default:
-        return "stop";
+    default                        : return "stop";
     }
 }
 

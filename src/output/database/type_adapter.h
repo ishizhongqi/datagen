@@ -27,7 +27,7 @@ class ITypeAdapter {
 public:
     virtual ~ITypeAdapter() = default;
 
-    virtual AdaptedValue adapt(
+    [[nodiscard]] virtual AdaptedValue adapt(
         const ColumnMetadata&            column,
         const std::optional<std::string>& raw_value
     ) const = 0;
@@ -35,7 +35,7 @@ public:
 
 class DefaultTypeAdapter final : public ITypeAdapter {
 public:
-    AdaptedValue adapt(const ColumnMetadata& column, const std::optional<std::string>& raw_value) const override;
+    [[nodiscard]] AdaptedValue adapt(const ColumnMetadata& column, const std::optional<std::string>& raw_value) const override;
 };
 
 }  // namespace data_generator::database

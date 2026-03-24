@@ -194,7 +194,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     const auto ended_at = std::chrono::steady_clock::now();
     const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(ended_at - started_at).count();
     const double elapsed_sec = std::max(0.001, static_cast<double>(elapsed_ms) / 1000.0);
-    const std::uint64_t rate = static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec);
+    const auto rate = static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec);
     logger.info("Generated rows=" + std::to_string(generated) + " rate=" + std::to_string(rate) + " rows/s");
 
     OutputStats stats;

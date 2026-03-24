@@ -237,7 +237,7 @@ bool SqliteDriver::load_table_metadata(
     const std::string& table_name,
     TableMetadata*     metadata,
     std::string*       error_message
-) {
+) const {
     metadata->table_name = table_name;
     metadata->columns.clear();
     metadata->foreign_keys.clear();

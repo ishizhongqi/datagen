@@ -41,7 +41,7 @@ std::string normalize_identifier_for_match(const std::string& raw) {
     std::string normalized;
     normalized.reserve(raw.size());
     for (const char raw_char : raw) {
-        const unsigned char ch = static_cast<unsigned char>(raw_char);
+        const auto ch = static_cast<unsigned char>(raw_char);
         if (!is_ascii_alpha_numeric(ch)) { continue; }
         normalized.push_back(static_cast<char>(std::tolower(ch)));
     }
@@ -51,8 +51,8 @@ std::string normalize_identifier_for_match(const std::string& raw) {
 std::vector<std::string> tokenize_identifier_for_match(const std::string& raw) {
     std::vector<std::string> tokens;
     std::string              current;
-    for (std::size_t i = 0; i < raw.size(); ++i) {
-        const unsigned char ch = static_cast<unsigned char>(raw[i]);
+    for (const char i : raw) {
+        const auto ch = static_cast<unsigned char>(i);
         if (!is_ascii_alpha_numeric(ch)) {
             if (!current.empty()) {
                 tokens.push_back(to_lower_ascii(current));
@@ -150,7 +150,7 @@ const std::unordered_map<std::string, std::string>& generator_alias_map() {
 }
 
 bool is_name_infer_compatible(
-    const std::string              generator_name,
+    const std::string&              generator_name,
     const database::ColumnTypeFamily family
 ) {
     if (family == database::ColumnTypeFamily::Integer) {
@@ -226,9 +226,6 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
                     scores[meta.name] += 4;
                 } else if (normalized_token.size() >= 3 &&
                            generator_token.rfind(normalized_token, 0) == 0) {
-                    scores[meta.name] += 2;
-                } else if (generator_token.size() >= 3 &&
-                           normalized_token.rfind(generator_token, 0) == 0) {
                     scores[meta.name] += 2;
                 }
             }

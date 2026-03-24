@@ -32,7 +32,7 @@ public:
     explicit OdbcDriver(DbType db_type);
     ~OdbcDriver() override;
 
-    DbType type() const override;
+    [[nodiscard]] DbType type() const override;
 
     bool connect(const DbUrl& url, std::string* error_message) override;
     void disconnect() override;
@@ -53,19 +53,20 @@ public:
         std::string*       error_message
     ) override;
 
-    bool supports_load_mode() const override;
+    [[nodiscard]] bool supports_load_mode() const override;
 
 private:
-    bool execute_statement(SQLHSTMT stmt, const std::string& sql, std::string* error_message) const;
+    static bool execute_statement(SQLHSTMT stmt, const std::string& sql, std::string* error_message);
     bool run_query(
         const std::string&                    sql,
         std::vector<std::vector<std::string>>* rows,
         std::string*                          error_message
     ) const;
 
-    bool load_mysql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message);
-    bool load_postgresql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message);
-    bool load_oracle_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message);
+    bool load_mysql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) const;
+    bool load_postgresql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message
+    ) const;
+    bool load_oracle_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) const;
 
     DbType       db_type_ = DbType::Unknown;
     DbUrl        connection_;
