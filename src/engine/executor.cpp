@@ -284,7 +284,7 @@ GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const Exe
         delimited_options.line_ending = cfg.output.file.custom.line_ending;
         output::file::write_delimited(columns, rows, out, delimited_options);
         break;
-    case config::OutputFormat::Json:
+    case config::OutputFormat::JsonFormat:
         output::file::write_json(columns, rows, out, cfg.output.file.json);
         break;
     case config::OutputFormat::Sql:

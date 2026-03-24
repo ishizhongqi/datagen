@@ -43,7 +43,7 @@ std::string now_compact_timestamp() {
 std::string extension_for_format(const config::OutputFormat format) {
     switch (format) {
     case config::OutputFormat::Csv         : return "csv";
-    case config::OutputFormat::Json        : return "json";
+    case config::OutputFormat::JsonFormat  : return "json";
     case config::OutputFormat::Sql         : return "sql";
     case config::OutputFormat::TabDelimited: return "tsv";
     default:
@@ -137,7 +137,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
         delimited_options.header = cfg.output.file.custom.header;
         delimited_options.line_ending = cfg.output.file.custom.line_ending;
         output::file::write_delimited_header(columns, output_stream, delimited_options);
-    } else if (format == config::OutputFormat::Json) {
+    } else if (format == config::OutputFormat::JsonFormat) {
         if (cfg.output.file.json.array) {
             output::file::write_json_array_start(output_stream);
         }
@@ -158,7 +158,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
                 format == config::OutputFormat::TabDelimited ||
                 format == config::OutputFormat::Custom) {
                 output::file::write_delimited_row(row, output_stream, delimited_options);
-            } else if (format == config::OutputFormat::Json) {
+            } else if (format == config::OutputFormat::JsonFormat) {
                 output::file::write_json_row(columns, row, output_stream, generated == 0, cfg.output.file.json);
             } else {
                 output::file::write_sql_row(columns, row, cfg.output.file.sql.table, output_stream);
@@ -182,7 +182,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     }
     std::cout << "\n" << std::flush;
 
-    if (format == config::OutputFormat::Json && cfg.output.file.json.array) {
+    if (format == config::OutputFormat::JsonFormat && cfg.output.file.json.array) {
         output::file::write_json_array_end(output_stream);
     }
 

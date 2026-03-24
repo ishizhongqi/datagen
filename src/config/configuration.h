@@ -19,7 +19,7 @@ using Json = nlohmann::json;
 
 enum class OutputFormat {
     Csv,
-    Json,
+    JsonFormat,
     Sql,
     TabDelimited,
     Custom,

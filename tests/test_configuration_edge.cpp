@@ -172,14 +172,14 @@ TEST(ConfigurationEdgeTest, AllowMissingOutputModeSucceedsWithDefaults) {
 
 TEST(ConfigurationEdgeTest, ApplyOverridesAndFormatRoundtrip) {
     EXPECT_EQ(config::parse_output_format("csv"), config::OutputFormat::Csv);
-    EXPECT_EQ(config::parse_output_format("json"), config::OutputFormat::Json);
+    EXPECT_EQ(config::parse_output_format("json"), config::OutputFormat::JsonFormat);
     EXPECT_EQ(config::parse_output_format("sql"), config::OutputFormat::Sql);
     EXPECT_EQ(config::parse_output_format("Tab-Delimited"), config::OutputFormat::TabDelimited);
     EXPECT_EQ(config::parse_output_format("Custom"), config::OutputFormat::Custom);
     EXPECT_FALSE(config::parse_output_format("x").has_value());
 
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Csv), "csv");
-    EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Json), "json");
+    EXPECT_EQ(config::output_format_to_string(config::OutputFormat::JsonFormat), "json");
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Sql), "sql");
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::TabDelimited), "Tab-Delimited");
     EXPECT_EQ(config::output_format_to_string(config::OutputFormat::Custom), "Custom");

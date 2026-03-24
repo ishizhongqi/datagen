@@ -269,7 +269,7 @@ bool parse_file_options(
         }
         return true;
     }
-    case OutputFormat::Json: {
+    case OutputFormat::JsonFormat: {
         validate_known_object_keys(options, kKnownJsonOptionKeys, path, issues);
         (void)parse_optional_bool(options, kKeyFileOptionArray, &file_cfg->json.array, issues, path);
         (void)parse_optional_bool(options, kKeyFileOptionIncludeNull, &file_cfg->json.include_null, issues, path);
@@ -306,7 +306,7 @@ bool parse_file_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    constexpr std::string base_path = "$.output.file";
+    const std::string base_path = "$.output.file";
     if (!output.contains(kKeyOutputFile)) {
         add_issue(
             issues,
@@ -357,7 +357,7 @@ bool parse_database_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    constexpr std::string base_path = "$.output.database";
+    const std::string base_path = "$.output.database";
     if (!output.contains(kKeyOutputDatabase)) {
         add_issue(
             issues,
@@ -611,7 +611,7 @@ void validate_and_collect_fields(
 
 std::optional<OutputFormat> parse_output_format(const std::string& value) {
     if (value == "csv") { return OutputFormat::Csv; }
-    if (value == "json") { return OutputFormat::Json; }
+    if (value == "json") { return OutputFormat::JsonFormat; }
     if (value == "sql") { return OutputFormat::Sql; }
     if (value == "Tab-Delimited") { return OutputFormat::TabDelimited; }
     if (value == "Custom") { return OutputFormat::Custom; }
@@ -621,7 +621,7 @@ std::optional<OutputFormat> parse_output_format(const std::string& value) {
 std::string output_format_to_string(const OutputFormat format) {
     switch (format) {
     case OutputFormat::Csv         : return "csv";
-    case OutputFormat::Json        : return "json";
+    case OutputFormat::JsonFormat  : return "json";
     case OutputFormat::Sql         : return "sql";
     case OutputFormat::TabDelimited: return "Tab-Delimited";
     case OutputFormat::Custom      : return "Custom";

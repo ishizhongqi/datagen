@@ -107,7 +107,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             delimited_options.line_ending = cfg.output.file.custom.line_ending;
             output::file::write_delimited(columns, rows, std::cout, delimited_options);
             break;
-        case config::OutputFormat::Json:
+        case config::OutputFormat::JsonFormat:
             output::file::write_json(columns, rows, std::cout, cfg.output.file.json);
             break;
         case config::OutputFormat::Sql:

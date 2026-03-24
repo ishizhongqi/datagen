@@ -48,7 +48,7 @@ TEST(ConfigurationTest, ParseValidConfig) {
     EXPECT_TRUE(issues.empty());
     EXPECT_EQ(cfg.rows, 5);
     EXPECT_EQ(cfg.output.type, config::OutputType::File);
-    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::Json);
+    EXPECT_EQ(cfg.output.file.format, config::OutputFormat::JsonFormat);
     EXPECT_TRUE(cfg.output.file.json.array);
     EXPECT_TRUE(cfg.output.file.json.include_null);
     ASSERT_EQ(cfg.fields.size(), 1U);
