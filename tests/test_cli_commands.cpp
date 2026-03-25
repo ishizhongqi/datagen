@@ -134,6 +134,71 @@ bool create_inference_sqlite_table(const std::filesystem::path& db_path, std::st
     return true;
 }
 
+bool create_temporal_inference_sqlite_table(const std::filesystem::path& db_path, std::string* error_message) {
+    sqlite3* db = nullptr;
+    const int rc = sqlite3_open_v2(db_path.string().c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+    if (rc != SQLITE_OK) {
+        if (error_message) { *error_message = db ? sqlite3_errmsg(db) : "sqlite open failed"; }
+        if (db) { sqlite3_close(db); }
+        return false;
+    }
+
+    const char* sql =
+        "CREATE TABLE IF NOT EXISTS t_temporal ("
+        "rank_value INTEGER,"
+        "ratio_value DECIMAL(8,2),"
+        "holiday_on DATE,"
+        "opens_at TIME,"
+        "occurred_when DATETIME"
+        ");";
+    char* error_text = nullptr;
+    const int exec_rc = sqlite3_exec(db, sql, nullptr, nullptr, &error_text);
+    if (exec_rc != SQLITE_OK) {
+        if (error_message) {
+            *error_message = error_text ? error_text : sqlite3_errmsg(db);
+        }
+        if (error_text) { sqlite3_free(error_text); }
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_close(db);
+    return true;
+}
+
+bool create_name_scoring_sqlite_table(const std::filesystem::path& db_path, std::string* error_message) {
+    sqlite3* db = nullptr;
+    const int rc = sqlite3_open_v2(db_path.string().c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+    if (rc != SQLITE_OK) {
+        if (error_message) { *error_message = db ? sqlite3_errmsg(db) : "sqlite open failed"; }
+        if (db) { sqlite3_close(db); }
+        return false;
+    }
+
+    const char* sql =
+        "CREATE TABLE IF NOT EXISTS t_name_score ("
+        "email TEXT,"
+        "userEmailToken TEXT,"
+        "customer_zip_code TEXT,"
+        "comp_group TEXT,"
+        "choice_bucket ENUM,"
+        "serial_value INTEGER(3)"
+        ");";
+    char* error_text = nullptr;
+    const int exec_rc = sqlite3_exec(db, sql, nullptr, nullptr, &error_text);
+    if (exec_rc != SQLITE_OK) {
+        if (error_message) {
+            *error_message = error_text ? error_text : sqlite3_errmsg(db);
+        }
+        if (error_text) { sqlite3_free(error_text); }
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_close(db);
+    return true;
+}
+
 const char* kValidConfigJson = R"json({
   "rows": 2,
   "output": {
@@ -305,6 +370,44 @@ TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
     auto infer_json = read_json_file(infer_out);
     EXPECT_TRUE(infer_json.contains("fields"));
     EXPECT_FALSE(infer_json["fields"].empty());
+}
+
+TEST(CliCommandsTest, InitRejectsInvalidArgumentsAndOpenFailure) {
+    EXPECT_EQ(invoke_cli({"init"}), cli::exit_codes::kUsage);
+    EXPECT_EQ(invoke_cli({"init", "--bad"}), cli::exit_codes::kUsage);
+
+    const auto dir_path = std::filesystem::temp_directory_path() / "dg_init_dir";
+    std::error_code ec;
+    std::filesystem::create_directories(dir_path, ec);
+
+    EXPECT_EQ(
+        invoke_cli({"init", dir_path.string(), "--template", "file", "--format", "csv"}),
+        cli::exit_codes::kCliError
+    );
+}
+
+TEST(CliCommandsTest, InitBuildsJsonAndTabDelimitedTemplates) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+
+    const auto json_out = temp_dir / "dg_init_json.json";
+    EXPECT_EQ(
+        invoke_cli({"init", json_out.string(), "--template", "file", "--format", "json"}),
+        cli::exit_codes::kOk
+    );
+    const auto json_root = read_json_file(json_out);
+    EXPECT_EQ(json_root["output"]["file"]["format"], "json");
+    EXPECT_TRUE(json_root["output"]["file"]["options"]["array"]);
+    EXPECT_TRUE(json_root["output"]["file"]["options"]["include_null"]);
+
+    const auto tab_out = temp_dir / "dg_init_tab.json";
+    EXPECT_EQ(
+        invoke_cli({"init", tab_out.string(), "--template", "file", "--format", "Tab-Delimited"}),
+        cli::exit_codes::kOk
+    );
+    const auto tab_root = read_json_file(tab_out);
+    EXPECT_EQ(tab_root["output"]["file"]["format"], "Tab-Delimited");
+    EXPECT_TRUE(tab_root["output"]["file"]["options"]["header"]);
+    EXPECT_EQ(tab_root["output"]["file"]["options"]["line_ending"], "LF");
 }
 
 TEST(CliCommandsTest, RunErrorAndHelpBranches) {
@@ -610,6 +713,23 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
         }),
         cli::exit_codes::kRuntimeFailure
     );
+
+    const auto bad_connect_out = temp_dir / "dg_init_db_connect_fail.json";
+    const auto unreachable_path = temp_dir / "dg_missing_dir" / "nested" / "connect_fail.sqlite";
+    std::filesystem::remove(unreachable_path, ec);
+    EXPECT_EQ(
+        invoke_cli({
+            "init",
+            bad_connect_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            std::string("sqlite://") + unreachable_path.string(),
+            "--table",
+            "t_data"
+        }),
+        cli::exit_codes::kRuntimeFailure
+    );
 }
 
 TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
@@ -680,6 +800,111 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
     const nlohmann::json* postal_code_field = find_field_by_name(fields, "postal_code");
     ASSERT_NE(postal_code_field, nullptr);
     EXPECT_EQ((*postal_code_field)["generator"], "postcode");
+}
+
+TEST(CliCommandsTest, InitInfersTemporalAndNumericFallbackGeneratorsFromSqliteMetadata) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto sqlite_path = temp_dir / "dg_init_infer_temporal.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(create_temporal_inference_sqlite_table(sqlite_path, &error)) << error;
+
+    const auto infer_out = temp_dir / "dg_init_infer_temporal.json";
+    ASSERT_EQ(
+        invoke_cli({
+            "init",
+            infer_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            std::string("sqlite://") + sqlite_path.string(),
+            "--table",
+            "t_temporal"
+        }),
+        cli::exit_codes::kOk
+    );
+
+    const auto inferred_json = read_json_file(infer_out);
+    ASSERT_TRUE(inferred_json.contains("fields"));
+    const auto& fields = inferred_json["fields"];
+
+    const nlohmann::json* rank_field = find_field_by_name(fields, "rank_value");
+    ASSERT_NE(rank_field, nullptr);
+    EXPECT_EQ((*rank_field)["generator"], "integer");
+
+    const nlohmann::json* ratio_field = find_field_by_name(fields, "ratio_value");
+    ASSERT_NE(ratio_field, nullptr);
+    EXPECT_EQ((*ratio_field)["generator"], "decimal");
+    EXPECT_EQ((*ratio_field)["config"]["decimal_places"], 2);
+
+    const nlohmann::json* holiday_field = find_field_by_name(fields, "holiday_on");
+    ASSERT_NE(holiday_field, nullptr);
+    EXPECT_EQ((*holiday_field)["generator"], "date");
+
+    const nlohmann::json* opens_field = find_field_by_name(fields, "opens_at");
+    ASSERT_NE(opens_field, nullptr);
+    EXPECT_EQ((*opens_field)["generator"], "time");
+
+    const nlohmann::json* occurred_field = find_field_by_name(fields, "occurred_when");
+    ASSERT_NE(occurred_field, nullptr);
+    EXPECT_EQ((*occurred_field)["generator"], "datetime");
+}
+
+TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMetadata) {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto sqlite_path = temp_dir / "dg_init_name_score.sqlite";
+    std::error_code ec;
+    std::filesystem::remove(sqlite_path, ec);
+
+    std::string error;
+    ASSERT_TRUE(create_name_scoring_sqlite_table(sqlite_path, &error)) << error;
+
+    const auto infer_out = temp_dir / "dg_init_name_score.json";
+    ASSERT_EQ(
+        invoke_cli({
+            "init",
+            infer_out.string(),
+            "--template",
+            "database",
+            "--from-database",
+            std::string("sqlite://") + sqlite_path.string(),
+            "--table",
+            "t_name_score"
+        }),
+        cli::exit_codes::kOk
+    );
+
+    const auto inferred_json = read_json_file(infer_out);
+    ASSERT_TRUE(inferred_json.contains("fields"));
+    const auto& fields = inferred_json["fields"];
+
+    const nlohmann::json* email_field = find_field_by_name(fields, "email");
+    ASSERT_NE(email_field, nullptr);
+    EXPECT_EQ((*email_field)["generator"], "email");
+
+    const nlohmann::json* user_email_field = find_field_by_name(fields, "userEmailToken");
+    ASSERT_NE(user_email_field, nullptr);
+    EXPECT_EQ((*user_email_field)["generator"], "email");
+
+    const nlohmann::json* zip_field = find_field_by_name(fields, "customer_zip_code");
+    ASSERT_NE(zip_field, nullptr);
+    EXPECT_EQ((*zip_field)["generator"], "postcode");
+
+    const nlohmann::json* company_field = find_field_by_name(fields, "comp_group");
+    ASSERT_NE(company_field, nullptr);
+    EXPECT_EQ((*company_field)["generator"], "company_name");
+
+    const nlohmann::json* enum_field = find_field_by_name(fields, "choice_bucket");
+    ASSERT_NE(enum_field, nullptr);
+    EXPECT_EQ((*enum_field)["generator"], "enum_item");
+    EXPECT_EQ((*enum_field)["config"]["enums"], nlohmann::json::array({"true", "false"}));
+
+    const nlohmann::json* serial_field = find_field_by_name(fields, "serial_value");
+    ASSERT_NE(serial_field, nullptr);
+    EXPECT_EQ((*serial_field)["generator"], "integer");
+    EXPECT_EQ((*serial_field)["config"]["end"], 999);
 }
 
 TEST(CliCommandsTest, SchemaOutputPathFailure) {
