@@ -95,4 +95,46 @@ TEST(DbSchemaValidatorTest, ValidationLevelToStringCoversAllBranches) {
     EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Info), "INFO");
     EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Warn), "WARN");
     EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Error), "ERROR");
+    EXPECT_EQ(
+        data_generator::database::validation_level_to_string(static_cast<ValidationLevel>(99)),
+        "INFO"
+    );
+}
+
+TEST(DbSchemaValidatorTest, CoversCharacterLengthAndCompatibilityFallbackBranches) {
+    GenerationConfig cfg;
+    cfg.fields.push_back(make_field("short_name", "text"));
+    cfg.fields.push_back(make_field("amount", "decimal"));
+    cfg.fields.push_back(make_field("pattern", "regular_expression"));
+    cfg.fields.push_back(make_field("email", "email"));
+
+    TableMetadata metadata;
+    metadata.table_name = "t_data";
+
+    ColumnMetadata short_name;
+    short_name.name = "short_name";
+    short_name.data_type = "varchar";
+    short_name.character_length = 12;
+    metadata.columns.push_back(short_name);
+
+    ColumnMetadata amount;
+    amount.name = "amount";
+    amount.data_type = "integer";
+    metadata.columns.push_back(amount);
+
+    ColumnMetadata pattern;
+    pattern.name = "pattern";
+    pattern.data_type = "text";
+    metadata.columns.push_back(pattern);
+
+    ColumnMetadata email;
+    email.name = "email";
+    email.data_type = "varchar";
+    metadata.columns.push_back(email);
+
+    const auto report = validate_table_schema(cfg, metadata);
+
+    EXPECT_EQ(report.error_count(), 0u);
+    EXPECT_TRUE(has_message(report.messages, "length limit varchar(12)"));
+    EXPECT_TRUE(has_message(report.messages, "index count: 0"));
 }

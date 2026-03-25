@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -18,6 +19,7 @@
 #include "output/database_backend.h"
 #include "output/database/db_url_parser.h"
 #include "output/database/drivers/idatabase_driver.h"
+#include "test_paths.h"
 
 using data_generator::config::GenerationConfig;
 using data_generator::config::ParseMode;
@@ -98,9 +100,8 @@ void ensure_tmp_dir(const std::filesystem::path& base) {
 }  // namespace
 
 TEST(DatabaseBackendTest, InsertAndBulkModesWithSqlite) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend.sqlite";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_backend.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -147,9 +148,8 @@ TEST(DatabaseBackendTest, InsertAndBulkModesWithSqlite) {
 }
 
 TEST(DatabaseBackendTest, LoadModeUnsupportedRespectsContinuePolicy) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_load.sqlite";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_backend_load.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -179,7 +179,7 @@ TEST(DatabaseBackendTest, LoadModeUnsupportedRespectsContinuePolicy) {
     };
 
     auto cfg = parse_or_fail(root);
-    cfg.workspace = (std::filesystem::temp_directory_path() / "dg_backend_workspace").string();
+    cfg.workspace = data_generator::test::workspace_path("dg_backend_workspace").string();
     ensure_tmp_dir(cfg.workspace);
 
     data_generator::output::DatabaseBackend backend;
@@ -191,10 +191,60 @@ TEST(DatabaseBackendTest, LoadModeUnsupportedRespectsContinuePolicy) {
     EXPECT_EQ(stats.rows_written, 0u);
 }
 
+TEST(DatabaseBackendTest, LoadModeEscapesNullAndSpecialCharactersBeforeUnsupportedSqliteLoad) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_load_escape.sqlite");
+    data_generator::test::reset_path(db_path);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (id INTEGER, note TEXT, payload TEXT);",
+                            &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "load"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "per-batch"},
+                {"error_policy", "continue"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 7}, {"end", 7}}}},
+            {{"name", "note"},
+             {"generator", "uuid"},
+             {"config", {{"include_hyphens", false}}},
+             {"null_value", {{"enabled", true}, {"percent", 100}}}},
+            {{"name", "payload"},
+             {"generator", "uuid"},
+             {"config", {{"include_hyphens", false}}},
+             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "slash\\\\tab\tline\ncarriage\r"}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    cfg.workspace = data_generator::test::workspace_path("dg_backend_load_escape_workspace").string();
+    ensure_tmp_dir(cfg.workspace);
+
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    ASSERT_TRUE(sqlite_exec(db_path, "DELETE FROM t_data;", &error)) << error;
+    const auto stats = backend.generate(cfg, options);
+    EXPECT_EQ(stats.rows_generated, 1u);
+    EXPECT_EQ(stats.rows_written, 0u);
+}
+
 TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_error.sqlite";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_backend_error.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -226,7 +276,7 @@ TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
     };
 
     auto rollback_cfg = parse_or_fail(base);
-    rollback_cfg.workspace = (std::filesystem::temp_directory_path() / "dg_backend_workspace2").string();
+    rollback_cfg.workspace = data_generator::test::workspace_path("dg_backend_workspace2").string();
     ensure_tmp_dir(rollback_cfg.workspace);
 
     data_generator::output::DatabaseBackend backend;
@@ -239,7 +289,7 @@ TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
     base["output"]["database"]["error_policy"] = "continue";
     base["output"]["database"]["transaction_mode"] = "per-batch";
     auto continue_cfg = parse_or_fail(base);
-    continue_cfg.workspace = (std::filesystem::temp_directory_path() / "dg_backend_workspace3").string();
+    continue_cfg.workspace = data_generator::test::workspace_path("dg_backend_workspace3").string();
     ensure_tmp_dir(continue_cfg.workspace);
 
     ASSERT_TRUE(sqlite_exec(db_path, "DELETE FROM t_data;", &error)) << error;
@@ -276,15 +326,118 @@ TEST(DatabaseBackendTest, InvalidUrlAndMissingTableThrow) {
 
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 
-    cfg.output.database.connection = std::string("sqlite://") + std::filesystem::temp_directory_path().string() + "/tmp.db";
+    cfg.output.database.connection = std::string("sqlite://") + data_generator::test::artifact_path("dg_backend_tmp.db").string();
     cfg.output.database.table.clear();
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 }
 
-TEST(DatabaseBackendTest, SchemaValidationFailureThrows) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_schema.sqlite";
+TEST(DatabaseBackendTest, ConnectionFailureThrowsForMissingSqliteParentDirectory) {
+    const auto missing_dir = data_generator::test::artifact_path("dg_backend_missing_parent");
+    const auto db_path = missing_dir / "nested" / "db.sqlite";
+    data_generator::test::reset_path(missing_dir);
     std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    std::filesystem::remove_all(missing_dir, ec);
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 1}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, MissingTargetTableMetadataThrows) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_missing_table.sqlite");
+    data_generator::test::reset_path(db_path);
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 1}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, CaseMismatchPassesSchemaValidationButFailsMetadataLookup) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_case_lookup.sqlite");
+    data_generator::test::reset_path(db_path);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (\"ID\" INTEGER);",
+                            &error)) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 1}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+}
+
+TEST(DatabaseBackendTest, SchemaValidationFailureThrows) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_schema.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -321,10 +474,60 @@ TEST(DatabaseBackendTest, SchemaValidationFailureThrows) {
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 }
 
+TEST(DatabaseBackendTest, SchemaWarningsAreLoggedAndGenerationContinues) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_schema_warn.sqlite");
+    data_generator::test::reset_path(db_path);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(
+        db_path,
+        "CREATE TABLE IF NOT EXISTS t_data (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);"
+        "CREATE TRIGGER IF NOT EXISTS t_data_noop AFTER INSERT ON t_data BEGIN SELECT 1; END;",
+        &error
+    )) << error;
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "insert"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 1}}}},
+            {{"name", "name"}, {"generator", "uuid"}, {"config", {{"include_hyphens", false}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    std::ostringstream captured_error;
+    auto* old_buffer = std::cerr.rdbuf(captured_error.rdbuf());
+
+    ASSERT_TRUE(sqlite_exec(db_path, "DELETE FROM t_data;", &error)) << error;
+    const auto stats = backend.generate(cfg, options);
+
+    std::cerr.rdbuf(old_buffer);
+
+    EXPECT_EQ(stats.rows_written, 1u);
+    EXPECT_NE(captured_error.str().find("AUTO_INCREMENT"), std::string::npos);
+    EXPECT_NE(captured_error.str().find("triggers detected"), std::string::npos);
+}
+
 TEST(DatabaseBackendTest, StopPolicyThrowsOnConversionError) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_stop.sqlite";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_backend_stop.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -363,9 +566,8 @@ TEST(DatabaseBackendTest, StopPolicyThrowsOnConversionError) {
 }
 
 TEST(DatabaseBackendTest, RollbackBatchPolicyContinuesOnConversionError) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_backend_rollback_batch.sqlite";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_backend_rollback_batch.sqlite");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(sqlite_exec(db_path,
@@ -402,6 +604,56 @@ TEST(DatabaseBackendTest, RollbackBatchPolicyContinuesOnConversionError) {
 
     const auto stats = backend.generate(cfg, options);
     EXPECT_EQ(stats.rows_generated, 2u);
+}
+
+TEST(DatabaseBackendTest, LoadModeThrowsWhenWorkspaceTempFileCannotBeOpened) {
+    const auto db_path = data_generator::test::artifact_path("dg_backend_load_open.sqlite");
+    const auto workspace_file = data_generator::test::artifact_path("dg_backend_workspace_file");
+    std::error_code ec;
+    data_generator::test::reset_path(db_path);
+    data_generator::test::reset_path(workspace_file);
+
+    std::string error;
+    ASSERT_TRUE(sqlite_exec(db_path,
+                            "CREATE TABLE IF NOT EXISTS t_data (id INTEGER);",
+                            &error)) << error;
+
+    {
+        std::ofstream out(workspace_file, std::ios::trunc);
+        ASSERT_TRUE(out.is_open());
+        out << "not a directory";
+    }
+
+    nlohmann::json root = {
+        {"rows", 1},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", std::string("sqlite://") + db_path.string()},
+                {"table", "t_data"},
+                {"insert_mode", "load"},
+                {"batch_size", 1},
+                {"queue_size", 1},
+                {"threads", 1},
+                {"transaction_mode", "none"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1000}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "integer"}, {"config", {{"start", 1}, {"end", 1}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    cfg.workspace = workspace_file.string();
+
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
+
+    std::filesystem::remove(workspace_file, ec);
 }
 
 TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
@@ -451,7 +703,7 @@ TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
     };
 
     auto cfg = parse_or_fail(root);
-    cfg.workspace = (std::filesystem::temp_directory_path() / "dg_backend_pg_workspace").string();
+    cfg.workspace = data_generator::test::workspace_path("dg_backend_pg_workspace").string();
     ensure_tmp_dir(cfg.workspace);
 
     data_generator::output::DatabaseBackend backend;

@@ -10,13 +10,14 @@
 #include <string>
 
 #include "cli/cli_shared.h"
+#include "test_paths.h"
 
 using namespace data_generator::cli;
 
 namespace {
 
 TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
-    const auto good = std::filesystem::temp_directory_path() / "dg_cli_shared_good.json";
+    const auto good = data_generator::test::artifact_path("dg_cli_shared_good.json");
     {
         std::ofstream out(good, std::ios::trunc);
         out << "{\"a\":1}";
@@ -24,13 +25,13 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
     const auto j = load_json_from_file(good.string());
     EXPECT_TRUE(j.contains("a"));
 
-    const auto bad = std::filesystem::temp_directory_path() / "dg_cli_shared_bad.json";
+    const auto bad = data_generator::test::artifact_path("dg_cli_shared_bad.json");
     {
         std::ofstream out(bad, std::ios::trunc);
         out << "{";
     }
     EXPECT_THROW((void)load_json_from_file(bad.string()), std::runtime_error);
-    const auto missing = std::filesystem::temp_directory_path() / "dg_cli_shared_missing_1234567.json";
+    const auto missing = data_generator::test::artifact_path("dg_cli_shared_missing_1234567.json");
     EXPECT_THROW((void)load_json_from_file(missing.string()), std::runtime_error);
 
     cxxopts::Options options("prog", "desc");

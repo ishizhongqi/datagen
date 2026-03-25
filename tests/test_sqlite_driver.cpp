@@ -9,6 +9,7 @@
 #include "output/database/drivers/idatabase_driver.h"
 #include "output/database/drivers/odbc_driver.h"
 #include "output/database/drivers/sqlite_driver.h"
+#include "test_paths.h"
 
 using data_generator::database::DbType;
 using data_generator::database::DbUrl;
@@ -31,9 +32,8 @@ DbUrl make_sqlite_url(const std::filesystem::path& path) {
 }  // namespace
 
 TEST(SqliteDriverTest, ConnectionAndMetadataCoverage) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_sqlite_driver_test.db";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_sqlite_driver_test.db");
+    data_generator::test::reset_path(db_path);
 
     SqliteDriver driver;
     std::string error;
@@ -84,6 +84,46 @@ TEST(SqliteDriverTest, ConnectionAndMetadataCoverage) {
 
     std::vector<std::vector<std::string>> rows;
     EXPECT_FALSE(driver.query("SELECT 1", &rows, &error));
+}
+
+TEST(SqliteDriverTest, QueryExecuteAndMetadataErrorBranches) {
+    const auto db_path = data_generator::test::artifact_path("dg_sqlite_driver_error.db");
+    data_generator::test::reset_path(db_path);
+
+    SqliteDriver driver;
+    std::string error;
+    std::vector<std::vector<std::string>> rows;
+
+    EXPECT_FALSE(driver.test_connection(&error));
+    EXPECT_FALSE(driver.execute("SELECT 1;", &error));
+    EXPECT_FALSE(driver.get_table_metadata("t_data", nullptr, &error));
+
+    const DbUrl url = make_sqlite_url(db_path);
+    ASSERT_TRUE(driver.connect(url, &error)) << error;
+
+    ASSERT_TRUE(driver.execute(
+        "CREATE TABLE weird_types (id INTEGER, label TEXT, payload BLOB_TEXT(7), ratio DECIMAL(8));",
+        &error
+    )) << error;
+    EXPECT_TRUE(driver.query("SELECT id, NULL FROM weird_types;", &rows, &error)) << error;
+    EXPECT_TRUE(rows.empty());
+
+    EXPECT_FALSE(driver.execute("INSERT INTO missing_table VALUES (1);", &error));
+    EXPECT_FALSE(error.empty());
+
+    EXPECT_FALSE(driver.query("SELECT FROM weird_types", &rows, &error));
+    EXPECT_FALSE(error.empty());
+
+    TableMetadata metadata;
+    ASSERT_TRUE(driver.get_table_metadata("weird_types", &metadata, &error)) << error;
+    ASSERT_EQ(metadata.columns.size(), 4u);
+    EXPECT_EQ(metadata.columns[1].character_length, std::nullopt);
+    EXPECT_EQ(metadata.columns[2].character_length, 7);
+    EXPECT_EQ(metadata.columns[3].numeric_precision, 8);
+    EXPECT_EQ(metadata.columns[3].numeric_scale, std::nullopt);
+
+    driver.disconnect();
+    EXPECT_FALSE(driver.get_table_metadata("weird_types", &metadata, &error));
 }
 
 TEST(SqliteDriverTest, FactoryCreatesExpectedDriverKinds) {

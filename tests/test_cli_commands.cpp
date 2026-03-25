@@ -17,6 +17,7 @@
 #include "app/run.h"
 #include "cli/exit_codes.h"
 #include "output/database/db_url_parser.h"
+#include "test_paths.h"
 
 using namespace data_generator;
 
@@ -40,7 +41,8 @@ int invoke_cli(const std::vector<std::string>& args) {
 }
 
 std::filesystem::path write_json_file(const std::string& name, const std::string& payload) {
-    const auto path = std::filesystem::temp_directory_path() / name;
+    const auto path = data_generator::test::artifact_path(name);
+    data_generator::test::reset_path(path);
     std::ofstream out(path, std::ios::trunc);
     out << payload;
     out.close();
@@ -257,7 +259,7 @@ TEST(CliCommandsTest, InfoDriversAndVersion) {
 }
 
 TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
-    const auto init_out = std::filesystem::temp_directory_path() / "dg_cli_init_template.json";
+    const auto init_out = data_generator::test::artifact_path("dg_cli_init_template.json");
     EXPECT_EQ(
         invoke_cli({"init", init_out.string(), "--template", "file", "--format", "csv"}),
         cli::exit_codes::kOk
@@ -276,7 +278,7 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
     const auto invalid_schema = write_json_file("dg_cli_invalid_schema.json", kInvalidConfigJson);
     EXPECT_EQ(invoke_cli({"check", invalid_schema.string()}), cli::exit_codes::kRuntimeFailure);
 
-    const auto schema_out = std::filesystem::temp_directory_path() / "dg_cli_schema.json";
+    const auto schema_out = data_generator::test::artifact_path("dg_cli_schema.json");
     EXPECT_EQ(invoke_cli({"schema", schema_out.string()}), cli::exit_codes::kOk);
     EXPECT_TRUE(std::filesystem::exists(schema_out));
 
@@ -288,7 +290,7 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
 }
 
 TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
 
     EXPECT_EQ(
         invoke_cli({"init", (temp_dir / "dg_init_bad_template.json").string(), "--template", "bad"}),
@@ -376,7 +378,7 @@ TEST(CliCommandsTest, InitRejectsInvalidArgumentsAndOpenFailure) {
     EXPECT_EQ(invoke_cli({"init"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--bad"}), cli::exit_codes::kUsage);
 
-    const auto dir_path = std::filesystem::temp_directory_path() / "dg_init_dir";
+    const auto dir_path = data_generator::test::artifact_path("dg_init_dir");
     std::error_code ec;
     std::filesystem::create_directories(dir_path, ec);
 
@@ -387,7 +389,7 @@ TEST(CliCommandsTest, InitRejectsInvalidArgumentsAndOpenFailure) {
 }
 
 TEST(CliCommandsTest, InitBuildsJsonAndTabDelimitedTemplates) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
 
     const auto json_out = temp_dir / "dg_init_json.json";
     EXPECT_EQ(
@@ -412,7 +414,7 @@ TEST(CliCommandsTest, InitBuildsJsonAndTabDelimitedTemplates) {
 
 TEST(CliCommandsTest, RunErrorAndHelpBranches) {
     const auto valid_input = write_json_file("dg_cli_valid_run.json", kValidConfigJson);
-    const auto output_path = std::filesystem::temp_directory_path() / "dg_cli_out.csv";
+    const auto output_path = data_generator::test::artifact_path("dg_cli_out.csv");
 
     EXPECT_EQ(invoke_cli({"run"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"run", valid_input.string(), "--rows", "0"}), cli::exit_codes::kUsage);
@@ -491,7 +493,7 @@ TEST(CliCommandsTest, CheckWarningsAndFailures) {
 }
 
 TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionTest) {
-    const auto sqlite_path = std::filesystem::temp_directory_path() / "dg_cli_check_warn.sqlite";
+    const auto sqlite_path = data_generator::test::artifact_path("dg_cli_check_warn.sqlite");
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
 
@@ -516,7 +518,7 @@ TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionT
 }
 
 TEST(CliCommandsTest, PreviewFormatsAndDatabasePreview) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
 
     nlohmann::json db_root = {
         {"rows", 1},
@@ -618,7 +620,7 @@ TEST(CliCommandsTest, PreviewHandlesNullFieldAndInvalidConfig) {
 }
 
 TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
 
     const auto file_db_out = temp_dir / "dg_init_file_db_warn.json";
     EXPECT_EQ(
@@ -630,7 +632,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--format",
             "csv",
             "--from-database",
-            "sqlite:///tmp/ignored.db",
+            std::string("sqlite://") + (temp_dir / "ignored.db").string(),
             "--table",
             "t_data"
         }),
@@ -645,7 +647,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--template",
             "database",
             "--from-database",
-            "sqlite:///tmp/ignored.db"
+            std::string("sqlite://") + (temp_dir / "ignored.db").string()
         }),
         cli::exit_codes::kOk
     );
@@ -686,7 +688,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
             "--template",
             "database",
             "--from-database",
-            "sqlite:///tmp/ignored.db",
+            std::string("sqlite://") + (temp_dir / "ignored.db").string(),
             "--table",
             ""
         }),
@@ -733,7 +735,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
 }
 
 TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_infer_rich.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -803,7 +805,7 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
 }
 
 TEST(CliCommandsTest, InitInfersTemporalAndNumericFallbackGeneratorsFromSqliteMetadata) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_infer_temporal.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -853,7 +855,7 @@ TEST(CliCommandsTest, InitInfersTemporalAndNumericFallbackGeneratorsFromSqliteMe
 }
 
 TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMetadata) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_name_score.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -908,7 +910,7 @@ TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMeta
 }
 
 TEST(CliCommandsTest, SchemaOutputPathFailure) {
-    const auto dir_path = std::filesystem::temp_directory_path() / "dg_schema_dir";
+    const auto dir_path = data_generator::test::artifact_path("dg_schema_dir");
     std::error_code ec;
     std::filesystem::create_directories(dir_path, ec);
 
@@ -922,7 +924,7 @@ TEST(CliCommandsTest, SchemaAndDriversRejectInvalidArguments) {
 }
 
 TEST(CliCommandsTest, RunCoversDatabaseOverrideAndArgumentFailures) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_cli_run.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);

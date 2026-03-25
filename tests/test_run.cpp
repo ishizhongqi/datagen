@@ -13,6 +13,7 @@
 
 #include "app/run.h"
 #include "cli/exit_codes.h"
+#include "test_paths.h"
 
 using namespace data_generator;
 
@@ -98,11 +99,11 @@ TEST(RunTest, HelpCommandReturnsOk) {
 
 TEST(RunTest, RunFromInputFileReturnsOkAndWritesOutput) {
     const auto input  = test_input("run_valid.json");
-    const auto workspace = std::filesystem::temp_directory_path() / "data-generator-test-workspace";
+    const auto workspace = data_generator::test::workspace_path("data-generator-test-workspace");
     const auto output = workspace / "data-generator-test-output.csv";
 
+    data_generator::test::reset_path(output);
     std::error_code ec;
-    std::filesystem::remove(output, ec);
     std::filesystem::create_directories(workspace, ec);
 
     const int rc = invoke_cli({
@@ -142,9 +143,8 @@ TEST(RunTest, CheckMissingFieldsReturnsRuntimeFailure) {
 }
 
 TEST(RunTest, RunSQLiteDatabaseOutput) {
-    const auto db_path = std::filesystem::temp_directory_path() / "dg_sqlite_test.db";
-    std::error_code ec;
-    std::filesystem::remove(db_path, ec);
+    const auto db_path = data_generator::test::artifact_path("dg_sqlite_test.db");
+    data_generator::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(create_sqlite_table(db_path, &error)) << error;
@@ -170,7 +170,7 @@ TEST(RunTest, RunSQLiteDatabaseOutput) {
         {{"name", "uid"}, {"generator", "uuid"}, {"config", {{"include_hyphens", true}}}}
     });
 
-    const auto config_path = std::filesystem::temp_directory_path() / "dg_cli_sqlite_config.json";
+    const auto config_path = data_generator::test::artifact_path("dg_cli_sqlite_config.json");
     {
         std::ofstream out(config_path, std::ios::trunc);
         out << root.dump(2);

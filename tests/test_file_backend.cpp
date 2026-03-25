@@ -14,6 +14,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 #include "output/file_backend.h"
+#include "test_paths.h"
 
 using data_generator::config::GenerationConfig;
 using data_generator::config::ParseMode;
@@ -66,7 +67,7 @@ void write_small_file(const GenerationConfig& cfg, const std::filesystem::path& 
 }  // namespace
 
 TEST(FileBackendTest, WritesCsvJsonSqlAndDelimitedFormats) {
-    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto temp_dir = data_generator::test::ensure_test_root();
 
     nlohmann::json csv_root = {
         {"rows", 3},
@@ -126,7 +127,7 @@ TEST(FileBackendTest, CancelsLargeOutputPrompt) {
     };
 
     auto cfg = parse_or_fail(root);
-    cfg.output.file.path = (std::filesystem::temp_directory_path() / "dg_large.csv").string();
+    cfg.output.file.path = data_generator::test::artifact_path("dg_large.csv").string();
 
     std::istringstream input("n\n");
     auto* old = std::cin.rdbuf(input.rdbuf());
@@ -140,7 +141,7 @@ TEST(FileBackendTest, CancelsLargeOutputPrompt) {
 }
 
 TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
-    const auto base_dir = std::filesystem::temp_directory_path() / "dg_unwritable_dir";
+    const auto base_dir = data_generator::test::artifact_path("dg_unwritable_dir");
     std::error_code ec;
     std::filesystem::create_directories(base_dir, ec);
 
@@ -181,7 +182,7 @@ TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
 }
 
 TEST(FileBackendTest, UsesGeneratedDefaultOutputPathWhenEmpty) {
-    const auto base_dir = std::filesystem::temp_directory_path() / "dg_file_backend_default";
+    const auto base_dir = data_generator::test::artifact_path("dg_file_backend_default");
     std::error_code ec;
     std::filesystem::remove_all(base_dir, ec);
     std::filesystem::create_directories(base_dir, ec);
@@ -248,7 +249,7 @@ TEST(FileBackendTest, UsesExpectedDefaultExtensionForEachOutputFormat) {
 
     for (const auto& format_case : cases) {
         const auto base_dir =
-            std::filesystem::temp_directory_path() / ("dg_default_ext_" + format_case.expected_extension.substr(1));
+            data_generator::test::artifact_path("dg_default_ext_" + format_case.expected_extension.substr(1));
         std::error_code ec;
         std::filesystem::remove_all(base_dir, ec);
         std::filesystem::create_directories(base_dir, ec);
@@ -292,7 +293,7 @@ TEST(FileBackendTest, UsesExpectedDefaultExtensionForEachOutputFormat) {
 }
 
 TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
-    const auto output_path = std::filesystem::temp_directory_path() / "dg_null_row_estimate.json";
+    const auto output_path = data_generator::test::artifact_path("dg_null_row_estimate.json");
     std::error_code ec;
     std::filesystem::remove(output_path, ec);
 
@@ -334,7 +335,7 @@ TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
 }
 
 TEST(FileBackendTest, PrintsProgressWhenGeneratedRowsReachTwoThousand) {
-    const auto output_path = std::filesystem::temp_directory_path() / "dg_progress_rows.csv";
+    const auto output_path = data_generator::test::artifact_path("dg_progress_rows.csv");
     std::error_code ec;
     std::filesystem::remove(output_path, ec);
 
