@@ -27,10 +27,8 @@ std::filesystem::path resolve_workspace_root(const std::optional<std::string>& c
 
 bool is_workspace_local_filename(const std::string& filename);
 
-WorkspaceLayout ensure_workspace_layout(
-    const std::optional<std::string>& configured_workspace,
-    std::string*                      error_message
-);
+WorkspaceLayout
+    ensure_workspace_layout(const std::optional<std::string>& configured_workspace, std::string* error_message);
 
 }  // namespace data_generator::utils
 

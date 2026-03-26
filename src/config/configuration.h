@@ -7,8 +7,8 @@
 #ifndef DATA_GENERATOR_CONFIGURATION_H
 #define DATA_GENERATOR_CONFIGURATION_H
 
-#include <nlohmann/json.hpp>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -67,52 +67,52 @@ enum class ParseMode {
 };
 
 struct CsvOptions {
-    bool       header = true;
+    bool       header      = true;
     LineEnding line_ending = LineEnding::LF;
 };
 
 struct JsonOptions {
-    bool array = true;
+    bool array        = true;
     bool include_null = true;
 };
 
 struct SqlOptions {
-    std::string table = "generated_data";
+    std::string table        = "generated_data";
     bool        create_table = false;
 };
 
 struct CustomOptions {
-    std::string delimiter = ",";
-    std::string quote = "\"";
-    bool        header = true;
+    std::string delimiter   = ",";
+    std::string quote       = "\"";
+    bool        header      = true;
     LineEnding  line_ending = LineEnding::LF;
 };
 
 struct FileOutputConfig {
-    OutputFormat format = OutputFormat::Csv;
-    CsvOptions   csv;
-    CsvOptions   tab_delimited;
-    JsonOptions  json;
-    SqlOptions   sql;
+    OutputFormat  format = OutputFormat::Csv;
+    CsvOptions    csv;
+    CsvOptions    tab_delimited;
+    JsonOptions   json;
+    SqlOptions    sql;
     CustomOptions custom;
-    std::string  path;
+    std::string   path;
 };
 
 struct DatabaseOutputConfig {
     std::string     connection;
-    std::string     table = "generated_data";
-    InsertMode      insert_mode = InsertMode::Auto;
-    int             batch_size = 1000;
-    int             queue_size = 1024;
-    int             db_threads = 2;
-    TransactionMode transaction_mode = TransactionMode::PerBatch;
-    ErrorPolicy     error_policy = ErrorPolicy::Stop;
+    std::string     table                   = "generated_data";
+    InsertMode      insert_mode             = InsertMode::Auto;
+    int             batch_size              = 1000;
+    int             queue_size              = 1024;
+    int             db_threads              = 2;
+    TransactionMode transaction_mode        = TransactionMode::PerBatch;
+    ErrorPolicy     error_policy            = ErrorPolicy::Stop;
     int             rate_limit_rows_per_sec = 20000;
 };
 
 struct OutputConfig {
-    OutputType          type = OutputType::File;
-    FileOutputConfig    file;
+    OutputType           type = OutputType::File;
+    FileOutputConfig     file;
     DatabaseOutputConfig database;
 };
 
@@ -125,15 +125,15 @@ struct FieldSpec {
 };
 
 struct GenerationConfig {
-    int                    rows                 = 100;
+    int                    rows = 100;
     std::string            workspace;
     std::vector<FieldSpec> fields;
     OutputConfig           output;
     Json                   root;
 };
 
-std::optional<OutputFormat> parse_output_format(const std::string& value);
-std::string                 output_format_to_string(OutputFormat format);
+std::optional<OutputFormat>    parse_output_format(const std::string& value);
+std::string                    output_format_to_string(OutputFormat format);
 std::optional<OutputType>      parse_output_type(const std::string& value);
 std::string                    output_type_to_string(OutputType type);
 std::optional<LineEnding>      parse_line_ending(const std::string& value);
@@ -153,12 +153,12 @@ bool parse_generation_config(
 );
 
 struct CliOverrides {
-    std::optional<int>              rows;
-    std::optional<OutputFormat>     format;
-    std::optional<std::string>      table_name;
-    std::optional<OutputType>        type;
-    std::optional<std::string>      output_path;
-    std::optional<std::string>      database_connection;
+    std::optional<int>          rows;
+    std::optional<OutputFormat> format;
+    std::optional<std::string>  table_name;
+    std::optional<OutputType>   type;
+    std::optional<std::string>  output_path;
+    std::optional<std::string>  database_connection;
 };
 
 void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides);

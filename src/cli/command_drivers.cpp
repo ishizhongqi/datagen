@@ -17,9 +17,7 @@ namespace data_generator::cli {
 
 int CommandDrivers::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator drivers", "List installed ODBC drivers.");
-    options.add_options()
-        ("json", "Output in JSON format")
-        ("h,help", "Show help");
+    options.add_options()("json", "Output in JSON format")("h,help", "Show help");
 
     cxxopts::ParseResult result;
     try {
@@ -36,7 +34,7 @@ int CommandDrivers::run(const std::vector<std::string>& args) {
     }
 
     std::vector<database::OdbcDriverInfo> drivers;
-    std::string error;
+    std::string                           error;
     if (!database::list_odbc_drivers(&drivers, &error)) {
         std::cerr << "Failed to list ODBC drivers: " << error << "\n";
         return exit_codes::kRuntimeFailure;
@@ -56,9 +54,7 @@ int CommandDrivers::run(const std::vector<std::string>& args) {
         return exit_codes::kOk;
     }
 
-    for (const auto& driver : drivers) {
-        std::cout << driver.name << "\n";
-    }
+    for (const auto& driver : drivers) { std::cout << driver.name << "\n"; }
     return exit_codes::kOk;
 }
 

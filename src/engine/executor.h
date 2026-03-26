@@ -29,8 +29,8 @@ struct ExecutionInfo {
 };
 
 struct GenerateResult {
-    ExecutionInfo  info;
-    std::uint64_t  rows_generated = 0;
+    ExecutionInfo info;
+    std::uint64_t rows_generated = 0;
 };
 
 using Row = std::vector<std::optional<std::string>>;
@@ -39,15 +39,11 @@ using RowConsumer = std::function<bool(Row&& row, std::uint64_t row_index)>;
 
 GenerateResult generate_with_consumer(
     const config::GenerationConfig& cfg,
-    const ExecutionOptions& opts,
-    const RowConsumer&      consumer
+    const ExecutionOptions&         opts,
+    const RowConsumer&              consumer
 );
 
-GenerateResult generate_to_stream(
-    const config::GenerationConfig& cfg,
-    const ExecutionOptions&         opts,
-    std::ostream&                   out
-);
+GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out);
 
 std::vector<std::optional<std::string>> preview_row(const config::GenerationConfig& cfg);
 

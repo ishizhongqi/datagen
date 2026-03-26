@@ -258,9 +258,7 @@ std::vector<GeneratorMetadata> build_catalog() {
                 {"start_date", "1970-01-01"},
                 {"end_date", "2050-12-31"},
                 {"days_of_week",
-                 Json::array(
-                     {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
-                 )},
+                 Json::array({"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"})},
             }
         ),
         make_metadata(
@@ -296,9 +294,7 @@ std::vector<GeneratorMetadata> build_catalog() {
                 {"start_time", "00:00:00"},
                 {"end_time", "23:59:59"},
                 {"days_of_week",
-                 Json::array(
-                     {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
-                 )},
+                 Json::array({"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"})},
             }
         ),
         make_metadata(
@@ -786,9 +782,7 @@ std::vector<GeneratorMetadata> build_catalog() {
             Json{{"pattern", "ORD-[A-Z]{3}-\\d{4}"}}
         ),
     };
-    for (auto& meta : catalog) {
-        meta.module = module_for_generator(meta.name);
-    }
+    for (auto& meta : catalog) { meta.module = module_for_generator(meta.name); }
     return catalog;
 }
 
@@ -811,33 +805,31 @@ const GeneratorMetadata* find_generator_metadata(const std::string& name) {
 
 Json build_project_template(const int rows, const std::string& file_format) {
     Json root;
-    root["rows"] = rows;
-    Json output = Json::object();
+    root["rows"]   = rows;
+    Json output    = Json::object();
     output["type"] = "file";
-    Json file = Json::object();
+    Json file      = Json::object();
     file["format"] = file_format;
-    Json options = Json::object();
+    Json options   = Json::object();
     if (file_format == "csv") {
-        options["header"] = true;
+        options["header"]      = true;
         options["line_ending"] = "LF";
     } else if (file_format == "json") {
-        options["array"] = true;
+        options["array"]        = true;
         options["include_null"] = true;
     } else if (file_format == "sql") {
-        options["table"] = "generated_data";
+        options["table"]        = "generated_data";
         options["create_table"] = false;
     } else if (file_format == "Tab-Delimited") {
-        options["header"] = true;
+        options["header"]      = true;
         options["line_ending"] = "LF";
     } else if (file_format == "Custom") {
-        options["delimiter"] = ",";
-        options["quote"] = "\"";
-        options["header"] = true;
+        options["delimiter"]   = ",";
+        options["quote"]       = "\"";
+        options["header"]      = true;
         options["line_ending"] = "LF";
     }
-    if (!options.empty()) {
-        file["options"] = std::move(options);
-    }
+    if (!options.empty()) { file["options"] = std::move(options); }
     output["file"] = std::move(file);
     root["output"] = std::move(output);
 

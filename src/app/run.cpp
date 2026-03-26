@@ -7,7 +7,6 @@
 #include "app/run.h"
 
 #include <cxxopts.hpp>
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -22,9 +21,7 @@ namespace data_generator {
 int run(int argc, char** argv) {
     if (argc >= 2) {
         const std::string first_arg = argv[1];
-        if (first_arg == "-h" || first_arg == "--help") {
-            return cli::CommandHelp::run({});
-        }
+        if (first_arg == "-h" || first_arg == "--help") { return cli::CommandHelp::run({}); }
         if (first_arg == "-v" || first_arg == "-V" || first_arg == "--version" || first_arg == "version") {
             cli::print_version(std::cout);
             return cli::exit_codes::kOk;

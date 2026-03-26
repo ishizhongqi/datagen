@@ -32,7 +32,7 @@ public:
     explicit OdbcDriver(DbType db_type = DbType::Odbc);
     ~OdbcDriver() override;
 
-    [[nodiscard]] DbType type() const override;
+    [[nodiscard]] DbType      type() const override;
     [[nodiscard]] std::string dbms_name() const override;
     [[nodiscard]] std::string dbms_version() const override;
 
@@ -43,40 +43,37 @@ public:
 
     bool execute(const std::string& sql, std::string* error_message) override;
 
-    bool query(
-        const std::string&                    sql,
-        std::vector<std::vector<std::string>>* rows,
-        std::string*                          error_message
-    ) override;
+    bool
+        query(const std::string& sql, std::vector<std::vector<std::string>>* rows, std::string* error_message) override;
 
-    bool get_table_metadata(
-        const std::string& table_name,
-        TableMetadata*     metadata,
-        std::string*       error_message
-    ) override;
+    bool
+        get_table_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) override;
 
     [[nodiscard]] bool supports_load_mode() const override;
 
 private:
     static bool execute_statement(SQLHSTMT stmt, const std::string& sql, std::string* error_message);
-    bool run_query(
-        const std::string&                    sql,
-        std::vector<std::vector<std::string>>* rows,
-        std::string*                          error_message
-    ) const;
+    bool        run_query(
+               const std::string&                     sql,
+               std::vector<std::vector<std::string>>* rows,
+               std::string*                           error_message
+           ) const;
 
     bool load_mysql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) const;
-    bool load_postgresql_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message
+    bool load_postgresql_metadata(
+        const std::string& table_name,
+        TableMetadata*     metadata,
+        std::string*       error_message
     ) const;
     bool load_oracle_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) const;
 
-    DbType       db_type_ = DbType::Unknown;
-    DbUrl        connection_;
-    std::string  dbms_name_;
-    std::string  dbms_version_;
-    bool         connected_ = false;
-    SQLHENV      env_ = SQL_NULL_HENV;
-    SQLHDBC      dbc_ = SQL_NULL_HDBC;
+    DbType      db_type_ = DbType::Unknown;
+    DbUrl       connection_;
+    std::string dbms_name_;
+    std::string dbms_version_;
+    bool        connected_ = false;
+    SQLHENV     env_       = SQL_NULL_HENV;
+    SQLHDBC     dbc_       = SQL_NULL_HDBC;
 };
 
 }  // namespace data_generator::database

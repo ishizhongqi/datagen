@@ -9,9 +9,9 @@
 
 namespace data_generator::cli::exit_codes {
 
-constexpr int kOk = 0;
-constexpr int kCliError = 1;
-constexpr int kUsage = 2;
+constexpr int kOk             = 0;
+constexpr int kCliError       = 1;
+constexpr int kUsage          = 2;
 constexpr int kRuntimeFailure = 3;
 
 }  // namespace data_generator::cli::exit_codes

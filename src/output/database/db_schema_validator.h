@@ -33,10 +33,7 @@ struct SchemaValidationReport {
     [[nodiscard]] std::size_t warning_count() const;
 };
 
-SchemaValidationReport validate_table_schema(
-    const config::GenerationConfig& cfg,
-    const TableMetadata&          metadata
-);
+SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg, const TableMetadata& metadata);
 
 std::string validation_level_to_string(ValidationLevel level);
 

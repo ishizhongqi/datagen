@@ -17,9 +17,9 @@
 namespace data_generator::output::file {
 
 struct DelimitedWriterOptions {
-    std::string        delimiter = ",";
-    std::string        quote = "\"";
-    bool               header = true;
+    std::string        delimiter   = ",";
+    std::string        quote       = "\"";
+    bool               header      = true;
     config::LineEnding line_ending = config::LineEnding::LF;
 };
 
@@ -30,11 +30,7 @@ void write_delimited_header(
     std::ostream&                   out,
     const DelimitedWriterOptions&   options
 );
-void write_delimited_row(
-    const engine::Row&            row,
-    std::ostream&                 out,
-    const DelimitedWriterOptions& options
-);
+void write_delimited_row(const engine::Row& row, std::ostream& out, const DelimitedWriterOptions& options);
 void write_delimited(
     const std::vector<std::string>& columns,
     const std::vector<engine::Row>& rows,

@@ -42,9 +42,7 @@ bool validate_database_connection(const config::GenerationConfig& cfg, std::stri
 
 int CommandCheck::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator check", "Validate JSON configuration.");
-    options.add_options()
-        ("config", "Input JSON file", cxxopts::value<std::string>())
-        ("h,help", "Show help");
+    options.add_options()("config", "Input JSON file", cxxopts::value<std::string>())("h,help", "Show help");
     options.parse_positional({"config"});
 
     cxxopts::ParseResult result;
@@ -68,7 +66,7 @@ int CommandCheck::run(const std::vector<std::string>& args) {
     }
 
     try {
-        const Json                         root = load_json_from_file(result["config"].as<std::string>());
+        const Json                           root = load_json_from_file(result["config"].as<std::string>());
         config::GenerationConfig             cfg;
         std::vector<config::ValidationIssue> issues;
 
@@ -81,18 +79,22 @@ int CommandCheck::run(const std::vector<std::string>& args) {
         std::vector<config::ValidationIssue> warnings;
         if (cfg.output.type == config::OutputType::Database) {
             if (cfg.output.database.connection.empty()) {
-                warnings.push_back(config::ValidationIssue{
-                    .warning = true,
-                    .path = "$.output.database.connection",
-                    .message = "database output requires connection in odbc://... or sqlite://... format",
-                });
+                warnings.push_back(
+                    config::ValidationIssue{
+                        .warning = true,
+                        .path    = "$.output.database.connection",
+                        .message = "database output requires connection in odbc://... or sqlite://... format",
+                    }
+                );
             }
             if (cfg.output.database.table.empty()) {
-                warnings.push_back(config::ValidationIssue{
-                    .warning = true,
-                    .path = "$.output.database.table",
-                    .message = "database output requires target table name",
-                });
+                warnings.push_back(
+                    config::ValidationIssue{
+                        .warning = true,
+                        .path    = "$.output.database.table",
+                        .message = "database output requires target table name",
+                    }
+                );
             }
         }
 

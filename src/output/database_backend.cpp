@@ -6,13 +6,13 @@
 
 #include "output/database_backend.h"
 
-#include <atomic>
 #include <algorithm>
-#include <chrono>
+#include <atomic>
 #include <cctype>
+#include <chrono>
 #include <condition_variable>
-#include <deque>
 #include <cstdio>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -42,8 +42,8 @@ namespace {
 using RowWithIndex = std::pair<std::uint64_t, engine::Row>;
 
 constexpr std::size_t kProgressClearWidth = 160;
-constexpr const char* kAnsiClearLine = "\x1b[2K";
-constexpr const char* kAnsiMoveUp = "\x1b[1A";
+constexpr const char* kAnsiClearLine      = "\x1b[2K";
+constexpr const char* kAnsiMoveUp         = "\x1b[1A";
 
 bool stdout_is_tty() {
 #if defined(_WIN32)
@@ -53,13 +53,8 @@ bool stdout_is_tty() {
 #endif
 }
 
-config::InsertMode choose_insert_mode(
-    const config::GenerationConfig&    cfg,
-    const database::IDatabaseDriver& driver
-) {
-    if (cfg.output.database.insert_mode != config::InsertMode::Auto) {
-        return cfg.output.database.insert_mode;
-    }
+config::InsertMode choose_insert_mode(const config::GenerationConfig& cfg, const database::IDatabaseDriver& driver) {
+    if (cfg.output.database.insert_mode != config::InsertMode::Auto) { return cfg.output.database.insert_mode; }
 
     if (driver.supports_load_mode() && cfg.rows >= 50000) { return config::InsertMode::Load; }
     if (cfg.output.database.batch_size > 1) { return config::InsertMode::Bulk; }
@@ -73,9 +68,7 @@ public:
 
     bool push(T value, const std::atomic<bool>* stop_flag) {
         std::unique_lock lock(mutex_);
-        can_push_.wait(lock, [&] {
-            return closed_ || queue_.size() < capacity_ || (stop_flag && stop_flag->load());
-        });
+        can_push_.wait(lock, [&] { return closed_ || queue_.size() < capacity_ || (stop_flag && stop_flag->load()); });
         if (closed_ || (stop_flag && stop_flag->load())) { return false; }
 
         queue_.push_back(std::move(value));
@@ -85,9 +78,7 @@ public:
 
     bool pop(T* out, const std::atomic<bool>* stop_flag) {
         std::unique_lock lock(mutex_);
-        can_pop_.wait(lock, [&] {
-            return closed_ || !queue_.empty() || (stop_flag && stop_flag->load());
-        });
+        can_pop_.wait(lock, [&] { return closed_ || !queue_.empty() || (stop_flag && stop_flag->load()); });
 
         if (queue_.empty()) { return false; }
 
@@ -105,12 +96,12 @@ public:
     }
 
 private:
-    std::size_t              capacity_;
-    std::deque<T>            queue_;
-    bool                     closed_ = false;
-    std::mutex               mutex_;
-    std::condition_variable  can_push_;
-    std::condition_variable  can_pop_;
+    std::size_t             capacity_;
+    std::deque<T>           queue_;
+    bool                    closed_ = false;
+    std::mutex              mutex_;
+    std::condition_variable can_push_;
+    std::condition_variable can_pop_;
 };
 
 std::string join_columns(const std::vector<std::string>& columns) {
@@ -123,7 +114,7 @@ std::string join_columns(const std::vector<std::string>& columns) {
 }
 
 std::string quote_identifier_segment(const database::DbType db_type, const std::string& value) {
-    const char quote = (db_type == database::DbType::Mysql) ? '`' : '"';
+    const char  quote = (db_type == database::DbType::Mysql) ? '`' : '"';
     std::string escaped;
     escaped.reserve(value.size() + 2);
     for (const char ch : value) {
@@ -138,7 +129,7 @@ std::string quote_identifier_path(const database::DbType db_type, const std::str
     std::size_t        begin = 0;
     bool               first = true;
     while (begin <= value.size()) {
-        const std::size_t end = value.find('.', begin);
+        const std::size_t end  = value.find('.', begin);
         const std::string part = end == std::string::npos ? value.substr(begin) : value.substr(begin, end - begin);
         if (!first) { oss << "."; }
         oss << quote_identifier_segment(db_type, part);
@@ -192,11 +183,11 @@ std::string render_row_for_load(const std::vector<std::string>& sql_literals) {
 }
 
 std::string build_insert_sql(
-    const database::DbType db_type,
-    const std::string& table_name,
-    const std::vector<std::string>& columns,
+    const database::DbType                       db_type,
+    const std::string&                           table_name,
+    const std::vector<std::string>&              columns,
     const std::vector<std::vector<std::string>>& rows,
-    const config::InsertMode mode
+    const config::InsertMode                     mode
 ) {
     std::ostringstream oss;
 
@@ -240,32 +231,27 @@ std::string build_insert_sql(
 }
 
 std::string build_load_sql(
-    const database::DbType db_type,
-    const std::string& table_name,
+    const database::DbType          db_type,
+    const std::string&              table_name,
     const std::vector<std::string>& columns,
-    const std::string& path
+    const std::string&              path
 ) {
     std::ostringstream oss;
     if (db_type == database::DbType::Mysql) {
         oss << "LOAD DATA LOCAL INFILE '" << sql_escape_single_quote(path) << "' INTO TABLE " << table_name
-            << " FIELDS TERMINATED BY '\\t' ESCAPED BY '\\\\' LINES TERMINATED BY '\\n' ("
-            << join_columns(columns) << ")";
+            << " FIELDS TERMINATED BY '\\t' ESCAPED BY '\\\\' LINES TERMINATED BY '\\n' (" << join_columns(columns)
+            << ")";
         return oss.str();
     }
     if (db_type == database::DbType::Postgresql) {
-        oss << "COPY " << table_name << " (" << join_columns(columns) << ") FROM '"
-            << sql_escape_single_quote(path)
+        oss << "COPY " << table_name << " (" << join_columns(columns) << ") FROM '" << sql_escape_single_quote(path)
             << "' WITH (FORMAT text, DELIMITER E'\\t', NULL '\\\\N')";
         return oss.str();
     }
     return "";
 }
 
-bool begin_transaction(
-    const database::DbType db_type,
-    database::IDatabaseDriver* driver,
-    std::string* error_message
-) {
+bool begin_transaction(const database::DbType db_type, database::IDatabaseDriver* driver, std::string* error_message) {
     if (!driver) {
         if (error_message) { *error_message = "driver pointer is null"; }
         return false;
@@ -292,10 +278,7 @@ bool supports_multi_row_values(const database::DbType db_type) {
     return db_type != database::DbType::Oracle;
 }
 
-std::string build_oracle_temporal_literal(
-    const database::ColumnTypeFamily family,
-    const std::string& converted_value
-) {
+std::string build_oracle_temporal_literal(const database::ColumnTypeFamily family, const std::string& converted_value) {
     if (family == database::ColumnTypeFamily::DateTime) {
         return "TO_TIMESTAMP('" + sql_escape_single_quote(converted_value) + "', 'YYYY-MM-DD HH24:MI:SS')";
     }
@@ -321,20 +304,15 @@ bool is_load_data_disabled_error(const std::string& error_text) {
         });
         return text;
     }();
-    return lower.find("local data is disabled") != std::string::npos ||
-           lower.find("local_infile") != std::string::npos;
+    return lower.find("local data is disabled") != std::string::npos || lower.find("local_infile") != std::string::npos;
 }
 
 std::string trim_ascii_spaces(std::string text) {
     std::size_t start = 0;
-    while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) {
-        ++start;
-    }
+    while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) { ++start; }
 
     std::size_t end = text.size();
-    while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) {
-        --end;
-    }
+    while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) { --end; }
 
     return text.substr(start, end - start);
 }
@@ -348,7 +326,7 @@ std::string to_upper_ascii(std::string text) {
 
 std::unordered_map<std::string, std::string> parse_odbc_attributes(const std::string& connection_string) {
     std::unordered_map<std::string, std::string> attributes;
-    std::size_t begin = 0;
+    std::size_t                                  begin = 0;
     while (begin <= connection_string.size()) {
         const std::size_t end = connection_string.find(';', begin);
         const std::string token =
@@ -356,7 +334,7 @@ std::unordered_map<std::string, std::string> parse_odbc_attributes(const std::st
         if (!token.empty()) {
             const std::size_t equal = token.find('=');
             if (equal != std::string::npos) {
-                const std::string key = to_upper_ascii(trim_ascii_spaces(token.substr(0, equal)));
+                const std::string key   = to_upper_ascii(trim_ascii_spaces(token.substr(0, equal)));
                 const std::string value = trim_ascii_spaces(token.substr(equal + 1));
                 if (!key.empty()) { attributes[key] = value; }
             }
@@ -419,23 +397,18 @@ bool load_odbc_ini_section(const std::string& section_name, std::unordered_map<s
         const std::size_t equal = trimmed.find('=');
         if (equal == std::string::npos) { continue; }
 
-        const std::string key = to_upper_ascii(trim_ascii_spaces(trimmed.substr(0, equal)));
+        const std::string key   = to_upper_ascii(trim_ascii_spaces(trimmed.substr(0, equal)));
         const std::string value = trim_ascii_spaces(trimmed.substr(equal + 1));
         if (!key.empty()) {
             (*out)[key] = value;
-            found = true;
+            found       = true;
         }
     }
 
     return found;
 }
 
-void parse_oracle_dbq(
-    const std::string& dbq,
-    std::string* host,
-    std::string* port,
-    std::string* database
-) {
+void parse_oracle_dbq(const std::string& dbq, std::string* host, std::string* port, std::string* database) {
     const std::size_t colon = dbq.find(':');
     const std::size_t slash = dbq.find('/');
     if (colon != std::string::npos) {
@@ -448,21 +421,17 @@ void parse_oracle_dbq(
     } else if (!dbq.empty()) {
         *host = dbq;
     }
-    if (slash != std::string::npos && slash + 1 < dbq.size()) {
-        *database = dbq.substr(slash + 1);
-    }
+    if (slash != std::string::npos && slash + 1 < dbq.size()) { *database = dbq.substr(slash + 1); }
 }
 
 std::string build_connection_info_line(const database::DbUrl& db_url) {
-    if (db_url.type == database::DbType::Sqlite) {
-        return "Database path=" + db_url.database;
-    }
+    if (db_url.type == database::DbType::Sqlite) { return "Database path=" + db_url.database; }
     std::string driver;
     std::string dsn;
-    std::string host = db_url.host;
-    std::string port = db_url.port > 0 ? std::to_string(db_url.port) : "";
+    std::string host     = db_url.host;
+    std::string port     = db_url.port > 0 ? std::to_string(db_url.port) : "";
     std::string database = db_url.database;
-    std::string user = db_url.username;
+    std::string user     = db_url.username;
 
     const auto attributes = parse_odbc_attributes(db_url.odbc_connection_string);
     if (const auto it = attributes.find("DRIVER"); it != attributes.end()) { driver = it->second; }
@@ -515,13 +484,17 @@ std::string build_connection_info_line(const database::DbUrl& db_url) {
                 if (const auto it = ini_attributes.find("HOST"); it != ini_attributes.end()) { host = it->second; }
             }
             if (host.empty()) {
-                if (const auto it = ini_attributes.find("SERVERNAME"); it != ini_attributes.end()) { host = it->second; }
+                if (const auto it = ini_attributes.find("SERVERNAME"); it != ini_attributes.end()) {
+                    host = it->second;
+                }
             }
             if (port.empty()) {
                 if (const auto it = ini_attributes.find("PORT"); it != ini_attributes.end()) { port = it->second; }
             }
             if (database.empty()) {
-                if (const auto it = ini_attributes.find("DATABASE"); it != ini_attributes.end()) { database = it->second; }
+                if (const auto it = ini_attributes.find("DATABASE"); it != ini_attributes.end()) {
+                    database = it->second;
+                }
             }
             if (database.empty()) {
                 if (const auto it = ini_attributes.find("DB"); it != ini_attributes.end()) { database = it->second; }
@@ -566,17 +539,11 @@ std::string build_connection_info_line(const database::DbUrl& db_url) {
     return oss.str();
 }
 
-std::string build_generated_line(
-    const std::uint64_t generated,
-    const std::uint64_t total
-) {
+std::string build_generated_line(const std::uint64_t generated, const std::uint64_t total) {
     return "[Rows Generated] " + logging::format_progress_bar(generated, total);
 }
 
-std::string build_imported_line(
-    const std::uint64_t imported,
-    const std::uint64_t total
-) {
+std::string build_imported_line(const std::uint64_t imported, const std::uint64_t total) {
     return "[Data Imported ] " + logging::format_progress_bar(imported, total);
 }
 
@@ -592,17 +559,11 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     }
 
     auto driver = database::make_database_driver(db_url.type);
-    if (!driver) {
-        throw std::runtime_error("unsupported database type: " + database::db_type_to_string(db_url.type));
-    }
-    if (!driver->connect(db_url, &error)) {
-        throw std::runtime_error("database connection failed: " + error);
-    }
+    if (!driver) { throw std::runtime_error("unsupported database type: " + database::db_type_to_string(db_url.type)); }
+    if (!driver->connect(db_url, &error)) { throw std::runtime_error("database connection failed: " + error); }
 
     const std::string table_name = cfg.output.database.table;
-    if (table_name.empty()) {
-        throw std::runtime_error("database output requires table name");
-    }
+    if (table_name.empty()) { throw std::runtime_error("database output requires table name"); }
 
     database::TableMetadata metadata;
     if (!driver->get_table_metadata(table_name, &metadata, &error)) {
@@ -631,17 +592,13 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
             logger.info(text);
         }
     }
-    if (report.error_count() > 0) {
-        throw std::runtime_error("table schema validation failed");
-    }
+    if (report.error_count() > 0) { throw std::runtime_error("table schema validation failed"); }
 
     const config::InsertMode resolved_mode = choose_insert_mode(cfg, *driver);
     logger.info("Resolved insert mode=" + config::insert_mode_to_string(resolved_mode));
 
     std::unordered_map<std::string, const database::ColumnMetadata*> column_map;
-    for (const auto& column : metadata.columns) {
-        column_map[column.name] = &column;
-    }
+    for (const auto& column : metadata.columns) { column_map[column.name] = &column; }
 
     std::vector<std::string> columns;
     columns.reserve(cfg.fields.size());
@@ -662,7 +619,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     const int total_rows = cfg.rows;
     const int batch_size = std::max(1, cfg.output.database.batch_size);
     const int queue_size = std::max(1, cfg.output.database.queue_size);
-    int db_threads = std::max(1, cfg.output.database.db_threads);
+    int       db_threads = std::max(1, cfg.output.database.db_threads);
 
     if (cfg.output.database.transaction_mode == config::TransactionMode::PerRun && db_threads > 1) {
         logger.warn("transaction_mode=per-run only supports db_threads=1, forcing db_threads=1");
@@ -673,23 +630,23 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         db_threads = 1;
     }
 
-    std::atomic<bool> stop{false};
-    std::atomic<bool> rollback_all{false};
-    std::atomic<bool> load_fallback_warned{false};
-    std::atomic<std::uint64_t> rows_generated{0};
-    std::atomic<std::uint64_t> rows_imported{0};
+    std::atomic<bool>                  stop{false};
+    std::atomic<bool>                  rollback_all{false};
+    std::atomic<bool>                  load_fallback_warned{false};
+    std::atomic<std::uint64_t>         rows_generated{0};
+    std::atomic<std::uint64_t>         rows_imported{0};
     std::vector<std::filesystem::path> temp_files;
-    std::mutex temp_files_mutex;
+    std::mutex                         temp_files_mutex;
 
     BoundedQueue<RowWithIndex> queue(static_cast<std::size_t>(queue_size));
 
-    std::mutex error_mutex;
+    std::mutex  error_mutex;
     std::string first_error;
 
     std::mutex        progress_mutex;
     std::atomic<bool> progress_active{false};
     const bool        multiline_progress = stdout_is_tty();
-    bool              progress_rendered = false;
+    bool              progress_rendered  = false;
 
     auto clear_progress_line = [&] {
         if (!progress_rendered) { return; }
@@ -707,16 +664,11 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
             if (progress_rendered) {
                 std::cout << "\r" << kAnsiClearLine << kAnsiMoveUp << "\r" << kAnsiClearLine << "\r";
             }
-            std::cout << build_generated_line(generated, static_cast<std::uint64_t>(total_rows))
-                      << "\n"
-                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows))
-                      << std::flush;
+            std::cout << build_generated_line(generated, static_cast<std::uint64_t>(total_rows)) << "\n"
+                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows)) << std::flush;
         } else {
-            std::cout << "\r"
-                      << build_generated_line(generated, static_cast<std::uint64_t>(total_rows))
-                      << " "
-                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows))
-                      << std::flush;
+            std::cout << "\r" << build_generated_line(generated, static_cast<std::uint64_t>(total_rows)) << " "
+                      << build_imported_line(imported, static_cast<std::uint64_t>(total_rows)) << std::flush;
         }
         progress_rendered = true;
     };
@@ -727,7 +679,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         log_fn(message);
         if (progress_active.load()) {
             const std::uint64_t generated = rows_generated.load();
-            const std::uint64_t imported = rows_imported.load();
+            const std::uint64_t imported  = rows_imported.load();
             render_progress(generated, imported, false);
         }
     };
@@ -744,15 +696,12 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
             return;
         }
         if (policy == config::ErrorPolicy::RollbackBatch) {
-            log_with_progress(
-                context_error + " (rollback current batch)",
-                [&](const std::string& message) { logger.warn(message); }
-            );
+            log_with_progress(context_error + " (rollback current batch)", [&](const std::string& message) {
+                logger.warn(message);
+            });
             return;
         }
-        if (policy == config::ErrorPolicy::RollbackAll) {
-            rollback_all.store(true);
-        }
+        if (policy == config::ErrorPolicy::RollbackAll) { rollback_all.store(true); }
         stop.store(true);
     };
 
@@ -761,7 +710,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     std::thread progress_thread([&] {
         while (!progress_stop.load()) {
             const std::uint64_t generated = rows_generated.load();
-            const std::uint64_t imported = rows_imported.load();
+            const std::uint64_t imported  = rows_imported.load();
             {
                 std::lock_guard lock(progress_mutex);
                 render_progress(generated, imported, false);
@@ -818,22 +767,24 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                         const auto adapted = adapter.adapt(*mapped_columns[i], row[i]);
                         if (!adapted.ok) {
                             std::ostringstream oss;
-                            oss << "row=" << row_index
-                                << " field=" << cfg.fields[i].name
+                            oss << "row=" << row_index << " field=" << cfg.fields[i].name
                                 << " raw=" << (row[i].has_value() ? *row[i] : "<NULL>")
-                                << " converted=" << adapted.converted_value
-                                << " error_type=" << adapted.error_type
+                                << " converted=" << adapted.converted_value << " error_type=" << adapted.error_type
                                 << " message=" << adapted.error_message;
                             register_error(oss.str());
                             handle_policy(cfg.output.database.error_policy, "type conversion failed");
-                            return cfg.output.database.error_policy == config::ErrorPolicy::Continue ||
+                            return cfg.output.database.error_policy ==
+                                   config::ErrorPolicy::Continue ||
                                    cfg.output.database.error_policy == config::ErrorPolicy::RollbackBatch;
                         }
                         std::string sql_literal = adapted.sql_literal;
                         if (db_type == database::DbType::Oracle && !adapted.is_null) {
-                            const database::ColumnTypeFamily family = database::classify_column_type(*mapped_columns[i]);
-                            if (family == database::ColumnTypeFamily::DateTime ||
-                                family == database::ColumnTypeFamily::Date ||
+                            const database::ColumnTypeFamily family =
+                                database::classify_column_type(*mapped_columns[i]);
+                            if (family ==
+                                database::ColumnTypeFamily::DateTime ||
+                                family ==
+                                database::ColumnTypeFamily::Date ||
                                 family == database::ColumnTypeFamily::Time) {
                                 sql_literal = build_oracle_temporal_literal(family, adapted.converted_value);
                             }
@@ -847,10 +798,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 auto execute_sql = [&](const std::string& sql) {
                     if (sql.empty()) { return true; }
                     if (!worker_driver->execute(sql, &worker_error)) {
-                        register_error(
-                            "sql execution failed: " + worker_error +
-                            " sql=" + truncate_for_log(sql, 4096)
-                        );
+                        register_error("sql execution failed: " + worker_error + " sql=" + truncate_for_log(sql, 4096));
                         handle_policy(cfg.output.database.error_policy, "sql execution failed");
                         return false;
                     }
@@ -895,17 +843,14 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                             }
                         }
                     } else {
-                        ok = execute_sql(build_insert_sql(
-                            db_type,
-                            sql_table_name,
-                            sql_columns,
-                            sql_rows,
-                            config::InsertMode::Bulk
-                        ));
+                        ok = execute_sql(
+                            build_insert_sql(db_type, sql_table_name, sql_columns, sql_rows, config::InsertMode::Bulk)
+                        );
                     }
                 } else {
                     const std::filesystem::path load_file =
-                        std::filesystem::path(cfg.workspace) / "tmp" /
+                        std::filesystem::path(cfg.workspace) /
+                        "tmp" /
                         ("load_" + std::to_string(worker_id) + "_" + std::to_string(rows.front().first) + ".tmp");
                     std::ofstream temp(load_file, std::ios::trunc);
                     if (!temp) {
@@ -913,15 +858,14 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                         stop.store(true);
                         ok = false;
                     } else {
-                        for (const auto& row_values : sql_rows) {
-                            temp << render_row_for_load(row_values);
-                        }
+                        for (const auto& row_values : sql_rows) { temp << render_row_for_load(row_values); }
                         temp.close();
                         {
                             std::lock_guard lock(temp_files_mutex);
                             temp_files.push_back(load_file);
                         }
-                        const std::string load_sql = build_load_sql(db_type, sql_table_name, sql_columns, load_file.string());
+                        const std::string load_sql =
+                            build_load_sql(db_type, sql_table_name, sql_columns, load_file.string());
                         if (load_sql.empty()) {
                             ok = false;
                             register_error("load mode is not supported for current database type");
@@ -946,8 +890,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                                 ));
                             } else {
                                 register_error(
-                                    "sql execution failed: " + worker_error +
-                                    " sql=" + truncate_for_log(load_sql, 4096)
+                                    "sql execution failed: " + worker_error + " sql=" + truncate_for_log(load_sql, 4096)
                                 );
                                 handle_policy(cfg.output.database.error_policy, "sql execution failed");
                                 ok = false;
@@ -975,11 +918,9 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
 
                     const int rate_limit = cfg.output.database.rate_limit_rows_per_sec;
                     if (rate_limit > 0) {
-                        const double sec = static_cast<double>(rows.size()) / static_cast<double>(rate_limit);
-                        const auto wait_ms = static_cast<int>(sec * 1000.0);
-                        if (wait_ms > 0) {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms));
-                        }
+                        const double sec     = static_cast<double>(rows.size()) / static_cast<double>(rate_limit);
+                        const auto   wait_ms = static_cast<int>(sec * 1000.0);
+                        if (wait_ms > 0) { std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms)); }
                     }
                 }
 
@@ -999,9 +940,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 }
             }
 
-            if (!batch.empty() && !stop.load()) {
-                (void)process_batch(batch);
-            }
+            if (!batch.empty() && !stop.load()) { (void)process_batch(batch); }
 
             if (per_run_tx) {
                 if (rollback_all.load() || stop.load()) {
@@ -1040,12 +979,12 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         std::filesystem::remove(path, ec);
     }
 
-    const auto ended_at = std::chrono::steady_clock::now();
-    const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(ended_at - started_at).count();
+    const auto   ended_at    = std::chrono::steady_clock::now();
+    const auto   elapsed_ms  = std::chrono::duration_cast<std::chrono::milliseconds>(ended_at - started_at).count();
     const double elapsed_sec = std::max(0.001, static_cast<double>(elapsed_ms) / 1000.0);
 
     const std::uint64_t generated = rows_generated.load();
-    const std::uint64_t imported = rows_imported.load();
+    const std::uint64_t imported  = rows_imported.load();
     {
         std::lock_guard lock(progress_mutex);
         render_progress(generated, imported, true);
@@ -1073,7 +1012,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     OutputStats stats;
     stats.execution_info = generate_result.info;
     stats.rows_generated = generated;
-    stats.rows_written = imported;
+    stats.rows_written   = imported;
     return stats;
 }
 

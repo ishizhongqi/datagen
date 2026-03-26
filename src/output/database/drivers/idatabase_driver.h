@@ -19,28 +19,22 @@ class IDatabaseDriver {
 public:
     virtual ~IDatabaseDriver() = default;
 
-    [[nodiscard]] virtual DbType type() const = 0;
-    [[nodiscard]] virtual std::string dbms_name() const = 0;
+    [[nodiscard]] virtual DbType      type() const         = 0;
+    [[nodiscard]] virtual std::string dbms_name() const    = 0;
     [[nodiscard]] virtual std::string dbms_version() const = 0;
 
     virtual bool connect(const DbUrl& url, std::string* error_message) = 0;
-    virtual void disconnect() = 0;
+    virtual void disconnect()                                          = 0;
 
     virtual bool test_connection(std::string* error_message) = 0;
 
     virtual bool execute(const std::string& sql, std::string* error_message) = 0;
 
-    virtual bool query(
-        const std::string&                    sql,
-        std::vector<std::vector<std::string>>* rows,
-        std::string*                          error_message
-    ) = 0;
+    virtual bool
+        query(const std::string& sql, std::vector<std::vector<std::string>>* rows, std::string* error_message) = 0;
 
-    virtual bool get_table_metadata(
-        const std::string& table_name,
-        TableMetadata*     metadata,
-        std::string*       error_message
-    ) = 0;
+    virtual bool
+        get_table_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) = 0;
 
     [[nodiscard]] virtual bool supports_load_mode() const = 0;
 };

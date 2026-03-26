@@ -23,10 +23,11 @@ namespace data_generator::cli {
 
 int CommandPreview::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator preview", "Generate a single row preview.");
-    options.add_options()
-        ("config", "Input JSON file", cxxopts::value<std::string>())
-        ("field", "Field name", cxxopts::value<std::string>())
-        ("h,help", "Show help");
+    options
+        .add_options()("config", "Input JSON file", cxxopts::value<std::string>())("field", "Field name", cxxopts::value<std::string>())(
+            "h,help",
+            "Show help"
+        );
     options.parse_positional({"config"});
 
     cxxopts::ParseResult result;
@@ -81,29 +82,29 @@ int CommandPreview::run(const std::vector<std::string>& args) {
         columns.reserve(cfg.fields.size());
         for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
-        std::vector<engine::Row> rows = {row};
-        const bool use_csv_preview = cfg.output.type == config::OutputType::Database;
+        std::vector<engine::Row>   rows            = {row};
+        const bool                 use_csv_preview = cfg.output.type == config::OutputType::Database;
         const config::OutputFormat format = use_csv_preview ? config::OutputFormat::Csv : cfg.output.file.format;
         output::file::DelimitedWriterOptions delimited_options;
         switch (format) {
         case config::OutputFormat::Csv:
-            delimited_options.delimiter = ",";
-            delimited_options.quote = "\"";
-            delimited_options.header = use_csv_preview ? true : cfg.output.file.csv.header;
+            delimited_options.delimiter   = ",";
+            delimited_options.quote       = "\"";
+            delimited_options.header      = use_csv_preview ? true : cfg.output.file.csv.header;
             delimited_options.line_ending = cfg.output.file.csv.line_ending;
             output::file::write_delimited(columns, rows, std::cout, delimited_options);
             break;
         case config::OutputFormat::TabDelimited:
-            delimited_options.delimiter = "\t";
-            delimited_options.quote = "\"";
-            delimited_options.header = cfg.output.file.tab_delimited.header;
+            delimited_options.delimiter   = "\t";
+            delimited_options.quote       = "\"";
+            delimited_options.header      = cfg.output.file.tab_delimited.header;
             delimited_options.line_ending = cfg.output.file.tab_delimited.line_ending;
             output::file::write_delimited(columns, rows, std::cout, delimited_options);
             break;
         case config::OutputFormat::Custom:
-            delimited_options.delimiter = cfg.output.file.custom.delimiter;
-            delimited_options.quote = cfg.output.file.custom.quote;
-            delimited_options.header = cfg.output.file.custom.header;
+            delimited_options.delimiter   = cfg.output.file.custom.delimiter;
+            delimited_options.quote       = cfg.output.file.custom.quote;
+            delimited_options.header      = cfg.output.file.custom.header;
             delimited_options.line_ending = cfg.output.file.custom.line_ending;
             output::file::write_delimited(columns, rows, std::cout, delimited_options);
             break;
@@ -114,7 +115,13 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             if (cfg.output.file.sql.table.empty()) {
                 output::file::write_sql(columns, rows, "preview_table", false, std::cout);
             } else {
-                output::file::write_sql(columns, rows, cfg.output.file.sql.table, cfg.output.file.sql.create_table, std::cout);
+                output::file::write_sql(
+                    columns,
+                    rows,
+                    cfg.output.file.sql.table,
+                    cfg.output.file.sql.create_table,
+                    std::cout
+                );
             }
             break;
         }

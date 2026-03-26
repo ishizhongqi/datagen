@@ -7,8 +7,8 @@
 #include "output/database/type_adapter.h"
 
 #include <algorithm>
-#include <charconv>
 #include <cctype>
+#include <charconv>
 
 namespace data_generator::database {
 
@@ -33,44 +33,40 @@ std::string sql_escape(const std::string& value) {
 
 AdaptedValue make_error(std::string error_type, std::string error_message) {
     AdaptedValue value;
-    value.ok = false;
-    value.error_type = std::move(error_type);
+    value.ok            = false;
+    value.error_type    = std::move(error_type);
     value.error_message = std::move(error_message);
     return value;
 }
 
 AdaptedValue make_success_value(const std::string& converted, const std::string& literal) {
     AdaptedValue value;
-    value.ok = true;
+    value.ok              = true;
     value.converted_value = converted;
-    value.sql_literal = literal;
+    value.sql_literal     = literal;
     return value;
 }
 
 }  // namespace
 
-AdaptedValue DefaultTypeAdapter::adapt(
-    const ColumnMetadata&             column,
-    const std::optional<std::string>& raw_value
-) const {
+AdaptedValue
+    DefaultTypeAdapter::adapt(const ColumnMetadata& column, const std::optional<std::string>& raw_value) const {
     if (!raw_value.has_value()) {
         AdaptedValue value;
-        value.ok = true;
-        value.is_null = true;
+        value.ok              = true;
+        value.is_null         = true;
         value.converted_value = "NULL";
-        value.sql_literal = "NULL";
+        value.sql_literal     = "NULL";
         return value;
     }
 
-    const std::string& raw = *raw_value;
+    const std::string&     raw    = *raw_value;
     const ColumnTypeFamily family = classify_column_type(column);
 
     switch (family) {
     case ColumnTypeFamily::Integer: {
-        if (raw.empty()) {
-            return make_error("type_conversion", "empty string cannot be converted to integer");
-        }
-        long long parsed = 0;
+        if (raw.empty()) { return make_error("type_conversion", "empty string cannot be converted to integer"); }
+        long long parsed     = 0;
         const auto [ptr, ec] = std::from_chars(raw.data(), raw.data() + raw.size(), parsed);
         if (ec != std::errc() || ptr != raw.data() + raw.size()) {
             return make_error("type_conversion", "invalid integer: " + raw);
@@ -81,9 +77,7 @@ AdaptedValue DefaultTypeAdapter::adapt(
         return make_success_value(std::to_string(parsed), std::to_string(parsed));
     }
     case ColumnTypeFamily::Decimal: {
-        if (raw.empty()) {
-            return make_error("type_conversion", "empty string cannot be converted to decimal");
-        }
+        if (raw.empty()) { return make_error("type_conversion", "empty string cannot be converted to decimal"); }
         bool decimal_point_found = false;
         for (const char ch : raw) {
             if (ch == '.') {
@@ -100,12 +94,8 @@ AdaptedValue DefaultTypeAdapter::adapt(
     }
     case ColumnTypeFamily::Boolean: {
         const std::string lower = to_lower(raw);
-        if (lower == "1" || lower == "true" || lower == "t" || lower == "yes") {
-            return make_success_value("1", "1");
-        }
-        if (lower == "0" || lower == "false" || lower == "f" || lower == "no") {
-            return make_success_value("0", "0");
-        }
+        if (lower == "1" || lower == "true" || lower == "t" || lower == "yes") { return make_success_value("1", "1"); }
+        if (lower == "0" || lower == "false" || lower == "f" || lower == "no") { return make_success_value("0", "0"); }
         return make_error("type_conversion", "invalid bool: " + raw);
     }
     case ColumnTypeFamily::Date:
@@ -119,10 +109,9 @@ AdaptedValue DefaultTypeAdapter::adapt(
     }
     case ColumnTypeFamily::Enum: {
         if (!column.enum_values.empty()) {
-            const bool matched = std::find(column.enum_values.begin(), column.enum_values.end(), raw) != column.enum_values.end();
-            if (!matched) {
-                return make_error("type_conversion", "enum value out of range: " + raw);
-            }
+            const bool matched =
+                std::find(column.enum_values.begin(), column.enum_values.end(), raw) != column.enum_values.end();
+            if (!matched) { return make_error("type_conversion", "enum value out of range: " + raw); }
         }
         return make_success_value(raw, "'" + sql_escape(raw) + "'");
     }

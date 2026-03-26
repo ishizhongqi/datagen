@@ -12,7 +12,7 @@ namespace data_generator::database {
 
 namespace {
 
-constexpr const char* kOdbcPrefix = "odbc://";
+constexpr const char* kOdbcPrefix   = "odbc://";
 constexpr const char* kSqlitePrefix = "sqlite://";
 
 bool parse_odbc_connection(const std::string& connection, DbUrl* parsed, std::string* error_message) {
@@ -24,8 +24,8 @@ bool parse_odbc_connection(const std::string& connection, DbUrl* parsed, std::st
         return false;
     }
 
-    parsed->type = DbType::Odbc;
-    parsed->raw = connection;
+    parsed->type                   = DbType::Odbc;
+    parsed->raw                    = connection;
     parsed->odbc_connection_string = odbc_connection_string;
     parsed->database.clear();
     return true;
@@ -49,7 +49,7 @@ bool parse_sqlite_connection(const std::string& connection, DbUrl* parsed, std::
     }
 
     parsed->type = DbType::Sqlite;
-    parsed->raw = connection;
+    parsed->raw  = connection;
     parsed->odbc_connection_string.clear();
     parsed->database = sqlite_target;
     return true;

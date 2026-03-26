@@ -17,8 +17,8 @@ namespace data_generator::output {
 
 struct OutputStats {
     engine::ExecutionInfo execution_info;
-    std::uint64_t       rows_generated = 0;
-    std::uint64_t       rows_written = 0;
+    std::uint64_t         rows_generated = 0;
+    std::uint64_t         rows_written   = 0;
 };
 
 class IOutputBackend {

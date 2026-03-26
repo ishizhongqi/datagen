@@ -12,11 +12,8 @@ namespace data_generator::output::file {
 
 namespace {
 
-nlohmann::json build_json_object(
-    const std::vector<std::string>& columns,
-    const engine::Row&              row,
-    const bool                      include_null
-) {
+nlohmann::json
+    build_json_object(const std::vector<std::string>& columns, const engine::Row& row, const bool include_null) {
     nlohmann::json entry = nlohmann::json::object();
     for (size_t i = 0; i < columns.size(); ++i) {
         if (i >= row.size() || !row[i].has_value()) {
@@ -64,17 +61,13 @@ void write_json(
         nlohmann::json result = nlohmann::json::array();
         result.get_ref<nlohmann::json::array_t&>().reserve(rows.size());
 
-        for (const auto& row : rows) {
-            result.push_back(build_json_object(columns, row, options.include_null));
-        }
+        for (const auto& row : rows) { result.push_back(build_json_object(columns, row, options.include_null)); }
 
         out << result.dump(2) << "\n";
         return;
     }
 
-    for (const auto& row : rows) {
-        out << build_json_object(columns, row, options.include_null).dump() << "\n";
-    }
+    for (const auto& row : rows) { out << build_json_object(columns, row, options.include_null).dump() << "\n"; }
 }
 
 }  // namespace data_generator::output::file

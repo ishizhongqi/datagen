@@ -29,11 +29,11 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
-        SQLCHAR     state[6] = {};
-        SQLINTEGER  native_error = 0;
-        SQLCHAR     text[kBufferSize] = {};
-        SQLSMALLINT text_length = 0;
-        const SQLRETURN rc = SQLGetDiagRec(
+        SQLCHAR         state[6]          = {};
+        SQLINTEGER      native_error      = 0;
+        SQLCHAR         text[kBufferSize] = {};
+        SQLSMALLINT     text_length       = 0;
+        const SQLRETURN rc                = SQLGetDiagRec(
             handle_type,
             handle,
             static_cast<SQLSMALLINT>(rec_number),
@@ -50,8 +50,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
         }
 
         if (rec_number > 1) { message << " | "; }
-        message << "[" << reinterpret_cast<const char*>(state) << "] "
-                << reinterpret_cast<const char*>(text);
+        message << "[" << reinterpret_cast<const char*>(state) << "] " << reinterpret_cast<const char*>(text);
     }
 
     const std::string result = message.str();
@@ -67,8 +66,8 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
     }
     drivers->clear();
 
-    SQLHENV env = SQL_NULL_HENV;
-    SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
+    SQLHENV   env = SQL_NULL_HENV;
+    SQLRETURN rc  = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
     if (!SQL_SUCCEEDED(rc)) {
         if (error_message) { *error_message = "failed to allocate ODBC environment"; }
         return false;
@@ -81,22 +80,13 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
         return false;
     }
 
-    SQLCHAR      desc[kBufferSize] = {0};
-    SQLSMALLINT  desc_length = 0;
-    SQLCHAR      attrs[kBufferSize] = {0};
-    SQLSMALLINT  attrs_length = 0;
+    SQLCHAR     desc[kBufferSize]  = {0};
+    SQLSMALLINT desc_length        = 0;
+    SQLCHAR     attrs[kBufferSize] = {0};
+    SQLSMALLINT attrs_length       = 0;
 
     for (SQLUSMALLINT direction = SQL_FETCH_FIRST; rc != SQL_NO_DATA; direction = SQL_FETCH_NEXT) {
-        rc = SQLDrivers(
-            env,
-            direction,
-            desc,
-            sizeof(desc),
-            &desc_length,
-            attrs,
-            sizeof(attrs),
-            &attrs_length
-        );
+        rc = SQLDrivers(env, direction, desc, sizeof(desc), &desc_length, attrs, sizeof(attrs), &attrs_length);
 
         if (rc == SQL_NO_DATA) { break; }
         if (!SQL_SUCCEEDED(rc)) {
@@ -105,10 +95,12 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
             return false;
         }
 
-        drivers->push_back(OdbcDriverInfo{
-            .name = reinterpret_cast<const char*>(desc),
-            .attributes = reinterpret_cast<const char*>(attrs),
-        });
+        drivers->push_back(
+            OdbcDriverInfo{
+                .name       = reinterpret_cast<const char*>(desc),
+                .attributes = reinterpret_cast<const char*>(attrs),
+            }
+        );
     }
 
     (void)SQLFreeHandle(SQL_HANDLE_ENV, env);

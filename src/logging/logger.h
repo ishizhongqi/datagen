@@ -41,7 +41,7 @@ private:
 
     void write(LogLevel level, const std::string& message);
 
-    LogLevel                     minimum_level_ = LogLevel::Info;
+    LogLevel                     minimum_level_  = LogLevel::Info;
     bool                         echo_to_stderr_ = true;
     std::mutex                   mutex_;
     std::optional<std::ofstream> generate_log_output_;

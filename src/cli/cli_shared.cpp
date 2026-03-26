@@ -45,7 +45,7 @@ OrderedJson to_ordered_json(const Json& value) {
 }
 
 OrderedJson build_ordered_config_template(const config::GeneratorMetadata& meta) {
-    OrderedJson                ordered = OrderedJson::object();
+    OrderedJson                     ordered = OrderedJson::object();
     std::unordered_set<std::string> seen;
     seen.reserve(meta.config_params.size());
 
@@ -76,8 +76,8 @@ cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<
 
 void print_validation_issues(const std::vector<config::ValidationIssue>& issues, std::ostream& output) {
     for (const auto& issue : issues) {
-        output << (issue.warning ? "Validation warning: " : "Validation error: ")
-               << issue.path << " " << issue.message << "\n";
+        output << (issue.warning ? "Validation warning: " : "Validation error: ") << issue.path << " " << issue.message
+               << "\n";
     }
 }
 

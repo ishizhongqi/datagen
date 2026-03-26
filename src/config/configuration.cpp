@@ -17,25 +17,25 @@ namespace data_generator::config {
 
 namespace {
 
-constexpr auto kKeyRows                        = "rows";
+constexpr auto kKeyRows = "rows";
 
-constexpr auto kKeyOutput                      = "output";
-constexpr auto kKeyOutputType                  = "type";
-constexpr auto kKeyOutputFile                  = "file";
-constexpr auto kKeyOutputDatabase              = "database";
-constexpr auto kKeyOutputFormat                = "format";
-constexpr auto kKeyOutputOptions               = "options";
+constexpr auto kKeyOutput         = "output";
+constexpr auto kKeyOutputType     = "type";
+constexpr auto kKeyOutputFile     = "file";
+constexpr auto kKeyOutputDatabase = "database";
+constexpr auto kKeyOutputFormat   = "format";
+constexpr auto kKeyOutputOptions  = "options";
 
-constexpr auto kKeyFields                      = "fields";
+constexpr auto kKeyFields = "fields";
 
-constexpr auto kKeyFileOptionHeader            = "header";
-constexpr auto kKeyFileOptionLineEnding        = "line_ending";
-constexpr auto kKeyFileOptionArray             = "array";
-constexpr auto kKeyFileOptionIncludeNull       = "include_null";
-constexpr auto kKeyFileOptionTable             = "table";
-constexpr auto kKeyFileOptionCreateTable       = "create_table";
-constexpr auto kKeyFileOptionDelimiter         = "delimiter";
-constexpr auto kKeyFileOptionQuote             = "quote";
+constexpr auto kKeyFileOptionHeader      = "header";
+constexpr auto kKeyFileOptionLineEnding  = "line_ending";
+constexpr auto kKeyFileOptionArray       = "array";
+constexpr auto kKeyFileOptionIncludeNull = "include_null";
+constexpr auto kKeyFileOptionTable       = "table";
+constexpr auto kKeyFileOptionCreateTable = "create_table";
+constexpr auto kKeyFileOptionDelimiter   = "delimiter";
+constexpr auto kKeyFileOptionQuote       = "quote";
 
 constexpr auto kKeyDatabaseConnection          = "connection";
 constexpr auto kKeyDatabaseTable               = "table";
@@ -374,14 +374,9 @@ bool parse_database_output(
     const Json& database = output.at(kKeyOutputDatabase);
     validate_known_object_keys(database, kKnownDatabaseKeys, base_path, issues);
 
-    (void)parse_optional_string(
-        database,
-        kKeyDatabaseConnection,
-        &cfg->output.database.connection,
-        issues,
-        base_path,
-        true
-    );
+    (
+        void
+    )parse_optional_string(database, kKeyDatabaseConnection, &cfg->output.database.connection, issues, base_path, true);
     (void)parse_optional_string(database, kKeyDatabaseTable, &cfg->output.database.table, issues, base_path, true);
 
     if (database.contains(kKeyDatabaseInsertMode)) {
@@ -758,9 +753,7 @@ void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides) {
     }
     if (overrides.type.has_value()) { cfg->output.type = *overrides.type; }
     if (overrides.output_path.has_value()) { cfg->output.file.path = *overrides.output_path; }
-    if (overrides.database_connection.has_value()) {
-        cfg->output.database.connection = *overrides.database_connection;
-    }
+    if (overrides.database_connection.has_value()) { cfg->output.database.connection = *overrides.database_connection; }
 }
 
 }  // namespace data_generator::config

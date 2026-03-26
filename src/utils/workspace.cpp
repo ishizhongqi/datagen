@@ -20,13 +20,9 @@ std::filesystem::path home_directory() {
     if (const auto user_profile = get_env_value("USERPROFILE"); user_profile.has_value()) {
         return std::filesystem::path(*user_profile);
     }
-    if (const auto home = get_env_value("HOME"); home.has_value()) {
-        return std::filesystem::path(*home);
-    }
+    if (const auto home = get_env_value("HOME"); home.has_value()) { return std::filesystem::path(*home); }
 #else
-    if (const auto home = get_env_value("HOME"); home.has_value()) {
-        return *home;
-    }
+    if (const auto home = get_env_value("HOME"); home.has_value()) { return *home; }
 #endif
     return std::filesystem::current_path();
 }
@@ -42,14 +38,10 @@ std::filesystem::path default_workspace_root() {
 }
 
 std::filesystem::path resolve_workspace_root(const std::optional<std::string>& configured_workspace) {
-    if (!configured_workspace.has_value() || configured_workspace->empty()) {
-        return default_workspace_root();
-    }
+    if (!configured_workspace.has_value() || configured_workspace->empty()) { return default_workspace_root(); }
 
     std::filesystem::path path = *configured_workspace;
-    if (path.is_relative()) {
-        path = default_workspace_root() / path;
-    }
+    if (path.is_relative()) { path = default_workspace_root() / path; }
     return path;
 }
 
@@ -61,16 +53,14 @@ bool is_workspace_local_filename(const std::string& filename) {
     return true;
 }
 
-WorkspaceLayout ensure_workspace_layout(
-    const std::optional<std::string>& configured_workspace,
-    std::string*                      error_message
-) {
+WorkspaceLayout
+    ensure_workspace_layout(const std::optional<std::string>& configured_workspace, std::string* error_message) {
     WorkspaceLayout layout;
-    layout.root = resolve_workspace_root(configured_workspace);
-    layout.log_dir = layout.root / "log";
-    layout.tmp_dir = layout.root / "tmp";
+    layout.root              = resolve_workspace_root(configured_workspace);
+    layout.log_dir           = layout.root / "log";
+    layout.tmp_dir           = layout.root / "tmp";
     layout.generate_log_file = layout.log_dir / "generate.log";
-    layout.error_log_file = layout.log_dir / "error.log";
+    layout.error_log_file    = layout.log_dir / "error.log";
 
     std::error_code ec;
     std::filesystem::create_directories(layout.log_dir, ec);

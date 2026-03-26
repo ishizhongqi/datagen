@@ -28,14 +28,13 @@ std::string escape_delimited_value(const std::string& value, const DelimitedWrit
     if (!needs_quoting(value, options)) { return value; }
     std::string escaped;
     escaped.reserve(value.size() + options.quote.size() * 2);
-    escaped += options.quote;
-    std::size_t pos = 0;
+    escaped         += options.quote;
+    std::size_t pos  = 0;
     while (pos < value.size()) {
-        if (!options.quote.empty() &&
-            value.compare(pos, options.quote.size(), options.quote) == 0) {
+        if (!options.quote.empty() && value.compare(pos, options.quote.size(), options.quote) == 0) {
             escaped += options.quote;
             escaped += options.quote;
-            pos += options.quote.size();
+            pos     += options.quote.size();
         } else {
             escaped.push_back(value[pos]);
             ++pos;
@@ -58,11 +57,7 @@ void write_delimited_header(
     out << line_ending_text(options.line_ending);
 }
 
-void write_delimited_row(
-    const engine::Row&            row,
-    std::ostream&                 out,
-    const DelimitedWriterOptions& options
-) {
+void write_delimited_row(const engine::Row& row, std::ostream& out, const DelimitedWriterOptions& options) {
     for (size_t i = 0; i < row.size(); ++i) {
         if (i > 0) { out << options.delimiter; }
         out << escape_delimited_value(row[i].value_or(""), options);
@@ -77,9 +72,7 @@ void write_delimited(
     const DelimitedWriterOptions&   options
 ) {
     write_delimited_header(columns, out, options);
-    for (const auto& row : rows) {
-        write_delimited_row(row, out, options);
-    }
+    for (const auto& row : rows) { write_delimited_row(row, out, options); }
 }
 
 }  // namespace data_generator::output::file

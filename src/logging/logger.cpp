@@ -88,13 +88,9 @@ void Logger::write(const LogLevel level, const std::string& message) {
 
     const std::string line = "[" + now_string() + "] [" + log_level_to_string(level) + "] " + message;
 
-    if (echo_to_stderr_) {
-        std::cerr << line << "\n";
-    }
+    if (echo_to_stderr_) { std::cerr << line << "\n"; }
 
-    if (generate_log_output_.has_value() && generate_log_output_->is_open()) {
-        *generate_log_output_ << line << "\n";
-    }
+    if (generate_log_output_.has_value() && generate_log_output_->is_open()) { *generate_log_output_ << line << "\n"; }
 
     if (level == LogLevel::Error && error_log_output_.has_value() && error_log_output_->is_open()) {
         *error_log_output_ << line << "\n";
@@ -106,21 +102,18 @@ std::string log_level_to_string(const LogLevel level) {
     case LogLevel::Info : return "INFO";
     case LogLevel::Warn : return "WARN";
     case LogLevel::Error: return "ERROR";
-    default:
-        return "INFO";
+    default             : return "INFO";
     }
 }
 
 std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {
-    constexpr int kWidth = 20;
-    const double progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
-    const int filled = static_cast<int>(progress * static_cast<double>(kWidth));
+    constexpr int kWidth   = 20;
+    const double  progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
+    const int     filled   = static_cast<int>(progress * static_cast<double>(kWidth));
 
     std::string bar;
     bar.reserve(kWidth);
-    for (int i = 0; i < kWidth; ++i) {
-        bar.push_back(i < filled ? '#' : '-');
-    }
+    for (int i = 0; i < kWidth; ++i) { bar.push_back(i < filled ? '#' : '-'); }
 
     std::ostringstream oss;
     oss << "[" << bar << "] " << static_cast<int>(progress * 100.0) << "% (" << done << "/" << total << ")";

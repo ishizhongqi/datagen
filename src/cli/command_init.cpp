@@ -7,8 +7,8 @@
 #include "cli/command_init.h"
 
 #include <algorithm>
-#include <cxxopts.hpp>
 #include <cctype>
+#include <cxxopts.hpp>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -28,9 +28,7 @@ namespace data_generator::cli {
 namespace {
 
 std::string to_lower_ascii(std::string text) {
-    for (char& ch : text) {
-        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-    }
+    for (char& ch : text) { ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch))); }
     return text;
 }
 
@@ -61,8 +59,7 @@ std::vector<std::string> tokenize_identifier_for_match(const std::string& raw) {
             }
             continue;
         }
-        if (!current.empty() && std::isupper(ch) &&
-            std::islower(static_cast<unsigned char>(current.back()))) {
+        if (!current.empty() && std::isupper(ch) && std::islower(static_cast<unsigned char>(current.back()))) {
             tokens.push_back(to_lower_ascii(current));
             current.clear();
         }
@@ -80,7 +77,7 @@ std::unordered_map<std::string, std::string> build_generator_name_map() {
     return map;
 }
 
-const std::unordered_map<std::string, std::string> kGeneratorNameMap = build_generator_name_map();
+const std::unordered_map<std::string, std::string> kGeneratorNameMap  = build_generator_name_map();
 const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
     {"id", "sequence"},
     {"seq", "sequence"},
@@ -150,22 +147,15 @@ const std::unordered_map<std::string, std::string>& generator_alias_map() {
     return kGeneratorAliasMap;
 }
 
-bool is_name_infer_compatible(
-    const std::string&              generator_name,
-    const database::ColumnTypeFamily family
-) {
+bool is_name_infer_compatible(const std::string& generator_name, const database::ColumnTypeFamily family) {
     if (family == database::ColumnTypeFamily::Integer) {
         return generator_name == "integer" || generator_name == "decimal" || generator_name == "sequence";
     }
     if (family == database::ColumnTypeFamily::Decimal) {
         return generator_name == "decimal" || generator_name == "integer" || generator_name == "sequence";
     }
-    if (family == database::ColumnTypeFamily::Date) {
-        return generator_name == "date" || generator_name == "datetime";
-    }
-    if (family == database::ColumnTypeFamily::Time) {
-        return generator_name == "time" || generator_name == "datetime";
-    }
+    if (family == database::ColumnTypeFamily::Date) { return generator_name == "date" || generator_name == "datetime"; }
+    if (family == database::ColumnTypeFamily::Time) { return generator_name == "time" || generator_name == "datetime"; }
     if (family == database::ColumnTypeFamily::DateTime) {
         return generator_name == "datetime" || generator_name == "date" || generator_name == "time";
     }
@@ -182,14 +172,10 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     if (normalized_column.empty()) { return std::nullopt; }
 
     const auto& name_map = generator_name_map();
-    if (const auto exact = name_map.find(normalized_column); exact != name_map.end()) {
-        return exact->second;
-    }
+    if (const auto exact = name_map.find(normalized_column); exact != name_map.end()) { return exact->second; }
 
     const auto& alias_map = generator_alias_map();
-    if (const auto alias = alias_map.find(normalized_column); alias != alias_map.end()) {
-        return alias->second;
-    }
+    if (const auto alias = alias_map.find(normalized_column); alias != alias_map.end()) { return alias->second; }
 
     const auto family = database::classify_column_type(column);
     const auto tokens = tokenize_identifier_for_match(column.name);
@@ -199,12 +185,8 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     for (const auto& token : tokens) {
         const std::string normalized_token = normalize_identifier_for_match(token);
         if (normalized_token.empty()) { continue; }
-        if (const auto it = alias_map.find(normalized_token); it != alias_map.end()) {
-            scores[it->second] += 8;
-        }
-        if (const auto it = name_map.find(normalized_token); it != name_map.end()) {
-            scores[it->second] += 10;
-        }
+        if (const auto it = alias_map.find(normalized_token); it != alias_map.end()) { scores[it->second] += 8; }
+        if (const auto it = name_map.find(normalized_token); it != name_map.end()) { scores[it->second] += 10; }
     }
 
     for (const auto& meta : config::get_generator_catalog()) {
@@ -225,8 +207,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
             for (const auto& generator_token : generator_tokens) {
                 if (normalized_token == generator_token) {
                     scores[meta.name] += 4;
-                } else if (normalized_token.size() >= 3 &&
-                           generator_token.rfind(normalized_token, 0) == 0) {
+                } else if (normalized_token.size() >= 3 && generator_token.rfind(normalized_token, 0) == 0) {
                     scores[meta.name] += 2;
                 }
             }
@@ -237,7 +218,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     std::string best_generator;
     for (const auto& [generator_name, score] : scores) {
         if (score > best_score) {
-            best_score = score;
+            best_score     = score;
             best_generator = generator_name;
         }
     }
@@ -247,9 +228,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
 }
 
 std::string infer_generator_name(const database::ColumnMetadata& column) {
-    if (const auto inferred = infer_generator_name_from_column_name(column); inferred.has_value()) {
-        return *inferred;
-    }
+    if (const auto inferred = infer_generator_name_from_column_name(column); inferred.has_value()) { return *inferred; }
 
     const auto family = database::classify_column_type(column);
     switch (family) {
@@ -262,8 +241,7 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
     case database::ColumnTypeFamily::Boolean : return "enum_item";
     case database::ColumnTypeFamily::String  :
     case database::ColumnTypeFamily::Binary  :
-    default:
-        return "text";
+    default                                  : return "text";
     }
 }
 
@@ -282,71 +260,67 @@ OrderedJson make_default_value_defaults() {
 }
 
 void apply_supported_field_attributes(
-    const database::TableMetadata& metadata,
-    const database::ColumnMetadata& column,
-    const config::GeneratorMetadata& meta,
+    const database::TableMetadata&        metadata,
+    const database::ColumnMetadata&       column,
+    const config::GeneratorMetadata&      meta,
     std::unordered_map<std::string, int>& linkage_counter_by_generator,
-    OrderedJson& field
+    OrderedJson&                          field
 ) {
     if (meta.supports_unique) {
         const bool unique = column.auto_increment || is_unique_column(metadata, column.name);
-        field["unique"] = unique;
+        field["unique"]   = unique;
     }
 
     if (meta.supports_data_linkage) {
-        const std::string module = meta.linkage_module.empty() ? meta.module : meta.linkage_module;
+        const std::string module       = meta.linkage_module.empty() ? meta.module : meta.linkage_module;
         const std::string group_module = module.empty() ? meta.name : module;
-        const int group_id = ++linkage_counter_by_generator[meta.name];
-        field["data_linkage"] = group_module + ":Group" + std::to_string(group_id);
+        const int         group_id     = ++linkage_counter_by_generator[meta.name];
+        field["data_linkage"]          = group_module + ":Group" + std::to_string(group_id);
     }
 
     field["default_value"] = make_default_value_defaults();
-    field["null_value"] = make_null_value_defaults();
+    field["null_value"]    = make_null_value_defaults();
 }
 
 OrderedJson infer_field_from_column(
-    const database::TableMetadata&                   metadata,
-    const database::ColumnMetadata&                  column,
-    std::unordered_map<std::string, int>*            linkage_counter_by_generator
+    const database::TableMetadata&        metadata,
+    const database::ColumnMetadata&       column,
+    std::unordered_map<std::string, int>* linkage_counter_by_generator
 ) {
-    OrderedJson field = OrderedJson::object();
+    OrderedJson       field          = OrderedJson::object();
     const std::string generator_name = infer_generator_name(column);
 
     const config::GeneratorMetadata* meta = config::find_generator_metadata(generator_name);
 
-    field["name"] = column.name;
+    field["name"]      = column.name;
     field["generator"] = generator_name;
-    field["config"] = meta ? build_ordered_config_template(*meta) : OrderedJson::object();
+    field["config"]    = meta ? build_ordered_config_template(*meta) : OrderedJson::object();
 
     if (generator_name == "integer") {
-        if (column.unsigned_number) {
-            field["config"]["start"] = 0;
-        }
+        if (column.unsigned_number) { field["config"]["start"] = 0; }
         if (column.numeric_precision.has_value()) {
-            const int digits = std::min(9, *column.numeric_precision);
-            int max_value = 1;
+            const int digits    = std::min(9, *column.numeric_precision);
+            int       max_value = 1;
             for (int i = 0; i < digits; ++i) { max_value *= 10; }
             field["config"]["end"] = max_value - 1;
         }
     } else if (generator_name == "sequence") {
         if (column.numeric_precision.has_value()) {
-            const int digits = std::min(18, *column.numeric_precision);
+            const int     digits    = std::min(18, *column.numeric_precision);
             std::uint64_t max_value = 1;
             for (int i = 0; i < digits; ++i) { max_value *= 10ULL; }
             field["config"]["end"] = max_value - 1ULL;
         }
         field["config"]["circle"] = false;
     } else if (generator_name == "decimal") {
-        const int scale = column.numeric_scale.value_or(2);
+        const int scale                   = column.numeric_scale.value_or(2);
         field["config"]["decimal_places"] = std::max(0, scale);
-        if (column.unsigned_number) {
-            field["config"]["start"] = 0.0;
-        }
+        if (column.unsigned_number) { field["config"]["start"] = 0.0; }
     } else if (generator_name == "text") {
         if (column.character_length.has_value()) {
-            const int max_len = std::max(1, *column.character_length);
+            const int max_len                        = std::max(1, *column.character_length);
             field["config"]["number_of_chars_start"] = std::min(16, max_len);
-            field["config"]["number_of_chars_end"] = max_len;
+            field["config"]["number_of_chars_end"]   = max_len;
         }
     } else if (generator_name == "enum_item") {
         OrderedJson enums = OrderedJson::array();
@@ -387,7 +361,8 @@ OrderedJson build_fields_from_template(const Json& root) {
         const std::string generator_name = field.contains("generator") && field.at("generator").is_string()
                                                ? field.at("generator").get<std::string>()
                                                : "";
-        const config::GeneratorMetadata* meta = generator_name.empty() ? nullptr : config::find_generator_metadata(generator_name);
+        const config::GeneratorMetadata* meta =
+            generator_name.empty() ? nullptr : config::find_generator_metadata(generator_name);
         database::ColumnMetadata pseudo_column;
         pseudo_column.name = field.value("name", "");
         database::TableMetadata pseudo_metadata;
@@ -446,29 +421,31 @@ int CommandInit::run(const std::vector<std::string>& args) {
         std::cerr << "--template must be file or database\n";
         return exit_codes::kUsage;
     }
-    const bool is_file_template = (template_type == "file");
+    const bool is_file_template     = (template_type == "file");
     const bool is_database_template = (template_type == "database");
 
     std::string file_format = "csv";
     if (result.count("format")) {
         file_format = result["format"].as<std::string>();
-        if (file_format != "csv" &&
-            file_format != "json" &&
-            file_format != "sql" &&
-            file_format != "Tab-Delimited" &&
+        if (file_format !=
+            "csv" &&
+            file_format !=
+            "json" &&
+            file_format !=
+            "sql" &&
+            file_format !=
+            "Tab-Delimited" &&
             file_format != "Custom") {
             std::cerr << "Unsupported format: " << file_format << "\n";
             return exit_codes::kUsage;
         }
-        if (is_database_template) {
-            std::cerr << "Warning: --format is ignored for database templates\n";
-        }
+        if (is_database_template) { std::cerr << "Warning: --format is ignored for database templates\n"; }
     }
 
-    const bool has_from_database = result.count("from-database") > 0;
-    const bool has_table = result.count("table") > 0;
+    const bool        has_from_database        = result.count("from-database") > 0;
+    const bool        has_table                = result.count("table") > 0;
     const std::string from_database_connection = has_from_database ? result["from-database"].as<std::string>() : "";
-    const std::string table_name = has_table ? result["table"].as<std::string>() : "";
+    const std::string table_name               = has_table ? result["table"].as<std::string>() : "";
 
     if (has_from_database && from_database_connection.empty()) {
         std::cerr << "--from-database must not be empty\n";
@@ -496,31 +473,30 @@ int CommandInit::run(const std::vector<std::string>& args) {
     const std::string default_table = "generated_data";
 
     const std::string output_connection =
-        should_infer ? from_database_connection
-                     : (has_from_database ? from_database_connection : default_connection);
+        should_infer ? from_database_connection : (has_from_database ? from_database_connection : default_connection);
     const std::string output_table = has_table ? table_name : default_table;
 
     OrderedJson output = OrderedJson::object();
-    output["$schema"] = "./schema/data-generator.schema.json";
-    output["rows"] = rows;
+    output["$schema"]  = "./schema/data-generator.schema.json";
+    output["rows"]     = rows;
 
     OrderedJson output_section = OrderedJson::object();
-    output_section["type"] = template_type;
+    output_section["type"]     = template_type;
 
     OrderedJson fields = OrderedJson::array();
 
     if (is_database_template) {
-        OrderedJson database = OrderedJson::object();
-        database["connection"] = output_connection;
-        database["table"] = output_table;
-        database["insert_mode"] = "auto";
-        database["batch_size"] = 1000;
-        database["queue_size"] = 1024;
-        database["threads"] = 2;
-        database["transaction_mode"] = "per-batch";
-        database["error_policy"] = "stop";
+        OrderedJson database                = OrderedJson::object();
+        database["connection"]              = output_connection;
+        database["table"]                   = output_table;
+        database["insert_mode"]             = "auto";
+        database["batch_size"]              = 1000;
+        database["queue_size"]              = 1024;
+        database["threads"]                 = 2;
+        database["transaction_mode"]        = "per-batch";
+        database["error_policy"]            = "stop";
         database["rate_limit_rows_per_sec"] = 20000;
-        output_section["database"] = std::move(database);
+        output_section["database"]          = std::move(database);
 
         if (should_infer) {
             database::DbUrl parsed_url;
@@ -554,42 +530,40 @@ int CommandInit::run(const std::vector<std::string>& args) {
             driver->disconnect();
         }
     } else {
-        OrderedJson file = OrderedJson::object();
-        file["format"] = file_format;
+        OrderedJson file         = OrderedJson::object();
+        file["format"]           = file_format;
         OrderedJson file_options = OrderedJson::object();
         if (file_format == "csv") {
-            file_options["header"] = true;
+            file_options["header"]      = true;
             file_options["line_ending"] = "LF";
         } else if (file_format == "json") {
-            file_options["array"] = true;
+            file_options["array"]        = true;
             file_options["include_null"] = true;
         } else if (file_format == "sql") {
-            file_options["table"] = output_table;
+            file_options["table"]        = output_table;
             file_options["create_table"] = false;
         } else if (file_format == "Tab-Delimited") {
-            file_options["header"] = true;
+            file_options["header"]      = true;
             file_options["line_ending"] = "LF";
         } else if (file_format == "Custom") {
-            file_options["delimiter"] = ",";
-            file_options["quote"] = "\"";
-            file_options["header"] = true;
+            file_options["delimiter"]   = ",";
+            file_options["quote"]       = "\"";
+            file_options["header"]      = true;
             file_options["line_ending"] = "LF";
         }
-        if (!file_options.empty()) {
-            file["options"] = std::move(file_options);
-        }
+        if (!file_options.empty()) { file["options"] = std::move(file_options); }
         output_section["file"] = std::move(file);
     }
 
     if (fields.empty()) {
         const Json root_template = config::build_project_template(rows, file_format);
-        fields = build_fields_from_template(root_template);
+        fields                   = build_fields_from_template(root_template);
     }
 
     output["output"] = std::move(output_section);
     output["fields"] = std::move(fields);
 
-    const std::string path = result["config"].as<std::string>();
+    const std::string path    = result["config"].as<std::string>();
     const std::string payload = output.dump(2);
     std::ofstream     out(path, std::ios::trunc);
     if (!out) {

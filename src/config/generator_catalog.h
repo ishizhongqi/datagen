@@ -30,7 +30,7 @@ struct ConfigParam {
         std::string              name_value,
         std::string              type_value,
         std::string              description_value,
-        bool                     required_value = false,
+        bool                     required_value         = false,
         std::vector<std::string> supported_values_value = {}
     ) :
         name(std::move(name_value)),

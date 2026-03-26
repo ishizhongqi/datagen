@@ -16,12 +16,9 @@ std::unique_ptr<IDatabaseDriver> make_database_driver(const DbType type) {
     case DbType::Odbc:
     case DbType::Mysql:
     case DbType::Postgresql:
-    case DbType::Oracle:
-        return std::make_unique<OdbcDriver>(type);
-    case DbType::Sqlite:
-        return std::make_unique<SqliteDriver>();
-    default:
-        return nullptr;
+    case DbType::Oracle    : return std::make_unique<OdbcDriver>(type);
+    case DbType::Sqlite    : return std::make_unique<SqliteDriver>();
+    default                : return nullptr;
     }
 }
 

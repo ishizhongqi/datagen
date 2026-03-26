@@ -56,9 +56,7 @@ void write_sql(
         }
         out << ");\n";
     }
-    for (const auto& row : rows) {
-        write_sql_row(columns, row, table_name, out);
-    }
+    for (const auto& row : rows) { write_sql_row(columns, row, table_name, out); }
 }
 
 }  // namespace data_generator::output::file

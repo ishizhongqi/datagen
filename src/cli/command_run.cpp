@@ -23,10 +23,12 @@ namespace data_generator::cli {
 namespace {
 
 std::string build_startup_log_line(const config::GenerationConfig& cfg) {
-    std::string message =
-        "startup rows=" + std::to_string(cfg.rows) +
-        " version=" + version_string() +
-        " destination=" + config::output_type_to_string(cfg.output.type);
+    std::string message = "startup rows=" +
+                          std::to_string(cfg.rows) +
+                          " version=" +
+                          version_string() +
+                          " destination=" +
+                          config::output_type_to_string(cfg.output.type);
     if (cfg.output.type == config::OutputType::File) {
         message += " format=" + config::output_format_to_string(cfg.output.file.format);
     }
@@ -85,9 +87,7 @@ int CommandRun::run(const std::vector<std::string>& args) {
             }
             overrides.rows = rows;
         }
-        if (result.count("output")) {
-            overrides.output_path = result["output"].as<std::string>();
-        }
+        if (result.count("output")) { overrides.output_path = result["output"].as<std::string>(); }
 
         config::apply_cli_overrides(&cfg, overrides);
 
@@ -95,7 +95,7 @@ int CommandRun::run(const std::vector<std::string>& args) {
             std::cerr << "--output is ignored when output.type=database\n";
         }
 
-        std::string workspace_error;
+        std::string                  workspace_error;
         const utils::WorkspaceLayout layout = utils::ensure_workspace_layout(cfg.workspace, &workspace_error);
         if (layout.root.empty()) {
             std::cerr << "Workspace initialization failed: " << workspace_error << "\n";
@@ -112,12 +112,14 @@ int CommandRun::run(const std::vector<std::string>& args) {
 
         logger.info(build_startup_log_line(cfg));
 
-        auto backend = output::make_output_backend(cfg);
-        const output::OutputStats stats = backend->generate(cfg, exec_opts);
+        auto                      backend = output::make_output_backend(cfg);
+        const output::OutputStats stats   = backend->generate(cfg, exec_opts);
 
         logger.info(
-            "run completed rows_generated=" + std::to_string(stats.rows_generated) +
-            " rows_imported=" + std::to_string(stats.rows_written)
+            "run completed rows_generated=" +
+            std::to_string(stats.rows_generated) +
+            " rows_imported=" +
+            std::to_string(stats.rows_written)
         );
         logger.disable_file_logging();
         return exit_codes::kOk;

@@ -50,7 +50,7 @@ struct ColumnMetadata {
     std::string                name;
     std::string                data_type;
     std::optional<std::string> default_value;
-    bool                       auto_increment = false;
+    bool                       auto_increment  = false;
     bool                       unsigned_number = false;
     std::optional<int>         character_length;
     std::optional<int>         numeric_precision;

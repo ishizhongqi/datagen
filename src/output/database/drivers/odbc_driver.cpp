@@ -41,11 +41,11 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
-        SQLCHAR     state[6] = {0};
-        SQLINTEGER  native_error = 0;
-        SQLCHAR     text[kOdbcTextBufferSize] = {0};
-        SQLSMALLINT text_length = 0;
-        const SQLRETURN rc = SQLGetDiagRec(
+        SQLCHAR         state[6]                  = {0};
+        SQLINTEGER      native_error              = 0;
+        SQLCHAR         text[kOdbcTextBufferSize] = {0};
+        SQLSMALLINT     text_length               = 0;
+        const SQLRETURN rc                        = SQLGetDiagRec(
             handle_type,
             handle,
             static_cast<SQLSMALLINT>(rec_number),
@@ -62,8 +62,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
         }
 
         if (rec_number > 1) { message << " | "; }
-        message << "[" << reinterpret_cast<const char*>(state) << "] "
-                << reinterpret_cast<const char*>(text);
+        message << "[" << reinterpret_cast<const char*>(state) << "] " << reinterpret_cast<const char*>(text);
     }
 
     const std::string result = message.str();
@@ -80,16 +79,14 @@ std::optional<int> try_parse_optional_int(const std::string& value) {
     if (value.empty()) { return std::nullopt; }
     try {
         return std::stoi(value);
-    } catch (...) {
-        return std::nullopt;
-    }
+    } catch (...) { return std::nullopt; }
 }
 
 bool load_info_string(SQLHDBC dbc, const SQLUSMALLINT info_type, std::string* value) {
     if (!value) { return false; }
-    SQLCHAR buffer[kOdbcTextBufferSize] = {0};
-    SQLSMALLINT output_length = 0;
-    const SQLRETURN rc = SQLGetInfo(dbc, info_type, buffer, sizeof(buffer), &output_length);
+    SQLCHAR         buffer[kOdbcTextBufferSize] = {0};
+    SQLSMALLINT     output_length               = 0;
+    const SQLRETURN rc                          = SQLGetInfo(dbc, info_type, buffer, sizeof(buffer), &output_length);
     if (!SQL_SUCCEEDED(rc)) { return false; }
     *value = reinterpret_cast<const char*>(buffer);
     return true;
@@ -106,8 +103,8 @@ DbType infer_db_type_from_dbms_name(const std::string& dbms_name) {
 }
 
 void load_index_metadata(
-    const std::vector<std::vector<std::string>>& rows,
-    TableMetadata& metadata,
+    const std::vector<std::vector<std::string>>&        rows,
+    TableMetadata&                                      metadata,
     const std::unordered_map<std::string, std::size_t>& index_name_to_pos
 ) {
     std::unordered_map<std::string, std::size_t> name_to_index = index_name_to_pos;
@@ -115,10 +112,10 @@ void load_index_metadata(
         if (row.size() < 3) { continue; }
 
         const std::string& index_name = row[0];
-        auto               it = name_to_index.find(index_name);
+        auto               it         = name_to_index.find(index_name);
         if (it == name_to_index.end()) {
             IndexMetadata index;
-            index.name = index_name;
+            index.name   = index_name;
             index.unique = (row[1] == "0");
             index.columns.push_back(row[2]);
             metadata.indexes.push_back(std::move(index));
@@ -158,7 +155,7 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
     }
 
     connection_ = url;
-    db_type_ = url.type;
+    db_type_    = url.type;
     dbms_name_.clear();
     dbms_version_.clear();
 
@@ -182,9 +179,9 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
         return false;
     }
 
-    SQLCHAR out_buffer[1024] = {0};
-    SQLSMALLINT out_length = 0;
-    rc = SQLDriverConnect(
+    SQLCHAR     out_buffer[1024] = {0};
+    SQLSMALLINT out_length       = 0;
+    rc                           = SQLDriverConnect(
         dbc_,
         nullptr,
         reinterpret_cast<SQLCHAR*>(const_cast<char*>(connection_.odbc_connection_string.c_str())),
@@ -232,7 +229,7 @@ void OdbcDriver::disconnect() {
     }
 
     connected_ = false;
-    db_type_ = DbType::Unknown;
+    db_type_   = DbType::Unknown;
     dbms_name_.clear();
     dbms_version_.clear();
 }
@@ -243,7 +240,7 @@ bool OdbcDriver::test_connection(std::string* error_message) {
         return false;
     }
 
-    const std::string sql = (db_type_ == DbType::Oracle) ? "SELECT 1 FROM DUAL" : "SELECT 1";
+    const std::string                     sql = (db_type_ == DbType::Oracle) ? "SELECT 1 FROM DUAL" : "SELECT 1";
     std::vector<std::vector<std::string>> rows;
     if (!run_query(sql, &rows, error_message)) { return false; }
     return !rows.empty();
@@ -255,7 +252,7 @@ bool OdbcDriver::execute(const std::string& sql, std::string* error_message) {
         return false;
     }
 
-    SQLHSTMT stmt = SQL_NULL_HSTMT;
+    SQLHSTMT        stmt     = SQL_NULL_HSTMT;
     const SQLRETURN alloc_rc = SQLAllocHandle(SQL_HANDLE_STMT, dbc_, &stmt);
     if (!SQL_SUCCEEDED(alloc_rc)) {
         if (error_message) { *error_message = parse_odbc_diagnostics(SQL_HANDLE_DBC, dbc_); }
@@ -267,11 +264,8 @@ bool OdbcDriver::execute(const std::string& sql, std::string* error_message) {
     return ok;
 }
 
-bool OdbcDriver::query(
-    const std::string&                     sql,
-    std::vector<std::vector<std::string>>* rows,
-    std::string*                           error_message
-) {
+bool
+    OdbcDriver::query(const std::string& sql, std::vector<std::vector<std::string>>* rows, std::string* error_message) {
     if (!rows) {
         if (error_message) { *error_message = "rows output pointer is null"; }
         return false;
@@ -283,11 +277,8 @@ bool OdbcDriver::query(
     return run_query(sql, rows, error_message);
 }
 
-bool OdbcDriver::get_table_metadata(
-    const std::string& table_name,
-    TableMetadata*     metadata,
-    std::string*       error_message
-) {
+bool
+    OdbcDriver::get_table_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) {
     if (!metadata) {
         if (error_message) { *error_message = "metadata output pointer is null"; }
         return false;
@@ -332,7 +323,7 @@ bool OdbcDriver::run_query(
 ) const {
     rows->clear();
 
-    SQLHSTMT stmt = SQL_NULL_HSTMT;
+    SQLHSTMT        stmt     = SQL_NULL_HSTMT;
     const SQLRETURN alloc_rc = SQLAllocHandle(SQL_HANDLE_STMT, dbc_, &stmt);
     if (!SQL_SUCCEEDED(alloc_rc)) {
         if (error_message) { *error_message = parse_odbc_diagnostics(SQL_HANDLE_DBC, dbc_); }
@@ -365,16 +356,9 @@ bool OdbcDriver::run_query(
             std::string value;
             bool        read_complete = false;
             while (!read_complete) {
-                SQLCHAR     buffer[kOdbcTextBufferSize] = {0};
-                SQLLEN      indicator = 0;
-                const SQLRETURN data_rc = SQLGetData(
-                    stmt,
-                    col,
-                    SQL_C_CHAR,
-                    buffer,
-                    sizeof(buffer),
-                    &indicator
-                );
+                SQLCHAR         buffer[kOdbcTextBufferSize] = {0};
+                SQLLEN          indicator                   = 0;
+                const SQLRETURN data_rc = SQLGetData(stmt, col, SQL_C_CHAR, buffer, sizeof(buffer), &indicator);
 
                 if (indicator == SQL_NULL_DATA) {
                     value.clear();
@@ -414,7 +398,9 @@ bool OdbcDriver::load_mysql_metadata(
         "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, (COLUMN_DEFAULT IS NULL), EXTRA, "
         "CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE "
         "FROM information_schema.COLUMNS "
-        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" + escaped_table_name + "' "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" +
+        escaped_table_name +
+        "' "
         "ORDER BY ORDINAL_POSITION";
     if (!run_query(column_sql, &rows, error_message)) { return false; }
 
@@ -422,15 +408,15 @@ bool OdbcDriver::load_mysql_metadata(
         if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
-        column.name = row[0];
-        column.data_type = row[1];
+        column.name                = row[0];
+        column.data_type           = row[1];
         const bool default_is_null = (row[3] == "1");
-        column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.auto_increment = (to_lower_ascii(row[4]).find("auto_increment") != std::string::npos);
-        column.unsigned_number = (to_lower_ascii(row[1]).find("unsigned") != std::string::npos);
-        column.character_length = try_parse_optional_int(row[5]);
-        column.numeric_precision = try_parse_optional_int(row[6]);
-        column.numeric_scale = try_parse_optional_int(row[7]);
+        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
+        column.auto_increment      = (to_lower_ascii(row[4]).find("auto_increment") != std::string::npos);
+        column.unsigned_number     = (to_lower_ascii(row[1]).find("unsigned") != std::string::npos);
+        column.character_length    = try_parse_optional_int(row[5]);
+        column.numeric_precision   = try_parse_optional_int(row[6]);
+        column.numeric_scale       = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }
@@ -439,24 +425,30 @@ bool OdbcDriver::load_mysql_metadata(
     const std::string fk_sql =
         "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME "
         "FROM information_schema.KEY_COLUMN_USAGE "
-        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" + escaped_table_name + "' "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" +
+        escaped_table_name +
+        "' "
         "AND REFERENCED_TABLE_NAME IS NOT NULL";
     if (!run_query(fk_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
         if (row.size() < 3) { continue; }
-        metadata->foreign_keys.push_back(ForeignKeyMetadata{
-            .column_name = row[0],
-            .referenced_table = row[1],
-            .referenced_column = row[2],
-        });
+        metadata->foreign_keys.push_back(
+            ForeignKeyMetadata{
+                .column_name       = row[0],
+                .referenced_table  = row[1],
+                .referenced_column = row[2],
+            }
+        );
     }
 
     rows.clear();
     const std::string index_sql =
         "SELECT INDEX_NAME, NON_UNIQUE, COLUMN_NAME "
         "FROM information_schema.STATISTICS "
-        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" + escaped_table_name + "' "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" +
+        escaped_table_name +
+        "' "
         "ORDER BY INDEX_NAME, SEQ_IN_INDEX";
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 
@@ -467,7 +459,9 @@ bool OdbcDriver::load_mysql_metadata(
     const std::string trigger_sql =
         "SELECT TRIGGER_NAME, EVENT_MANIPULATION "
         "FROM information_schema.TRIGGERS "
-        "WHERE TRIGGER_SCHEMA = DATABASE() AND EVENT_OBJECT_TABLE = '" + escaped_table_name + "'";
+        "WHERE TRIGGER_SCHEMA = DATABASE() AND EVENT_OBJECT_TABLE = '" +
+        escaped_table_name +
+        "'";
     if (!run_query(trigger_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
@@ -478,7 +472,8 @@ bool OdbcDriver::load_mysql_metadata(
     rows.clear();
     const std::string partition_sql =
         "SELECT PARTITION_NAME FROM information_schema.PARTITIONS "
-        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" + escaped_table_name +
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" +
+        escaped_table_name +
         "' AND PARTITION_NAME IS NOT NULL LIMIT 1";
     if (!run_query(partition_sql, &rows, error_message)) { return false; }
     metadata->partitioned = !rows.empty();
@@ -495,14 +490,18 @@ bool OdbcDriver::load_postgresql_metadata(
     const auto [schema_name, base_table_name] = split_schema_table(table_name);
 
     const std::string schema = escape_sql_literal(schema_name);
-    const std::string table = escape_sql_literal(base_table_name);
+    const std::string table  = escape_sql_literal(base_table_name);
 
     const std::string column_sql =
         "SELECT c.column_name, c.udt_name, c.column_default, (c.column_default IS NULL), "
         "FALSE, c.character_maximum_length, c.numeric_precision, c.numeric_scale "
         "FROM information_schema.columns c "
-        "WHERE c.table_schema = COALESCE(NULLIF('" + schema + "', ''), current_schema()) "
-        "AND c.table_name = '" + table + "' "
+        "WHERE c.table_schema = COALESCE(NULLIF('" +
+        schema +
+        "', ''), current_schema()) "
+        "AND c.table_name = '" +
+        table +
+        "' "
         "ORDER BY c.ordinal_position";
     if (!run_query(column_sql, &rows, error_message)) { return false; }
 
@@ -510,15 +509,15 @@ bool OdbcDriver::load_postgresql_metadata(
         if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
-        column.name = row[0];
-        column.data_type = row[1];
+        column.name                = row[0];
+        column.data_type           = row[1];
         const bool default_is_null = (row[3] == "1" || to_lower_ascii(row[3]) == "true");
-        column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.auto_increment = false;
-        column.unsigned_number = false;
-        column.character_length = try_parse_optional_int(row[5]);
-        column.numeric_precision = try_parse_optional_int(row[6]);
-        column.numeric_scale = try_parse_optional_int(row[7]);
+        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
+        column.auto_increment      = false;
+        column.unsigned_number     = false;
+        column.character_length    = try_parse_optional_int(row[5]);
+        column.numeric_precision   = try_parse_optional_int(row[6]);
+        column.numeric_scale       = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }
@@ -532,17 +531,23 @@ bool OdbcDriver::load_postgresql_metadata(
         "JOIN information_schema.constraint_column_usage ccu "
         "  ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema "
         "WHERE tc.constraint_type = 'FOREIGN KEY' "
-        "AND tc.table_schema = COALESCE(NULLIF('" + schema + "', ''), current_schema()) "
-        "AND tc.table_name = '" + table + "'";
+        "AND tc.table_schema = COALESCE(NULLIF('" +
+        schema +
+        "', ''), current_schema()) "
+        "AND tc.table_name = '" +
+        table +
+        "'";
     if (!run_query(fk_sql, &rows, error_message)) { return false; }
 
     for (const auto& row : rows) {
         if (row.size() < 3) { continue; }
-        metadata->foreign_keys.push_back(ForeignKeyMetadata{
-            .column_name = row[0],
-            .referenced_table = row[1],
-            .referenced_column = row[2],
-        });
+        metadata->foreign_keys.push_back(
+            ForeignKeyMetadata{
+                .column_name       = row[0],
+                .referenced_table  = row[1],
+                .referenced_column = row[2],
+            }
+        );
     }
 
     rows.clear();
@@ -554,8 +559,12 @@ bool OdbcDriver::load_postgresql_metadata(
         "JOIN pg_index ix ON t.oid = ix.indrelid "
         "JOIN pg_class i ON i.oid = ix.indexrelid "
         "JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) "
-        "WHERE t.relkind = 'r' AND t.relname = '" + table + "' "
-        "AND ns.nspname = COALESCE(NULLIF('" + schema + "', ''), current_schema()) "
+        "WHERE t.relkind = 'r' AND t.relname = '" +
+        table +
+        "' "
+        "AND ns.nspname = COALESCE(NULLIF('" +
+        schema +
+        "', ''), current_schema()) "
         "ORDER BY i.relname, a.attnum";
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 
@@ -572,7 +581,7 @@ bool OdbcDriver::load_oracle_metadata(
 ) const {
     std::vector<std::vector<std::string>> rows;
     const auto [schema_name, base_table_name] = split_schema_table(table_name);
-    const std::string table = escape_sql_literal(base_table_name);
+    const std::string table                   = escape_sql_literal(base_table_name);
 
     std::string column_sql;
     if (schema_name.empty()) {
@@ -582,7 +591,9 @@ bool OdbcDriver::load_oracle_metadata(
             "CASE WHEN utc.identity_column = 'YES' THEN 1 ELSE 0 END, "
             "utc.char_length, utc.data_precision, utc.data_scale "
             "FROM user_tab_columns utc "
-            "WHERE utc.table_name = UPPER('" + table + "') "
+            "WHERE utc.table_name = UPPER('" +
+            table +
+            "') "
             "ORDER BY utc.column_id";
     } else {
         const std::string schema = escape_sql_literal(schema_name);
@@ -592,8 +603,12 @@ bool OdbcDriver::load_oracle_metadata(
             "CASE WHEN atc.identity_column = 'YES' THEN 1 ELSE 0 END, "
             "atc.char_length, atc.data_precision, atc.data_scale "
             "FROM all_tab_columns atc "
-            "WHERE atc.owner = UPPER('" + schema + "') "
-            "AND atc.table_name = UPPER('" + table + "') "
+            "WHERE atc.owner = UPPER('" +
+            schema +
+            "') "
+            "AND atc.table_name = UPPER('" +
+            table +
+            "') "
             "ORDER BY atc.column_id";
     }
 
@@ -603,15 +618,15 @@ bool OdbcDriver::load_oracle_metadata(
         if (row.size() < 8) { continue; }
 
         ColumnMetadata column;
-        column.name = row[0];
-        column.data_type = row[1];
+        column.name                = row[0];
+        column.data_type           = row[1];
         const bool default_is_null = (row[3] == "1");
-        column.default_value = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.auto_increment = (row[4] == "1");
-        column.unsigned_number = false;
-        column.character_length = try_parse_optional_int(row[5]);
-        column.numeric_precision = try_parse_optional_int(row[6]);
-        column.numeric_scale = try_parse_optional_int(row[7]);
+        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
+        column.auto_increment      = (row[4] == "1");
+        column.unsigned_number     = false;
+        column.character_length    = try_parse_optional_int(row[5]);
+        column.numeric_precision   = try_parse_optional_int(row[6]);
+        column.numeric_scale       = try_parse_optional_int(row[7]);
 
         metadata->columns.push_back(std::move(column));
     }
@@ -622,7 +637,9 @@ bool OdbcDriver::load_oracle_metadata(
         "uic.column_name "
         "FROM user_indexes ui "
         "JOIN user_ind_columns uic ON ui.index_name = uic.index_name "
-        "WHERE ui.table_name = UPPER('" + table + "') "
+        "WHERE ui.table_name = UPPER('" +
+        table +
+        "') "
         "ORDER BY ui.index_name, uic.column_position";
     if (!run_query(index_sql, &rows, error_message)) { return false; }
 

@@ -9,17 +9,16 @@
 
 #include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
-
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include "config/generator_catalog.h"
 #include "config/configuration.h"
+#include "config/generator_catalog.h"
 
 namespace data_generator::cli {
 
-using Json = nlohmann::json;
+using Json        = nlohmann::json;
 using OrderedJson = nlohmann::ordered_json;
 
 Json load_json_from_file(const std::string& path);

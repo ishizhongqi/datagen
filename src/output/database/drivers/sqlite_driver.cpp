@@ -46,13 +46,11 @@ std::optional<int> parse_int(const std::string& value) {
     if (value.empty()) { return std::nullopt; }
     try {
         return std::stoi(value);
-    } catch (...) {
-        return std::nullopt;
-    }
+    } catch (...) { return std::nullopt; }
 }
 
 void parse_type_details(
-    const std::string& type_name,
+    const std::string&  type_name,
     std::optional<int>& character_length,
     std::optional<int>& numeric_precision,
     std::optional<int>& numeric_scale
@@ -61,17 +59,20 @@ void parse_type_details(
     numeric_precision.reset();
     numeric_scale.reset();
 
-    const std::size_t open = type_name.find('(');
+    const std::size_t open  = type_name.find('(');
     const std::size_t close = type_name.find(')', open);
     if (open == std::string::npos || close == std::string::npos || close <= open + 1) { return; }
 
     const std::string inside = type_name.substr(open + 1, close - open - 1);
-    const std::size_t comma = inside.find(',');
+    const std::size_t comma  = inside.find(',');
     if (comma == std::string::npos) {
         const auto parsed = parse_int(inside);
         if (!parsed.has_value()) { return; }
         const std::string lower = to_lower(type_name);
-        if (lower.find("char") != std::string::npos || lower.find("clob") != std::string::npos ||
+        if (lower.find("char") !=
+            std::string::npos ||
+            lower.find("clob") !=
+            std::string::npos ||
             lower.find("text") != std::string::npos) {
             character_length = parsed;
         } else {
@@ -81,7 +82,7 @@ void parse_type_details(
     }
 
     const auto precision = parse_int(inside.substr(0, comma));
-    const auto scale = parse_int(inside.substr(comma + 1));
+    const auto scale     = parse_int(inside.substr(comma + 1));
     if (precision.has_value()) { numeric_precision = precision; }
     if (scale.has_value()) { numeric_scale = scale; }
 }
@@ -116,13 +117,8 @@ bool SqliteDriver::connect(const DbUrl& url, std::string* error_message) {
         return false;
     }
 
-    db_path_ = url.database;
-    const int rc = sqlite3_open_v2(
-        db_path_.c_str(),
-        &db_,
-        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-        nullptr
-    );
+    db_path_     = url.database;
+    const int rc = sqlite3_open_v2(db_path_.c_str(), &db_, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     if (rc != SQLITE_OK) {
         if (error_message) { *error_message = sqlite3_errmsg(db_ ? db_ : nullptr); }
         disconnect();
@@ -153,12 +149,10 @@ bool SqliteDriver::execute(const std::string& sql, std::string* error_message) {
         if (error_message) { *error_message = "driver is not connected"; }
         return false;
     }
-    char* error_text = nullptr;
-    const int rc = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &error_text);
+    char*     error_text = nullptr;
+    const int rc         = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &error_text);
     if (rc != SQLITE_OK) {
-        if (error_message) {
-            *error_message = error_text ? error_text : sqlite3_errmsg(db_);
-        }
+        if (error_message) { *error_message = error_text ? error_text : sqlite3_errmsg(db_); }
         if (error_text) { sqlite3_free(error_text); }
         return false;
     }
@@ -208,8 +202,8 @@ bool SqliteDriver::run_query(
 ) const {
     rows->clear();
 
-    sqlite3_stmt* stmt = nullptr;
-    const int prepare_rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
+    sqlite3_stmt* stmt       = nullptr;
+    const int     prepare_rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
     if (prepare_rc != SQLITE_OK) {
         if (error_message) { *error_message = sqlite3_errmsg(db_); }
         return false;
@@ -252,7 +246,7 @@ bool SqliteDriver::load_table_metadata(
     metadata->triggers.clear();
     metadata->partitioned = false;
 
-    const std::string escaped_table = escape_sql_literal(table_name);
+    const std::string                     escaped_table = escape_sql_literal(table_name);
     std::vector<std::vector<std::string>> rows;
 
     std::string create_sql;
@@ -261,9 +255,7 @@ bool SqliteDriver::load_table_metadata(
             &rows,
             error_message
         )) {
-        if (!rows.empty() && !rows.front().empty()) {
-            create_sql = to_lower(rows.front().front());
-        }
+        if (!rows.empty() && !rows.front().empty()) { create_sql = to_lower(rows.front().front()); }
     }
 
     rows.clear();
@@ -276,12 +268,12 @@ bool SqliteDriver::load_table_metadata(
     for (const auto& row : rows) {
         if (row.size() < 6) { continue; }
         ColumnMetadata column;
-        column.name = row[1];
+        column.name      = row[1];
         column.data_type = row[2];
         if (!row[4].empty()) { column.default_value = row[4]; }
-        const bool is_pk = (row[5] == "1");
+        const bool        is_pk      = (row[5] == "1");
         const std::string lower_type = to_lower(row[2]);
-        column.auto_increment = is_pk && lower_type.find("int") != std::string::npos;
+        column.auto_increment        = is_pk && lower_type.find("int") != std::string::npos;
         if (!create_sql.empty() && create_sql.find("autoincrement") != std::string::npos) {
             column.auto_increment = is_pk && lower_type.find("int") != std::string::npos;
         }
@@ -293,11 +285,13 @@ bool SqliteDriver::load_table_metadata(
     if (!run_query("PRAGMA foreign_key_list('" + escaped_table + "')", &rows, error_message)) { return false; }
     for (const auto& row : rows) {
         if (row.size() < 5) { continue; }
-        metadata->foreign_keys.push_back(ForeignKeyMetadata{
-            .column_name = row[3],
-            .referenced_table = row[2],
-            .referenced_column = row[4],
-        });
+        metadata->foreign_keys.push_back(
+            ForeignKeyMetadata{
+                .column_name       = row[3],
+                .referenced_table  = row[2],
+                .referenced_column = row[4],
+            }
+        );
     }
 
     rows.clear();
@@ -305,7 +299,7 @@ bool SqliteDriver::load_table_metadata(
     for (const auto& row : rows) {
         if (row.size() < 3) { continue; }
         IndexMetadata index;
-        index.name = row[1];
+        index.name   = row[1];
         index.unique = (row[2] == "1");
 
         std::vector<std::vector<std::string>> index_rows;

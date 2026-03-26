@@ -51,8 +51,8 @@ Json build_param_for_config_param(const config::ConfigParam& param) {
 
 Json build_config_schema(const config::GeneratorMetadata& meta) {
     Json config_schema;
-    config_schema["type"] = "object";
-    config_schema["properties"] = Json::object();
+    config_schema["type"]                 = "object";
+    config_schema["properties"]           = Json::object();
     config_schema["additionalProperties"] = false;
 
     Json required = Json::array();
@@ -102,34 +102,34 @@ Json build_json_schema() {
     for (const auto& meta : catalog) { field_constraints.push_back(build_generator_constraint(meta)); }
 
     Json field_item_schema;
-    field_item_schema["type"] = "object";
+    field_item_schema["type"]                 = "object";
     field_item_schema["additionalProperties"] = false;
-    field_item_schema["properties"] = Json{
-        {"name", Json{{"type", "string"}}},
-        {"generator", Json{{"type", "string"}, {"enum", generator_names}}},
-        {"config", Json{{"type", "object"}}},
-        {"unique", Json{{"type", "boolean"}}},
-        {"data_linkage", Json{{"type", "string"}}},
-        {"supports_unique", Json{{"type", "boolean"}}},
-        {"supports_data_linkage", Json{{"type", "boolean"}}},
-        {"null_value", Json{{"type", "object"}}},
-        {"default_value", Json{{"type", "object"}}},
+    field_item_schema["properties"]           = Json{
+                  {"name", Json{{"type", "string"}}},
+                  {"generator", Json{{"type", "string"}, {"enum", generator_names}}},
+                  {"config", Json{{"type", "object"}}},
+                  {"unique", Json{{"type", "boolean"}}},
+                  {"data_linkage", Json{{"type", "string"}}},
+                  {"supports_unique", Json{{"type", "boolean"}}},
+                  {"supports_data_linkage", Json{{"type", "boolean"}}},
+                  {"null_value", Json{{"type", "object"}}},
+                  {"default_value", Json{{"type", "object"}}},
     };
     field_item_schema["required"] = Json::array({"name", "generator", "config"});
-    field_item_schema["allOf"] = std::move(field_constraints);
+    field_item_schema["allOf"]    = std::move(field_constraints);
 
     Json schema;
-    schema["$schema"] = "https://json-schema.org/draft/2020-12/schema";
-    schema["type"] = "object";
+    schema["$schema"]              = "https://json-schema.org/draft/2020-12/schema";
+    schema["type"]                 = "object";
     schema["additionalProperties"] = false;
-    schema["patternProperties"] = Json{{R"(^\$schema$)", Json{{"type", "string"}}}};
-    Json csv_options = Json{
-        {"type", "object"},
-        {"additionalProperties", false},
-        {"properties",
-         Json{
-             {"header", Json{{"type", "boolean"}}},
-             {"line_ending", Json{{"type", "string"}, {"enum", Json::array({"LF", "CRLF"})}}},
+    schema["patternProperties"]    = Json{{R"(^\$schema$)", Json{{"type", "string"}}}};
+    Json csv_options               = Json{
+                      {"type", "object"},
+                      {"additionalProperties", false},
+                      {"properties",
+                       Json{
+                           {"header", Json{{"type", "boolean"}}},
+                           {"line_ending", Json{{"type", "string"}, {"enum", Json::array({"LF", "CRLF"})}}},
          }},
     };
     Json json_options = Json{
@@ -163,71 +163,79 @@ Json build_json_schema() {
     };
 
     Json file_schema;
-    file_schema["type"] = "object";
+    file_schema["type"]                 = "object";
     file_schema["additionalProperties"] = false;
-    file_schema["properties"] = Json{
-        {"format", Json{{"type", "string"}, {"enum", Json::array({"csv", "json", "sql", "Tab-Delimited", "Custom"})}}},
-        {"options", Json{{"type", "object"}}},
+    file_schema["properties"]           = Json{
+                  {"format", Json{{"type", "string"}, {"enum", Json::array({"csv", "json", "sql", "Tab-Delimited", "Custom"})}}},
+                  {"options", Json{{"type", "object"}}},
     };
     file_schema["required"] = Json::array({"format"});
 
     Json file_conditionals = Json::array();
     file_conditionals.push_back(
         Json{
-            {"if", Json{{"properties", Json{{"format", Json{{"const", "csv"}}}}}, {"required", Json::array({"format"})}}},
+            {"if",
+             Json{{"properties", Json{{"format", Json{{"const", "csv"}}}}}, {"required", Json::array({"format"})}}},
             {"then", Json{{"properties", Json{{"options", csv_options}}}}},
         }
     );
     file_conditionals.push_back(
         Json{
-            {"if", Json{{"properties", Json{{"format", Json{{"const", "Tab-Delimited"}}}}}, {"required", Json::array({"format"})}}},
+            {"if",
+             Json{
+                 {"properties", Json{{"format", Json{{"const", "Tab-Delimited"}}}}},
+                 {"required", Json::array({"format"})}
+             }},
             {"then", Json{{"properties", Json{{"options", csv_options}}}}},
         }
     );
     file_conditionals.push_back(
         Json{
-            {"if", Json{{"properties", Json{{"format", Json{{"const", "json"}}}}}, {"required", Json::array({"format"})}}},
+            {"if",
+             Json{{"properties", Json{{"format", Json{{"const", "json"}}}}}, {"required", Json::array({"format"})}}},
             {"then", Json{{"properties", Json{{"options", json_options}}}}},
         }
     );
     file_conditionals.push_back(
         Json{
-            {"if", Json{{"properties", Json{{"format", Json{{"const", "sql"}}}}}, {"required", Json::array({"format"})}}},
+            {"if",
+             Json{{"properties", Json{{"format", Json{{"const", "sql"}}}}}, {"required", Json::array({"format"})}}},
             {"then", Json{{"properties", Json{{"options", sql_options}}}}},
         }
     );
     file_conditionals.push_back(
         Json{
-            {"if", Json{{"properties", Json{{"format", Json{{"const", "Custom"}}}}}, {"required", Json::array({"format"})}}},
+            {"if",
+             Json{{"properties", Json{{"format", Json{{"const", "Custom"}}}}}, {"required", Json::array({"format"})}}},
             {"then", Json{{"properties", Json{{"options", custom_options}}}}},
         }
     );
     file_schema["allOf"] = std::move(file_conditionals);
 
     Json database_schema;
-    database_schema["type"] = "object";
+    database_schema["type"]                 = "object";
     database_schema["additionalProperties"] = false;
-    database_schema["properties"] = Json{
-        {"connection", Json{{"type", "string"}, {"minLength", 1}}},
-        {"table", Json{{"type", "string"}, {"minLength", 1}}},
-        {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
-        {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"threads", Json{{"type", "integer"}, {"minimum", 1}}},
-        {"transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
-        {"error_policy",
-         Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
-        {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
+    database_schema["properties"]           = Json{
+                  {"connection", Json{{"type", "string"}, {"minLength", 1}}},
+                  {"table", Json{{"type", "string"}, {"minLength", 1}}},
+                  {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
+                  {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
+                  {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
+                  {"threads", Json{{"type", "integer"}, {"minimum", 1}}},
+                  {"transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
+                  {"error_policy",
+                   Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
+                  {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
     };
     database_schema["required"] = Json::array({"connection", "table"});
 
     Json output_schema;
-    output_schema["type"] = "object";
+    output_schema["type"]                 = "object";
     output_schema["additionalProperties"] = false;
-    output_schema["properties"] = Json{
-        {"type", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
-        {"file", std::move(file_schema)},
-        {"database", std::move(database_schema)},
+    output_schema["properties"]           = Json{
+                  {"type", Json{{"type", "string"}, {"enum", Json::array({"file", "database"})}}},
+                  {"file", std::move(file_schema)},
+                  {"database", std::move(database_schema)},
     };
     output_schema["allOf"] = Json::array({
         Json{
@@ -235,7 +243,8 @@ Json build_json_schema() {
             {"then", Json{{"required", Json::array({"file"})}}},
         },
         Json{
-            {"if", Json{{"properties", Json{{"type", Json{{"const", "database"}}}}}, {"required", Json::array({"type"})}}},
+            {"if",
+             Json{{"properties", Json{{"type", Json{{"const", "database"}}}}}, {"required", Json::array({"type"})}}},
             {"then", Json{{"required", Json::array({"database"})}}},
         },
     });
@@ -259,9 +268,7 @@ Json build_json_schema() {
 
 int CommandSchema::run(const std::vector<std::string>& args) {
     cxxopts::Options options("data-generator schema", "Generate JSON Schema from generator metadata.");
-    options.add_options()
-        ("output", "Output schema file path", cxxopts::value<std::string>())
-        ("h,help", "Show help");
+    options.add_options()("output", "Output schema file path", cxxopts::value<std::string>())("h,help", "Show help");
     options.parse_positional({"output"});
 
     cxxopts::ParseResult result;
@@ -285,7 +292,7 @@ int CommandSchema::run(const std::vector<std::string>& args) {
     }
 
     const std::string schema_text = build_json_schema().dump(2);
-    const std::string path = result["output"].as<std::string>();
+    const std::string path        = result["output"].as<std::string>();
     std::ofstream     out(path, std::ios::trunc);
     if (!out) {
         std::cerr << "Failed to open output file: " << path << "\n";

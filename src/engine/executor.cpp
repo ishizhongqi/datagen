@@ -15,9 +15,6 @@
 #include <thread>
 #include <unordered_set>
 
-#include "output/file/csv_writer.h"
-#include "output/file/json_writer.h"
-#include "output/file/sql_writer.h"
 #include "generators/core/override_rules.h"
 #include "generators/types/business_generators.h"
 #include "generators/types/computer_generators.h"
@@ -29,6 +26,9 @@
 #include "generators/types/product_generators.h"
 #include "generators/types/string_generators.h"
 #include "generators/types/utility_generators.h"
+#include "output/file/csv_writer.h"
+#include "output/file/json_writer.h"
+#include "output/file/sql_writer.h"
 
 namespace data_generator::engine {
 
@@ -36,7 +36,7 @@ namespace {
 
 using GeneratorPtr = std::unique_ptr<generator::IGenerator>;
 using RuntimeField = GeneratorPtr;
-using Json = config::Json;
+using Json         = config::Json;
 
 const std::unordered_set<std::string> kParallelEligibleGenerators = {
     "integer",
@@ -80,7 +80,7 @@ std::vector<RuntimeField> build_runtime_fields(const config::GenerationConfig& c
     for (const auto& field : cfg.fields) {
         Json field_cfg    = field.raw;
         field_cfg["rows"] = rows_for_generator;
-        auto generator = registry.create(field.generator, field_cfg);
+        auto generator    = registry.create(field.generator, field_cfg);
         fields.emplace_back(std::move(generator));
     }
 
@@ -142,8 +142,8 @@ Row materialize_row(const std::vector<RuntimeField>* runtime_fields) {
 
 GenerateResult generate_sequential(
     const config::GenerationConfig& cfg,
-    const RowConsumer&      consumer,
-    std::atomic<bool>*      cancelled
+    const RowConsumer&              consumer,
+    std::atomic<bool>*              cancelled
 ) {
     const auto runtime_fields = build_runtime_fields(cfg, cfg.rows);
 
@@ -165,9 +165,9 @@ GenerateResult generate_sequential(
 
 GenerateResult generate_parallel(
     const config::GenerationConfig& cfg,
-    const std::size_t       threads,
-    const RowConsumer&      consumer,
-    std::atomic<bool>*      cancelled
+    const std::size_t               threads,
+    const RowConsumer&              consumer,
+    std::atomic<bool>*              cancelled
 ) {
     GenerateResult result;
     result.info.threads_used = threads;
@@ -191,7 +191,7 @@ GenerateResult generate_parallel(
 
         workers.emplace_back([&, begin, count] {
             try {
-                const auto       runtime_fields = build_runtime_fields(cfg, count);
+                const auto runtime_fields = build_runtime_fields(cfg, count);
                 const auto row_offset     = static_cast<std::uint64_t>(begin);
                 for (std::uint64_t i = 0; i < static_cast<std::uint64_t>(count); ++i) {
                     if (cancelled->load()) { break; }
@@ -224,8 +224,8 @@ GenerateResult generate_parallel(
 
 GenerateResult generate_with_consumer(
     const config::GenerationConfig& cfg,
-    const ExecutionOptions& opts,
-    const RowConsumer&      consumer
+    const ExecutionOptions&         opts,
+    const RowConsumer&              consumer
 ) {
     if (!consumer) { throw std::runtime_error("consumer callback is required"); }
 
@@ -239,16 +239,17 @@ GenerateResult generate_with_consumer(
         if (can_parallelize_safely(cfg, reason)) {
             return generate_parallel(cfg, candidate_threads, consumer, &cancelled);
         }
-        GenerateResult result = generate_sequential(cfg, consumer, &cancelled);
+        GenerateResult result                 = generate_sequential(cfg, consumer, &cancelled);
         result.info.fallback_to_single_thread = true;
-        result.info.fallback_reason = std::move(reason);
+        result.info.fallback_reason           = std::move(reason);
         return result;
     }
 
     return generate_sequential(cfg, consumer, &cancelled);
 }
 
-GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out) {
+GenerateResult
+    generate_to_stream(const config::GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out) {
     std::vector<Row> rows(static_cast<std::size_t>(cfg.rows));
 
     const GenerateResult result = generate_with_consumer(cfg, opts, [&](Row&& row, const std::uint64_t row_index) {
@@ -260,33 +261,31 @@ GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const Exe
     columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
-    const config::OutputFormat format = cfg.output.file.format;
+    const config::OutputFormat           format = cfg.output.file.format;
     output::file::DelimitedWriterOptions delimited_options;
     switch (format) {
     case config::OutputFormat::Csv:
-        delimited_options.delimiter = ",";
-        delimited_options.quote = "\"";
-        delimited_options.header = cfg.output.file.csv.header;
+        delimited_options.delimiter   = ",";
+        delimited_options.quote       = "\"";
+        delimited_options.header      = cfg.output.file.csv.header;
         delimited_options.line_ending = cfg.output.file.csv.line_ending;
         output::file::write_delimited(columns, rows, out, delimited_options);
         break;
     case config::OutputFormat::TabDelimited:
-        delimited_options.delimiter = "\t";
-        delimited_options.quote = "\"";
-        delimited_options.header = cfg.output.file.tab_delimited.header;
+        delimited_options.delimiter   = "\t";
+        delimited_options.quote       = "\"";
+        delimited_options.header      = cfg.output.file.tab_delimited.header;
         delimited_options.line_ending = cfg.output.file.tab_delimited.line_ending;
         output::file::write_delimited(columns, rows, out, delimited_options);
         break;
     case config::OutputFormat::Custom:
-        delimited_options.delimiter = cfg.output.file.custom.delimiter;
-        delimited_options.quote = cfg.output.file.custom.quote;
-        delimited_options.header = cfg.output.file.custom.header;
+        delimited_options.delimiter   = cfg.output.file.custom.delimiter;
+        delimited_options.quote       = cfg.output.file.custom.quote;
+        delimited_options.header      = cfg.output.file.custom.header;
         delimited_options.line_ending = cfg.output.file.custom.line_ending;
         output::file::write_delimited(columns, rows, out, delimited_options);
         break;
-    case config::OutputFormat::JsonFormat:
-        output::file::write_json(columns, rows, out, cfg.output.file.json);
-        break;
+    case config::OutputFormat::JsonFormat: output::file::write_json(columns, rows, out, cfg.output.file.json); break;
     case config::OutputFormat::Sql:
         output::file::write_sql(columns, rows, cfg.output.file.sql.table, cfg.output.file.sql.create_table, out);
         break;
@@ -297,7 +296,7 @@ GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const Exe
 
 std::vector<std::optional<std::string>> preview_row(const config::GenerationConfig& cfg) {
     const auto runtime_fields = build_runtime_fields(cfg, 1);
-    auto row            = materialize_row(&runtime_fields);
+    auto       row            = materialize_row(&runtime_fields);
     return row;
 }
 

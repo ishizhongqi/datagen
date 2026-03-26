@@ -13,7 +13,7 @@
 namespace data_generator::utils {
 
 std::optional<std::string> get_env_value(const char* key);
-std::string get_env_or_default(const char* key, const char* default_value);
+std::string                get_env_or_default(const char* key, const char* default_value);
 
 }  // namespace data_generator::utils
 

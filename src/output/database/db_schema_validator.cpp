@@ -14,11 +14,7 @@ namespace data_generator::database {
 
 namespace {
 
-void add_message(
-    SchemaValidationReport* report,
-    const ValidationLevel   level,
-    const std::string&      message
-) {
+void add_message(SchemaValidationReport* report, const ValidationLevel level, const std::string& message) {
     report->messages.push_back(ValidationMessage{.level = level, .message = message});
 }
 
@@ -31,7 +27,10 @@ std::string to_lower(std::string value) {
 
 bool is_generator_type_compatible(const std::string& generator_name, const ColumnTypeFamily family) {
     if (generator_name == "integer" || generator_name == "sequence") {
-        return family == ColumnTypeFamily::Integer || family == ColumnTypeFamily::Decimal ||
+        return family ==
+               ColumnTypeFamily::Integer ||
+               family ==
+               ColumnTypeFamily::Decimal ||
                family == ColumnTypeFamily::Boolean;
     }
     if (generator_name == "decimal") {
@@ -39,14 +38,25 @@ bool is_generator_type_compatible(const std::string& generator_name, const Colum
     }
     if (generator_name == "date") { return family == ColumnTypeFamily::Date || family == ColumnTypeFamily::DateTime; }
     if (generator_name == "time") { return family == ColumnTypeFamily::Time || family == ColumnTypeFamily::DateTime; }
-    if (generator_name == "datetime") { return family == ColumnTypeFamily::DateTime || family == ColumnTypeFamily::Date; }
+    if (generator_name == "datetime") {
+        return family == ColumnTypeFamily::DateTime || family == ColumnTypeFamily::Date;
+    }
     if (generator_name == "enum_item") {
-        return family == ColumnTypeFamily::Enum || family == ColumnTypeFamily::String ||
+        return family ==
+               ColumnTypeFamily::Enum ||
+               family ==
+               ColumnTypeFamily::String ||
                family == ColumnTypeFamily::Boolean;
     }
     if (generator_name == "regular_expression") { return true; }
-    if (generator_name == "uuid" || generator_name == "text") { return family == ColumnTypeFamily::String || family == ColumnTypeFamily::Unknown; }
-    return family == ColumnTypeFamily::String || family == ColumnTypeFamily::Enum || family == ColumnTypeFamily::Unknown;
+    if (generator_name == "uuid" || generator_name == "text") {
+        return family == ColumnTypeFamily::String || family == ColumnTypeFamily::Unknown;
+    }
+    return family ==
+           ColumnTypeFamily::String ||
+           family ==
+           ColumnTypeFamily::Enum ||
+           family == ColumnTypeFamily::Unknown;
 }
 
 }  // namespace
@@ -72,30 +82,29 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
 
     std::unordered_map<std::string, const ColumnMetadata*> column_map;
     column_map.reserve(metadata.columns.size());
-    for (const auto& column : metadata.columns) {
-        column_map[to_lower(column.name)] = &column;
-    }
+    for (const auto& column : metadata.columns) { column_map[to_lower(column.name)] = &column; }
 
     for (const auto& field : cfg.fields) {
         const std::string key = to_lower(field.name);
         if (!column_map.contains(key)) {
-            add_message(
-                &report,
-                ValidationLevel::Error,
-                "missing target column for field: " + field.name
-            );
+            add_message(&report, ValidationLevel::Error, "missing target column for field: " + field.name);
             continue;
         }
 
-        const ColumnMetadata& column = *column_map.at(key);
+        const ColumnMetadata&  column = *column_map.at(key);
         const ColumnTypeFamily family = classify_column_type(column);
 
         if (!is_generator_type_compatible(field.generator, family)) {
             add_message(
                 &report,
                 ValidationLevel::Error,
-                "field '" + field.name + "' generator '" + field.generator +
-                    "' is incompatible with column type '" + column.data_type + "'"
+                "field '" +
+                    field.name +
+                    "' generator '" +
+                    field.generator +
+                    "' is incompatible with column type '" +
+                    column.data_type +
+                    "'"
             );
         }
 
@@ -119,8 +128,7 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
             add_message(
                 &report,
                 ValidationLevel::Info,
-                "column '" + field.name + "' length limit varchar(" +
-                    std::to_string(*column.character_length) + ")"
+                "column '" + field.name + "' length limit varchar(" + std::to_string(*column.character_length) + ")"
             );
         }
 
@@ -128,29 +136,27 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
             add_message(
                 &report,
                 ValidationLevel::Info,
-                "column '" + field.name + "' decimal(" +
-                    std::to_string(*column.numeric_precision) + "," +
-                    std::to_string(*column.numeric_scale) + ")"
+                "column '" +
+                    field.name +
+                    "' decimal(" +
+                    std::to_string(*column.numeric_precision) +
+                    "," +
+                    std::to_string(*column.numeric_scale) +
+                    ")"
             );
         }
 
         if (column.unsigned_number) {
-            add_message(
-                &report,
-                ValidationLevel::Info,
-                "column '" + field.name + "' is unsigned"
-            );
+            add_message(&report, ValidationLevel::Info, "column '" + field.name + "' is unsigned");
         }
 
         if (!column.enum_values.empty()) {
             add_message(
                 &report,
                 ValidationLevel::Info,
-                "column '" + field.name + "' is enum with " + std::to_string(column.enum_values.size()) +
-                    " values"
+                "column '" + field.name + "' is enum with " + std::to_string(column.enum_values.size()) + " values"
             );
         }
-
     }
 
     if (!metadata.foreign_keys.empty()) {
@@ -169,13 +175,7 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
         );
     }
 
-    if (metadata.partitioned) {
-        add_message(
-            &report,
-            ValidationLevel::Info,
-            "table is partitioned"
-        );
-    }
+    if (metadata.partitioned) { add_message(&report, ValidationLevel::Info, "table is partitioned"); }
 
     if (metadata.indexes.size() > 8) {
         add_message(
@@ -184,11 +184,7 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
             "index count is high (" + std::to_string(metadata.indexes.size()) + "), write throughput may drop"
         );
     } else {
-        add_message(
-            &report,
-            ValidationLevel::Info,
-            "index count: " + std::to_string(metadata.indexes.size())
-        );
+        add_message(&report, ValidationLevel::Info, "index count: " + std::to_string(metadata.indexes.size()));
     }
 
     return report;
@@ -199,8 +195,7 @@ std::string validation_level_to_string(const ValidationLevel level) {
     case ValidationLevel::Info : return "INFO";
     case ValidationLevel::Warn : return "WARN";
     case ValidationLevel::Error: return "ERROR";
-    default:
-        return "INFO";
+    default                    : return "INFO";
     }
 }
 
