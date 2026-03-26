@@ -69,15 +69,6 @@ std::vector<std::string> tokenize_identifier_for_match(const std::string& raw) {
     return tokens;
 }
 
-std::unordered_map<std::string, std::string> build_generator_name_map() {
-    std::unordered_map<std::string, std::string> map;
-    for (const auto& meta : config::get_generator_catalog()) {
-        map.emplace(normalize_identifier_for_match(meta.name), meta.name);
-    }
-    return map;
-}
-
-const std::unordered_map<std::string, std::string> kGeneratorNameMap  = build_generator_name_map();
 const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
     {"id", "sequence"},
     {"seq", "sequence"},
@@ -87,6 +78,7 @@ const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
     {"zip", "postcode"},
     {"zipcod", "postcode"},
     {"postalcode", "postcode"},
+    {"postal", "postcode"},
     {"postcode", "postcode"},
     {"comp", "company_name"},
     {"company", "company_name"},
@@ -94,18 +86,43 @@ const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
     {"companyname", "company_name"},
     {"corpname", "company_name"},
     {"bizname", "company_name"},
+    {"org", "company_name"},
+    {"organization", "company_name"},
+    {"organisation", "company_name"},
+    {"vendor", "company_name"},
+    {"supplier", "company_name"},
+    {"employer", "company_name"},
     {"dept", "department"},
+    {"team", "department"},
+    {"division", "department"},
     {"industryname", "industry"},
+    {"sector", "industry"},
     {"ip", "ip_address"},
     {"ipaddr", "ip_address"},
+    {"ipv4", "ip_address"},
+    {"ipv6", "ip_address"},
     {"mac", "mac_address"},
+    {"macaddr", "mac_address"},
     {"hostname", "hostname"},
     {"host", "hostname"},
+    {"url", "url"},
+    {"uri", "url"},
+    {"link", "url"},
     {"website", "url"},
+    {"homepage", "url"},
+    {"webpage", "url"},
     {"weburl", "url"},
     {"filepath", "file_path"},
+    {"fullpath", "file_path"},
+    {"directory", "file_directory"},
+    {"dir", "file_directory"},
+    {"folder", "file_directory"},
     {"filename", "file_name"},
+    {"basename", "file_name"},
     {"fileext", "file_extension"},
+    {"extension", "file_extension"},
+    {"ext", "file_extension"},
+    {"suffix", "file_extension"},
     {"filedir", "file_directory"},
     {"address1", "address_line1"},
     {"addr1", "address_line1"},
@@ -122,29 +139,118 @@ const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
     {"mobile", "phone_number"},
     {"cellphone", "phone_number"},
     {"phonenumber", "phone_number"},
+    {"phone", "phone_number"},
     {"mail", "email"},
     {"emailaddr", "email"},
     {"emailaddress", "email"},
+    {"givenname", "first_name"},
+    {"forename", "first_name"},
+    {"surname", "last_name"},
+    {"familyname", "last_name"},
     {"job", "job_title"},
+    {"jobtitle", "job_title"},
     {"title", "title"},
     {"gender", "gender"},
     {"dob", "date"},
     {"birthdate", "date"},
     {"dt", "datetime"},
     {"timestamp", "datetime"},
+    {"createdat", "datetime"},
+    {"updatedat", "datetime"},
+    {"modifiedat", "datetime"},
+    {"deletedat", "datetime"},
+    {"createdon", "datetime"},
+    {"updatedon", "datetime"},
+    {"modifiedon", "datetime"},
     {"amount", "decimal"},
     {"price", "decimal"},
     {"qty", "integer"},
     {"count", "integer"},
     {"num", "integer"},
+    {"province", "region"},
+    {"cardno", "card_number"},
+    {"ccnumber", "card_number"},
+    {"description", "text"},
+    {"comment", "text"},
+    {"note", "text"},
+    {"memo", "text"},
+    {"content", "text"},
+    {"message", "text"},
+    {"body", "text"},
+    {"details", "text"},
+    {"remark", "text"},
+    {"summary", "text"},
 };
 
-const std::unordered_map<std::string, std::string>& generator_name_map() {
-    return kGeneratorNameMap;
+const std::unordered_map<std::string, std::string> kGeneratorKeywordMap = {
+    {"comp", "company_name"},
+    {"company", "company_name"},
+    {"vendor", "company_name"},
+    {"supplier", "company_name"},
+    {"org", "company_name"},
+    {"team", "department"},
+    {"dept", "department"},
+    {"division", "department"},
+    {"sector", "industry"},
+    {"ip", "ip_address"},
+    {"ipaddr", "ip_address"},
+    {"ipv4", "ip_address"},
+    {"ipv6", "ip_address"},
+    {"mac", "mac_address"},
+    {"macaddr", "mac_address"},
+    {"url", "url"},
+    {"uri", "url"},
+    {"link", "url"},
+    {"website", "url"},
+    {"homepage", "url"},
+    {"webpage", "url"},
+    {"directory", "file_directory"},
+    {"folder", "file_directory"},
+    {"dir", "file_directory"},
+    {"extension", "file_extension"},
+    {"ext", "file_extension"},
+    {"suffix", "file_extension"},
+    {"zip", "postcode"},
+    {"postal", "postcode"},
+    {"postcode", "postcode"},
+    {"phone", "phone_number"},
+    {"tel", "phone_number"},
+    {"telephone", "phone_number"},
+    {"mobile", "phone_number"},
+    {"cellphone", "phone_number"},
+    {"mail", "email"},
+    {"surname", "last_name"},
+    {"familyname", "last_name"},
+    {"givenname", "first_name"},
+    {"forename", "first_name"},
+    {"job", "job_title"},
+    {"jobtitle", "job_title"},
+    {"province", "region"},
+    {"description", "text"},
+    {"comment", "text"},
+    {"note", "text"},
+    {"memo", "text"},
+    {"content", "text"},
+    {"message", "text"},
+    {"body", "text"},
+    {"details", "text"},
+    {"remark", "text"},
+    {"summary", "text"},
+};
+
+std::optional<std::string> find_generator_name_by_normalized_identifier(const std::string& normalized_identifier) {
+    for (const auto& meta : config::get_generator_catalog()) {
+        if (normalize_identifier_for_match(meta.name) == normalized_identifier) { return meta.name; }
+    }
+    return std::nullopt;
 }
 
 const std::unordered_map<std::string, std::string>& generator_alias_map() {
     return kGeneratorAliasMap;
+}
+
+const std::unordered_map<std::string, std::string>& generator_keyword_map() {
+    return kGeneratorKeywordMap;
 }
 
 bool is_name_infer_compatible(const std::string& generator_name, const database::ColumnTypeFamily family) {
@@ -171,8 +277,9 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     const std::string normalized_column = normalize_identifier_for_match(column.name);
     if (normalized_column.empty()) { return std::nullopt; }
 
-    const auto& name_map = generator_name_map();
-    if (const auto exact = name_map.find(normalized_column); exact != name_map.end()) { return exact->second; }
+    if (const auto exact = find_generator_name_by_normalized_identifier(normalized_column); exact.has_value()) {
+        return *exact;
+    }
 
     const auto& alias_map = generator_alias_map();
     if (const auto alias = alias_map.find(normalized_column); alias != alias_map.end()) { return alias->second; }
@@ -181,12 +288,24 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     const auto tokens = tokenize_identifier_for_match(column.name);
     if (tokens.empty()) { return std::nullopt; }
 
+    const auto& keyword_map = generator_keyword_map();
     std::unordered_map<std::string, int> scores;
     for (const auto& token : tokens) {
         const std::string normalized_token = normalize_identifier_for_match(token);
         if (normalized_token.empty()) { continue; }
-        if (const auto it = alias_map.find(normalized_token); it != alias_map.end()) { scores[it->second] += 8; }
-        if (const auto it = name_map.find(normalized_token); it != name_map.end()) { scores[it->second] += 10; }
+        if (const auto it = keyword_map.find(normalized_token); it != keyword_map.end()) { scores[it->second] += 8; }
+        if (const auto generator_name = find_generator_name_by_normalized_identifier(normalized_token);
+            generator_name.has_value()) {
+            scores[*generator_name] += 10;
+        }
+
+        if (normalized_token.size() >= 4) {
+            for (const auto& [keyword, generator_name] : keyword_map) {
+                if (keyword.size() >= 3 && normalized_token.find(keyword) != std::string::npos) {
+                    scores[generator_name] += 3;
+                }
+            }
+        }
     }
 
     for (const auto& meta : config::get_generator_catalog()) {

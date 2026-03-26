@@ -114,6 +114,54 @@ Root keys:
   - `error_policy`: string. `stop`, `continue`, `rollback-batch`, `rollback-all`.
   - `rate_limit_rows_per_sec`: integer. `>= 1`.
 
+`output.database` details:
+
+- `insert_mode`: controls how rows are written.
+  - `auto`: chooses `load` when the driver supports load mode and `rows >= 50000`; otherwise chooses `bulk` when `batch_size > 1`; otherwise chooses `insert`.
+  - `insert`: executes one `INSERT INTO ... VALUES (...)` per row.
+  - `bulk`: writes one batch at a time.
+    - MySQL/PostgreSQL/SQLite: `INSERT INTO ... VALUES (...), (...), ...`
+    - Oracle: `INSERT ALL ... INTO ... VALUES (...) ... SELECT 1 FROM DUAL`
+    - If the current database does not support multi-row `VALUES`, the backend falls back to row-by-row `insert`.
+  - `load`: writes a temporary data file under `<workspace>/tmp/`, then asks the database to import it.
+    - MySQL: `LOAD DATA LOCAL INFILE`
+    - PostgreSQL: `COPY ... FROM`
+    - SQLite: not supported
+    - Oracle: not supported in the current backend
+  - Notes:
+    - SQLite uses `insert` or `bulk`; `load` is rejected at runtime.
+    - MySQL load mode can fall back to `bulk` if `LOAD DATA LOCAL INFILE` is disabled by the driver or server.
+- `batch_size`: rows per write batch. Default `1000`.
+  - Used by `bulk` and `load`, and also defines the transaction chunk when `transaction_mode=per-batch`.
+  - With `insert`, rows are still grouped in memory by batch, but each row in the batch is sent as its own `INSERT`.
+- `queue_size`: capacity of the in-memory queue between the generator thread and database writer thread(s). Default `1024`.
+  - Larger values can smooth producer/consumer imbalance.
+  - Smaller values reduce memory usage and apply backpressure earlier.
+- `threads`: number of database writer threads. Default `2`.
+  - SQLite is forced to `1` because it only supports a single writer in this backend.
+  - `transaction_mode=per-run` is also forced to `1`, because one transaction cannot be safely shared across multiple writer threads here.
+  - In the internal config this field maps to `db_threads`.
+- `transaction_mode`: controls transaction boundaries.
+  - `per-batch`: begin one transaction for each batch, then `COMMIT` or `ROLLBACK` that batch.
+  - `per-run`: begin one transaction for the whole run, then `COMMIT` or `ROLLBACK` once at the end.
+  - `none`: do not explicitly start a transaction; each statement uses the database/driver default behavior.
+  - Per database:
+    - SQLite: begins with `BEGIN TRANSACTION`
+    - MySQL/PostgreSQL: begins with `START TRANSACTION`
+    - Oracle: no explicit begin SQL is sent by the current backend; `COMMIT` and `ROLLBACK` are still used when needed
+- `error_policy`: controls what happens after a batch or statement error.
+  - `stop`: stop immediately and report the first error.
+  - `continue`: log a warning and keep processing later rows/batches.
+  - `rollback-batch`: roll back only the current batch when a batch transaction exists, then continue.
+  - `rollback-all`: stop further processing and roll back the whole run when a per-run transaction exists.
+  - Notes:
+    - `rollback-batch` is most meaningful with `transaction_mode=per-batch`.
+    - `rollback-all` is most meaningful with `transaction_mode=per-run`.
+    - With `transaction_mode=none`, there is no explicit transaction to roll back, so rollback policies mainly affect whether processing stops or continues.
+- `rate_limit_rows_per_sec`: maximum import speed target after successful writes. Default `20000`.
+  - The backend sleeps after each successful batch so the effective import rate stays near this value.
+  - This limits database write throughput, not just row generation speed.
+
 Connection format:
 
 - ODBC: `odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=test;UID=root;PWD=123456;`
@@ -145,12 +193,12 @@ Field object keys:
 
 If both `default_value` and `null_value` are enabled, their `percent` values must sum to `<= 100`.
 
-Supported generators:
+Supported generators (from library `faker`):
 
 ```
 company_name, department, industry, ip_address, mac_address, file_path, file_directory, file_name,
 file_extension, url, hostname, date, time, datetime, address_line1, address_line2, postcode,
-full_address, city, region, integer, decimal, payment_method, card_type, card_number, card_date,
+full_address, city, region, integer, decimal(decimal_string), payment_method, card_type, card_number, card_date,
 first_name, last_name, full_name, gender, title, marital_status, phone_number, email, job_title,
 social_network_id, product_name, product_category, color, size, barcode, enum_item, text, uuid,
 sequence, regular_expression
@@ -175,16 +223,16 @@ Example commands:
 
 ```sh
 # Validate config
-data-generator check docs/example_mysql_db.json
+data-generator check example_mysql_db.json
 
 # Preview one row (format comes from JSON config)
-data-generator preview docs/example_file.json
+data-generator preview example_file.json
 
 # Generate CSV to file
-data-generator run docs/example_file.json --output ./out.csv
+data-generator run example_file.json --output out.csv
 
 # Generate data into MySQL (ODBC)
-data-generator run docs/example_mysql_db.json
+data-generator run example_mysql_db.json
 ```
 
 **License**

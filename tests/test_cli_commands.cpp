@@ -179,8 +179,22 @@ bool create_name_scoring_sqlite_table(const std::filesystem::path& db_path, std:
 
     const char* sql =
         "CREATE TABLE IF NOT EXISTS t_name_score ("
+        "url TEXT,"
         "email TEXT,"
         "userEmailToken TEXT,"
+        "profile_url TEXT,"
+        "callbackURL TEXT,"
+        "user_link TEXT,"
+        "vendor_name TEXT,"
+        "team_name TEXT,"
+        "ipv4_address TEXT,"
+        "folder_name TEXT,"
+        "file_ext TEXT,"
+        "created_at DATETIME,"
+        "phone TEXT,"
+        "surname TEXT,"
+        "description TEXT,"
+        "province TEXT,"
         "customer_zip_code TEXT,"
         "comp_group TEXT,"
         "choice_bucket ENUM,"
@@ -886,9 +900,65 @@ TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMeta
     ASSERT_NE(email_field, nullptr);
     EXPECT_EQ((*email_field)["generator"], "email");
 
+    const nlohmann::json* url_field = find_field_by_name(fields, "url");
+    ASSERT_NE(url_field, nullptr);
+    EXPECT_EQ((*url_field)["generator"], "url");
+
     const nlohmann::json* user_email_field = find_field_by_name(fields, "userEmailToken");
     ASSERT_NE(user_email_field, nullptr);
     EXPECT_EQ((*user_email_field)["generator"], "email");
+
+    const nlohmann::json* profile_url_field = find_field_by_name(fields, "profile_url");
+    ASSERT_NE(profile_url_field, nullptr);
+    EXPECT_EQ((*profile_url_field)["generator"], "url");
+
+    const nlohmann::json* callback_url_field = find_field_by_name(fields, "callbackURL");
+    ASSERT_NE(callback_url_field, nullptr);
+    EXPECT_EQ((*callback_url_field)["generator"], "url");
+
+    const nlohmann::json* user_link_field = find_field_by_name(fields, "user_link");
+    ASSERT_NE(user_link_field, nullptr);
+    EXPECT_EQ((*user_link_field)["generator"], "url");
+
+    const nlohmann::json* vendor_name_field = find_field_by_name(fields, "vendor_name");
+    ASSERT_NE(vendor_name_field, nullptr);
+    EXPECT_EQ((*vendor_name_field)["generator"], "company_name");
+
+    const nlohmann::json* team_name_field = find_field_by_name(fields, "team_name");
+    ASSERT_NE(team_name_field, nullptr);
+    EXPECT_EQ((*team_name_field)["generator"], "department");
+
+    const nlohmann::json* ipv4_address_field = find_field_by_name(fields, "ipv4_address");
+    ASSERT_NE(ipv4_address_field, nullptr);
+    EXPECT_EQ((*ipv4_address_field)["generator"], "ip_address");
+
+    const nlohmann::json* folder_name_field = find_field_by_name(fields, "folder_name");
+    ASSERT_NE(folder_name_field, nullptr);
+    EXPECT_EQ((*folder_name_field)["generator"], "file_directory");
+
+    const nlohmann::json* file_ext_field = find_field_by_name(fields, "file_ext");
+    ASSERT_NE(file_ext_field, nullptr);
+    EXPECT_EQ((*file_ext_field)["generator"], "file_extension");
+
+    const nlohmann::json* created_at_field = find_field_by_name(fields, "created_at");
+    ASSERT_NE(created_at_field, nullptr);
+    EXPECT_EQ((*created_at_field)["generator"], "datetime");
+
+    const nlohmann::json* phone_field = find_field_by_name(fields, "phone");
+    ASSERT_NE(phone_field, nullptr);
+    EXPECT_EQ((*phone_field)["generator"], "phone_number");
+
+    const nlohmann::json* surname_field = find_field_by_name(fields, "surname");
+    ASSERT_NE(surname_field, nullptr);
+    EXPECT_EQ((*surname_field)["generator"], "last_name");
+
+    const nlohmann::json* description_field = find_field_by_name(fields, "description");
+    ASSERT_NE(description_field, nullptr);
+    EXPECT_EQ((*description_field)["generator"], "text");
+
+    const nlohmann::json* province_field = find_field_by_name(fields, "province");
+    ASSERT_NE(province_field, nullptr);
+    EXPECT_EQ((*province_field)["generator"], "region");
 
     const nlohmann::json* zip_field = find_field_by_name(fields, "customer_zip_code");
     ASSERT_NE(zip_field, nullptr);

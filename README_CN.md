@@ -114,6 +114,54 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
   - `error_policy`：string。`stop`、`continue`、`rollback-batch`、`rollback-all`。
   - `rate_limit_rows_per_sec`：integer。`>= 1`。
 
+`output.database` 详细说明：
+
+- `insert_mode`：控制写入数据库的方式。
+  - `auto`：当驱动支持 `load` 且 `rows >= 50000` 时选择 `load`；否则若 `batch_size > 1` 则选择 `bulk`；再否则选择 `insert`。
+  - `insert`：每一行执行一条 `INSERT INTO ... VALUES (...)`。
+  - `bulk`：按批写入。
+    - MySQL/PostgreSQL/SQLite：`INSERT INTO ... VALUES (...), (...), ...`
+    - Oracle：`INSERT ALL ... INTO ... VALUES (...) ... SELECT 1 FROM DUAL`
+    - 如果当前数据库不支持多行 `VALUES`，后端会自动退回到逐行 `insert`。
+  - `load`：先在 `<workspace>/tmp/` 下生成临时数据文件，再让数据库执行导入。
+    - MySQL：`LOAD DATA LOCAL INFILE`
+    - PostgreSQL：`COPY ... FROM`
+    - SQLite：当前不支持
+    - Oracle：当前后端未实现
+  - 说明：
+    - SQLite 只适合 `insert` 或 `bulk`；显式使用 `load` 时会在运行时报不支持。
+    - MySQL 的 `load` 模式如果被驱动或服务端禁用了 `LOAD DATA LOCAL INFILE`，当前实现会回退到 `bulk`。
+- `batch_size`：每批写入的行数。默认 `1000`。
+  - 对 `bulk` 和 `load` 直接生效，也会在 `transaction_mode=per-batch` 时决定每个事务包含多少行。
+  - 即使是 `insert`，程序也会先按批缓存行，只是批内每一行仍分别发送单条 `INSERT`。
+- `queue_size`：生成线程与数据库写线程之间的内存队列容量。默认 `1024`。
+  - 值更大时，生产和写入速度不一致时会更平滑。
+  - 值更小时，内存占用更低，也会更早对生成端施加背压。
+- `threads`：数据库写线程数量。默认 `2`。
+  - SQLite 会被强制降为 `1`，因为当前后端只支持单写者。
+  - `transaction_mode=per-run` 也会被强制降为 `1`，因为当前实现不会把同一个运行级事务跨多个写线程共享。
+  - 这个 JSON 字段在内部配置中对应 `db_threads`。
+- `transaction_mode`：控制事务边界。
+  - `per-batch`：每个批次开启一个事务，批次成功后 `COMMIT`，失败时 `ROLLBACK` 当前批次。
+  - `per-run`：整个运行只开启一个事务，结束时统一 `COMMIT` 或 `ROLLBACK`。
+  - `none`：不显式开启事务，使用数据库/驱动的默认行为。
+  - 分数据库行为：
+    - SQLite：使用 `BEGIN TRANSACTION`
+    - MySQL/PostgreSQL：使用 `START TRANSACTION`
+    - Oracle：当前后端不会发送显式的 begin SQL，但需要时仍会执行 `COMMIT` 和 `ROLLBACK`
+- `error_policy`：控制写入出错后的处理方式。
+  - `stop`：立即停止，并报告首个错误。
+  - `continue`：记录警告后继续处理后续行或批次。
+  - `rollback-batch`：如果当前存在批次级事务，则回滚当前批次，然后继续。
+  - `rollback-all`：停止后续处理；如果当前存在运行级事务，则回滚整个运行。
+  - 说明：
+    - `rollback-batch` 最适合搭配 `transaction_mode=per-batch`。
+    - `rollback-all` 最适合搭配 `transaction_mode=per-run`。
+    - 如果 `transaction_mode=none`，则没有显式事务可回滚，此时 rollback 类策略主要体现为“停止还是继续”。
+- `rate_limit_rows_per_sec`：成功写入后的目标限速，单位为每秒行数。默认 `20000`。
+  - 后端会在每个成功批次后适当休眠，使整体导入速率接近这个值。
+  - 它限制的是数据库写入吞吐，不只是数据生成速度。
+
 连接格式：
 
 - ODBC：`odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=test;UID=root;PWD=123456;`
@@ -145,12 +193,12 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 
 若同时启用 `default_value` 与 `null_value`，两者 `percent` 之和必须 `<= 100`。
 
-支持的生成器：
+支持的生成器(来自库 `faker` 的接口)：
 
 ```
 company_name, department, industry, ip_address, mac_address, file_path, file_directory, file_name,
 file_extension, url, hostname, date, time, datetime, address_line1, address_line2, postcode,
-full_address, city, region, integer, decimal, payment_method, card_type, card_number, card_date,
+full_address, city, region, integer, decimal(decimal_string), payment_method, card_type, card_number, card_date,
 first_name, last_name, full_name, gender, title, marital_status, phone_number, email, job_title,
 social_network_id, product_name, product_category, color, size, barcode, enum_item, text, uuid,
 sequence, regular_expression
@@ -175,16 +223,16 @@ JSON 配置示例：
 
 ```sh
 # 校验配置
-data-generator check docs/example_mysql_db.json
+data-generator check example_mysql_db.json
 
 # 预览单行（格式来自 JSON 配置）
-data-generator preview docs/example_file.json
+data-generator preview example_file.json
 
 # 生成 CSV 文件
-data-generator run docs/example_file.json --output ./out.csv
+data-generator run example_file.json --output out.csv
 
 # 通过 ODBC 写入 MySQL
-data-generator run docs/example_mysql_db.json
+data-generator run example_mysql_db.json
 ```
 
 **许可证**
