@@ -118,7 +118,9 @@ AdaptedValue
     case ColumnTypeFamily::String:
     case ColumnTypeFamily::Binary:
     case ColumnTypeFamily::Unknown: {
-        if (column.character_length.has_value() && static_cast<int>(raw.size()) > *column.character_length) {
+        if (column.character_length.has_value() &&
+            *column.character_length > 0 &&
+            static_cast<int>(raw.size()) > *column.character_length) {
             return make_error(
                 "type_conversion",
                 "value length exceeds column limit " + std::to_string(*column.character_length)

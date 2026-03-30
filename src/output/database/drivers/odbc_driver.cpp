@@ -82,6 +82,11 @@ std::optional<int> try_parse_optional_int(const std::string& value) {
     } catch (...) { return std::nullopt; }
 }
 
+std::optional<int> normalize_character_length(std::optional<int> value) {
+    if (!value.has_value() || *value <= 0) { return std::nullopt; }
+    return value;
+}
+
 bool load_info_string(SQLHDBC dbc, const SQLUSMALLINT info_type, std::string* value) {
     if (!value) { return false; }
     SQLCHAR         buffer[kOdbcTextBufferSize] = {0};
@@ -414,7 +419,7 @@ bool OdbcDriver::load_mysql_metadata(
         column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
         column.auto_increment      = (to_lower_ascii(row[4]).find("auto_increment") != std::string::npos);
         column.unsigned_number     = (to_lower_ascii(row[1]).find("unsigned") != std::string::npos);
-        column.character_length    = try_parse_optional_int(row[5]);
+        column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
         column.numeric_precision   = try_parse_optional_int(row[6]);
         column.numeric_scale       = try_parse_optional_int(row[7]);
 
@@ -515,7 +520,7 @@ bool OdbcDriver::load_postgresql_metadata(
         column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
         column.auto_increment      = false;
         column.unsigned_number     = false;
-        column.character_length    = try_parse_optional_int(row[5]);
+        column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
         column.numeric_precision   = try_parse_optional_int(row[6]);
         column.numeric_scale       = try_parse_optional_int(row[7]);
 
@@ -624,7 +629,7 @@ bool OdbcDriver::load_oracle_metadata(
         column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
         column.auto_increment      = (row[4] == "1");
         column.unsigned_number     = false;
-        column.character_length    = try_parse_optional_int(row[5]);
+        column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
         column.numeric_precision   = try_parse_optional_int(row[6]);
         column.numeric_scale       = try_parse_optional_int(row[7]);
 

@@ -86,6 +86,12 @@ TEST(TypeAdapterTest, AdaptsTemporalEnumAndStringValues) {
 
     auto too_long = adapter.adapt(text, std::optional<std::string>("abcd"));
     EXPECT_FALSE(too_long.ok);
+
+    ColumnMetadata clob = make_column("notes", "clob");
+    clob.character_length = 0;
+    auto oracle_clob = adapter.adapt(clob, std::optional<std::string>("The Church-Turing thesis"));
+    EXPECT_TRUE(oracle_clob.ok);
+    EXPECT_EQ(oracle_clob.sql_literal, "'The Church-Turing thesis'");
 }
 
 TEST(TypeAdapterTest, AdaptsNullValues) {
