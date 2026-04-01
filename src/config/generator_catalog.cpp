@@ -106,7 +106,7 @@ std::string module_for_generator(const std::string& name) {
         return "product";
     }
     if (name == "enum_item" || name == "text" || name == "uuid") { return "string"; }
-    if (name == "sequence" || name == "regular_expression") { return "utility"; }
+    if (name == "boolean" || name == "sequence" || name == "regular_expression") { return "utility"; }
     return "";
 }
 
@@ -757,6 +757,19 @@ std::vector<GeneratorMetadata> build_catalog() {
             false,
             "",
             Json{{"include_hyphens", true}}
+        ),
+        make_metadata(
+            "boolean",
+            {
+                {"true_percentage",
+                 "number",
+                 "Percentage of rows that return true. Value must be between 0 and 100.",
+                 true},
+            },
+            false,
+            false,
+            "",
+            Json{{"true_percentage", 50}}
         ),
         make_metadata(
             "sequence",

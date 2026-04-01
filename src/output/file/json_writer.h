@@ -19,6 +19,7 @@ namespace data_generator::output::file {
 void write_json_array_start(std::ostream& out);
 void write_json_row(
     const std::vector<std::string>& columns,
+    const std::vector<bool>&        boolean_columns,
     const engine::Row&              row,
     std::ostream&                   out,
     bool                            first,
@@ -28,6 +29,7 @@ void write_json_array_end(std::ostream& out);
 
 void write_json(
     const std::vector<std::string>& columns,
+    const std::vector<bool>&        boolean_columns,
     const std::vector<engine::Row>& rows,
     std::ostream&                   out,
     const config::JsonOptions&      options

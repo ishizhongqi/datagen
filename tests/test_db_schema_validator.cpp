@@ -138,3 +138,27 @@ TEST(DbSchemaValidatorTest, CoversCharacterLengthAndCompatibilityFallbackBranche
     EXPECT_TRUE(has_message(report.messages, "length limit varchar(12)"));
     EXPECT_TRUE(has_message(report.messages, "index count: 0"));
 }
+
+TEST(DbSchemaValidatorTest, BooleanGeneratorSupportsBooleanAndNumericColumns) {
+    GenerationConfig cfg;
+    cfg.fields.push_back(make_field("is_active", "boolean"));
+    cfg.fields.push_back(make_field("legacy_flag", "boolean"));
+
+    TableMetadata metadata;
+    metadata.table_name = "t_data";
+
+    ColumnMetadata boolean_column;
+    boolean_column.name = "is_active";
+    boolean_column.data_type = "boolean";
+    metadata.columns.push_back(boolean_column);
+
+    ColumnMetadata numeric_column;
+    numeric_column.name = "legacy_flag";
+    numeric_column.data_type = "number";
+    numeric_column.numeric_precision = 1;
+    numeric_column.numeric_scale = 0;
+    metadata.columns.push_back(numeric_column);
+
+    const auto report = validate_table_schema(cfg, metadata);
+    EXPECT_EQ(report.error_count(), 0u);
+}

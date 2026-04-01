@@ -13,8 +13,10 @@ namespace data_generator::generator {
 
 namespace {
 
-void validate_percent(const int percent, const std::string& name) {
-    if (percent < 0 || percent > 100) { throw std::invalid_argument(name + " percent must be in [0, 100]"); }
+void validate_percentage(const int percentage, const std::string& name) {
+    if (percentage < 0 || percentage > 100) {
+        throw std::invalid_argument(name + " percentage must be in [0, 100]");
+    }
 }
 
 bool roll_remaining(int& remaining, const int rows_left) {
@@ -32,12 +34,16 @@ bool roll_remaining(int& remaining, const int rows_left) {
     return false;
 }
 
-bool roll_percent(const int percent) {
-    if (percent <= 0) { return false; }
-    if (percent >= 100) { return true; }
+bool roll_percentage(const int percentage) {
+    if (percentage <= 0) { return false; }
+    if (percentage >= 100) { return true; }
     thread_local std::mt19937_64       rng{std::random_device{}()};
     std::uniform_int_distribution<int> dist(1, 100);
-    return dist(rng) <= percent;
+    return dist(rng) <= percentage;
+}
+
+int read_percentage_value(const Json& config) {
+    return config.value("percentage", 100);
 }
 
 }  // namespace
@@ -48,16 +54,16 @@ OverrideState parse_overrides(const Json& filed) {
     if (filed.contains("default_value")) {
         const auto& cfg                = filed.at("default_value");
         overrides.default_rule.enabled = cfg.value("enabled", false);
-        overrides.default_rule.percent = cfg.value("percent", 100);
-        validate_percent(overrides.default_rule.percent, "default_value");
+        overrides.default_rule.percentage = read_percentage_value(cfg);
+        validate_percentage(overrides.default_rule.percentage, "default_value");
         if (cfg.contains("value")) { overrides.default_rule.value = cfg.at("value").get<std::string>(); }
     }
 
     if (filed.contains("null_value")) {
         const auto& cfg             = filed.at("null_value");
         overrides.null_rule.enabled = cfg.value("enabled", false);
-        overrides.null_rule.percent = cfg.value("percent", 100);
-        validate_percent(overrides.null_rule.percent, "null_value");
+        overrides.null_rule.percentage = read_percentage_value(cfg);
+        validate_percentage(overrides.null_rule.percentage, "null_value");
         if (overrides.null_rule.enabled) { overrides.null_literal = std::string(kNullSentinel); }
     }
 
@@ -67,14 +73,14 @@ OverrideState parse_overrides(const Json& filed) {
     if (overrides.total_rows > 0) {
         if (overrides.default_rule.enabled &&
             overrides.null_rule.enabled &&
-            overrides.default_rule.percent +
-            overrides.null_rule.percent > 100) {
-            throw std::invalid_argument("default_value percent + null_value percent must be <= 100");
+            overrides.default_rule.percentage +
+            overrides.null_rule.percentage > 100) {
+            throw std::invalid_argument("default_value percentage + null_value percentage must be <= 100");
         }
         overrides.null_remaining =
-            overrides.null_rule.enabled ? (overrides.total_rows * overrides.null_rule.percent) / 100 : 0;
+            overrides.null_rule.enabled ? (overrides.total_rows * overrides.null_rule.percentage) / 100 : 0;
         overrides.default_remaining =
-            overrides.default_rule.enabled ? (overrides.total_rows * overrides.default_rule.percent) / 100 : 0;
+            overrides.default_rule.enabled ? (overrides.total_rows * overrides.default_rule.percentage) / 100 : 0;
     }
 
     return overrides;
@@ -93,11 +99,13 @@ std::optional<std::string> apply_override(OverrideState& state) {
         return std::nullopt;
     }
 
-    if (state.null_rule.enabled && roll_percent(state.null_rule.percent)) {
+    if (state.null_rule.enabled && roll_percentage(state.null_rule.percentage)) {
         if (!state.null_literal.empty()) { return state.null_literal; }
         return std::string();
     }
-    if (state.default_rule.enabled && roll_percent(state.default_rule.percent)) { return state.default_rule.value; }
+    if (state.default_rule.enabled && roll_percentage(state.default_rule.percentage)) {
+        return state.default_rule.value;
+    }
     return std::nullopt;
 }
 

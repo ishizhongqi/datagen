@@ -51,7 +51,7 @@ TEST(ExecutorTest, NullOverrideProducesJsonNull) {
       },
       "null_value": {
         "enabled": true,
-        "percent": 100
+        "percentage": 100
       }
     }
   ]
@@ -98,7 +98,7 @@ TEST(ExecutorTest, IncludeNullFalseOmitsField) {
       },
       "null_value": {
         "enabled": true,
-        "percent": 100
+        "percentage": 100
       }
     }
   ]

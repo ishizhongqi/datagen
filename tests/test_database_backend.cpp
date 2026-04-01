@@ -221,11 +221,11 @@ TEST(DatabaseBackendTest, LoadModeEscapesNullAndSpecialCharactersBeforeUnsupport
             {{"name", "note"},
              {"generator", "uuid"},
              {"config", {{"include_hyphens", false}}},
-             {"null_value", {{"enabled", true}, {"percent", 100}}}},
+             {"null_value", {{"enabled", true}, {"percentage", 100}}}},
             {{"name", "payload"},
              {"generator", "uuid"},
              {"config", {{"include_hyphens", false}}},
-             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "slash\\\\tab\tline\ncarriage\r"}}}}
+             {"default_value", {{"enabled", true}, {"percentage", 100}, {"value", "slash\\\\tab\tline\ncarriage\r"}}}}
         })}
     };
 
@@ -270,7 +270,7 @@ TEST(DatabaseBackendTest, ErrorPoliciesHandleInvalidOverrides) {
         {"fields", nlohmann::json::array({
             {{"name", "id"}, {"generator", "integer"},
              {"config", {{"start", 1}, {"end", 3}}},
-             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "bad"}}}},
+             {"default_value", {{"enabled", true}, {"percentage", 100}, {"value", "bad"}}}},
             {{"name", "name"}, {"generator", "uuid"}, {"config", {{"include_hyphens", false}}}}
         })}
     };
@@ -554,7 +554,7 @@ TEST(DatabaseBackendTest, StopPolicyThrowsOnConversionError) {
             {{"name", "id"},
              {"generator", "integer"},
              {"config", {{"start", 1}, {"end", 9}}},
-             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "bad"}}}}
+             {"default_value", {{"enabled", true}, {"percentage", 100}, {"value", "bad"}}}}
         })}
     };
 
@@ -594,7 +594,7 @@ TEST(DatabaseBackendTest, RollbackBatchPolicyContinuesOnConversionError) {
             {{"name", "id"},
              {"generator", "integer"},
              {"config", {{"start", 1}, {"end", 9}}},
-             {"default_value", {{"enabled", true}, {"percent", 100}, {"value", "bad"}}}}
+             {"default_value", {{"enabled", true}, {"percentage", 100}, {"value", "bad"}}}}
         })}
     };
 
@@ -715,6 +715,73 @@ TEST(DatabaseBackendTest, PostgresOdbcBulkInsertMode) {
     ASSERT_TRUE(driver->connect(parsed, &error)) << error;
     std::vector<std::vector<std::string>> rows;
     ASSERT_TRUE(driver->query("SELECT COUNT(*) FROM t_data;", &rows, &error)) << error;
+    ASSERT_FALSE(rows.empty());
+    ASSERT_FALSE(rows.front().empty());
+    EXPECT_EQ(std::stoi(rows.front().front()), 3);
+    driver->disconnect();
+}
+
+TEST(DatabaseBackendTest, PostgresOdbcBooleanGeneratorWritesNativeBoolean) {
+    const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
+    if (!pg_url || std::string(pg_url).empty()) {
+        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL not set; skipping ODBC Postgres boolean coverage.";
+    }
+
+    data_generator::database::DbUrl parsed;
+    std::string error;
+    if (!data_generator::database::parse_db_connection(pg_url, &parsed, &error)) {
+        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL is not in the new connection format: " << error;
+    }
+
+    auto driver = data_generator::database::make_database_driver(parsed.type);
+    ASSERT_TRUE(driver);
+    ASSERT_TRUE(driver->connect(parsed, &error)) << error;
+
+    (void)driver->execute("DROP TABLE IF EXISTS dg_boolean_test_pg;", &error);
+    error.clear();
+    ASSERT_TRUE(driver->execute(
+        "CREATE TABLE dg_boolean_test_pg (id INT, is_active BOOLEAN);",
+        &error
+    )) << error;
+
+    driver->disconnect();
+
+    nlohmann::json root = {
+        {"rows", 3},
+        {"output", {
+            {"type", "database"},
+            {"database", {
+                {"connection", pg_url},
+                {"table", "dg_boolean_test_pg"},
+                {"insert_mode", "bulk"},
+                {"batch_size", 2},
+                {"queue_size", 2},
+                {"threads", 1},
+                {"transaction_mode", "per-batch"},
+                {"error_policy", "stop"},
+                {"rate_limit_rows_per_sec", 1}
+            }}
+        }},
+        {"fields", nlohmann::json::array({
+            {{"name", "id"}, {"generator", "sequence"}, {"config", {{"start", 1}, {"end", 3}, {"step", 1}, {"circle", false}}}},
+            {{"name", "is_active"}, {"generator", "boolean"}, {"config", {{"true_percentage", 100.0}}}}
+        })}
+    };
+
+    auto cfg = parse_or_fail(root);
+    cfg.workspace = data_generator::test::workspace_path("dg_backend_pg_boolean_workspace").string();
+    ensure_tmp_dir(cfg.workspace);
+
+    data_generator::output::DatabaseBackend backend;
+    data_generator::engine::ExecutionOptions options;
+
+    auto stats = backend.generate(cfg, options);
+    EXPECT_EQ(stats.rows_written, 3u);
+
+    ASSERT_TRUE(driver->connect(parsed, &error)) << error;
+    std::vector<std::vector<std::string>> rows;
+    ASSERT_TRUE(driver->query("SELECT COUNT(*) FROM dg_boolean_test_pg WHERE is_active IS TRUE;", &rows, &error))
+        << error;
     ASSERT_FALSE(rows.empty());
     ASSERT_FALSE(rows.front().empty());
     EXPECT_EQ(std::stoi(rows.front().front()), 3);

@@ -115,6 +115,10 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
+    std::vector<bool> boolean_columns;
+    boolean_columns.reserve(cfg.fields.size());
+    for (const auto& field : cfg.fields) { boolean_columns.push_back(field.generator == "boolean"); }
+
     output::file::DelimitedWriterOptions delimited_options;
     if (format == config::OutputFormat::Csv) {
         delimited_options.delimiter   = ",";
@@ -139,6 +143,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     } else if (format == config::OutputFormat::Sql) {
         output::file::write_sql(
             columns,
+            boolean_columns,
             {},
             cfg.output.file.sql.table,
             cfg.output.file.sql.create_table,
@@ -160,9 +165,16 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
                 format == config::OutputFormat::Custom) {
                 output::file::write_delimited_row(row, output_stream, delimited_options);
             } else if (format == config::OutputFormat::JsonFormat) {
-                output::file::write_json_row(columns, row, output_stream, generated == 0, cfg.output.file.json);
+                output::file::write_json_row(
+                    columns,
+                    boolean_columns,
+                    row,
+                    output_stream,
+                    generated == 0,
+                    cfg.output.file.json
+                );
             } else {
-                output::file::write_sql_row(columns, row, cfg.output.file.sql.table, output_stream);
+                output::file::write_sql_row(columns, boolean_columns, row, cfg.output.file.sql.table, output_stream);
             }
 
             ++generated;

@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -20,6 +22,32 @@
 namespace data_generator::generator {
 
 namespace {
+
+using PatternSize = std::string::size_type;
+
+class BooleanGenerator : public IGenerator {
+public:
+    BooleanGenerator(const double true_percentage, OverrideState overrides) :
+        distribution_(true_percentage / 100.0), overrides_(std::move(overrides)) {
+        if (true_percentage < 0.0 || true_percentage > 100.0) {
+            throw std::invalid_argument("boolean true_percentage must be between 0 and 100");
+        }
+    }
+
+    std::string generate() override {
+        if (auto overridden = apply_override(overrides_)) { return *overridden; }
+        return distribution_(rng_) ? "true" : "false";
+    }
+
+    void next() override {
+        next_row(overrides_);
+    }
+
+private:
+    std::bernoulli_distribution distribution_;
+    std::mt19937_64             rng_{std::random_device{}()};
+    OverrideState               overrides_;
+};
 
 class SequenceGenerator : public IGenerator {
 public:
@@ -93,7 +121,7 @@ private:
 
     char pick_char(const std::vector<char>& charset) {
         if (charset.empty()) { return '\0'; }
-        std::uniform_int_distribution<size_t> dist(0, charset.size() - 1);
+        std::uniform_int_distribution<std::size_t> dist(0, charset.size() - 1);
         return charset[dist(rng_)];
     }
 
@@ -169,7 +197,7 @@ private:
         }
         while (pos_ < pattern_.size() && pattern_[pos_] != ']') {
             const char start = pattern_[pos_++];
-            if (pos_ + 1 < pattern_.size() && pattern_[pos_] == '-') {
+            if (pos_ + static_cast<PatternSize>(1) < pattern_.size() && pattern_[pos_] == '-') {
                 ++pos_;
                 const char end = pattern_[pos_++];
                 for (char c = start; c <= end; ++c) { charset.push_back(c); }
@@ -239,7 +267,7 @@ private:
 
     std::string             pattern_;
     std::vector<RegexToken> tokens_;
-    size_t                  pos_ = 0;
+    PatternSize             pos_ = 0;
     std::mt19937_64         rng_{std::random_device{}()};
     OverrideState           overrides_;
 };
@@ -247,6 +275,13 @@ private:
 }  // namespace
 
 void register_utility_generators(GeneratorRegistry& registry) {
+    registry.register_generator("boolean", [](const Json& filed) {
+        const Json& config          = filed.at("config");
+        const auto  overrides       = parse_overrides(filed);
+        const double true_percentage = config.value("true_percentage", 50.0);
+        return std::make_unique<BooleanGenerator>(true_percentage, overrides);
+    });
+
     registry.register_generator("sequence", [](const Json& filed) {
         const Json&   config    = filed.at("config");
         const auto    overrides = parse_overrides(filed);

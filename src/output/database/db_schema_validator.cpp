@@ -26,6 +26,19 @@ std::string to_lower(std::string value) {
 }
 
 bool is_generator_type_compatible(const std::string& generator_name, const ColumnTypeFamily family) {
+    if (generator_name == "boolean") {
+        return family ==
+                   ColumnTypeFamily::Boolean ||
+               family ==
+                   ColumnTypeFamily::Integer ||
+               family ==
+                   ColumnTypeFamily::Decimal ||
+               family ==
+                   ColumnTypeFamily::Enum ||
+               family ==
+                   ColumnTypeFamily::String ||
+               family == ColumnTypeFamily::Unknown;
+    }
     if (generator_name == "integer" || generator_name == "sequence") {
         return family ==
                ColumnTypeFamily::Integer ||

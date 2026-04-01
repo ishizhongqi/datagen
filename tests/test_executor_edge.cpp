@@ -78,7 +78,7 @@ TEST(ExecutorEdgeTest, ParallelFallbackBecauseOfOverrideRule) {
       "name":"v",
       "generator":"integer",
       "config":{"start":1,"end":9},
-      "null_value":{"enabled":true,"percent":10}
+      "null_value":{"enabled":true,"percentage":10}
     }
   ]
 }

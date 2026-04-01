@@ -183,15 +183,15 @@ Field object keys:
 `default_value` object:
 
 - `enabled`: boolean. Whether to enable default override.
-- `percent`: integer. `0` to `100`.
+- `percentage`: integer. `0` to `100`.
 - `value`: string. Default value when override triggers.
 
 `null_value` object:
 
 - `enabled`: boolean. Whether to enable null override.
-- `percent`: integer. `0` to `100`.
+- `percentage`: integer. `0` to `100`.
 
-If both `default_value` and `null_value` are enabled, their `percent` values must sum to `<= 100`.
+If both `default_value` and `null_value` are enabled, their `percentage` values must sum to `<= 100`.
 
 Supported generators (from library `faker`):
 
@@ -201,10 +201,36 @@ file_extension, url, hostname, date, time, datetime, address_line1, address_line
 full_address, city, region, integer, decimal(decimal_string), payment_method, card_type, card_number, card_date,
 first_name, last_name, full_name, gender, title, marital_status, phone_number, email, job_title,
 social_network_id, product_name, product_category, color, size, barcode, enum_item, text, uuid,
-sequence, regular_expression
+boolean, sequence, regular_expression
 ```
 
 Use `data-generator info <name>` to see required config keys and supported values for each generator.
+
+`boolean` generator:
+
+- Module: `utility`
+- Config:
+  - `true_percentage`: number. Required. Range `0` to `100`. Default example value is `50`.
+- Output behavior:
+  - JSON file output: writes native JSON booleans `true` / `false`
+  - SQL file output: writes SQL literals `TRUE` / `FALSE`
+  - CSV / Tab-Delimited / Custom file output: writes text `true` / `false`
+  - Database output:
+    - PostgreSQL `BOOLEAN`: writes `TRUE` / `FALSE`
+    - MySQL `TINYINT(1)`, Oracle `NUMBER(1)`, SQLite `INTEGER`: writes `1` / `0`
+    - Other string-like columns: stores `true` / `false` as text if schema validation allows it
+
+Example field:
+
+```json
+{
+  "name": "is_active",
+  "generator": "boolean",
+  "config": {
+    "true_percentage": 80
+  }
+}
+```
 
 **Examples**
 
@@ -213,10 +239,14 @@ Database schemas:
 - `docs/schema_mysql.sql`
 - `docs/schema_oracle.sql`
 - `docs/schema_postgresql.sql`
+- `docs/schema_sqlite.sql`
 
 JSON config examples:
 
 - `docs/example_mysql_db.json`
+- `docs/example_postgresql_db.json`
+- `docs/example_oracle_db.json`
+- `docs/example_sqlite_db.json`
 - `docs/example_file.json`
 
 Example commands:

@@ -50,6 +50,76 @@ TEST(UtilityGeneratorsTest, SequenceAndRegexVariants) {
     EXPECT_NE(out.str().find("seq_circle"), std::string::npos);
 }
 
+TEST(UtilityGeneratorsTest, BooleanGeneratorUsesNativeBooleanInJsonAndTextInCsv) {
+    const auto json_root = nlohmann::json::parse(R"json(
+{
+  "rows": 1,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
+  "fields": [
+    {"name":"flag","generator":"boolean","config":{"true_percentage":100.0}}
+  ]
+}
+)json");
+
+    auto json_cfg = cfg_from(json_root);
+    std::ostringstream json_out;
+    (void)engine::generate_to_stream(json_cfg, engine::ExecutionOptions{.requested_threads = 1}, json_out);
+    const auto parsed = nlohmann::json::parse(json_out.str());
+    ASSERT_TRUE(parsed.is_array());
+    ASSERT_EQ(parsed.size(), 1u);
+    ASSERT_TRUE(parsed[0]["flag"].is_boolean());
+    EXPECT_TRUE(parsed[0]["flag"].get<bool>());
+
+    const auto csv_root = nlohmann::json::parse(R"json(
+{
+  "rows": 1,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  },
+  "fields": [
+    {"name":"flag","generator":"boolean","config":{"true_percentage":0.0}}
+  ]
+}
+)json");
+
+    auto csv_cfg = cfg_from(csv_root);
+    std::ostringstream csv_out;
+    (void)engine::generate_to_stream(csv_cfg, engine::ExecutionOptions{.requested_threads = 1}, csv_out);
+    EXPECT_NE(csv_out.str().find("false"), std::string::npos);
+}
+
+TEST(UtilityGeneratorsTest, BooleanGeneratorRejectsOutOfRangeProbability) {
+    const auto root = nlohmann::json::parse(R"json(
+{
+  "rows": 1,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "json"
+    }
+  },
+  "fields": [
+    {"name":"flag","generator":"boolean","config":{"true_percentage":150.0}}
+  ]
+}
+)json");
+
+    auto cfg = cfg_from(root);
+    std::ostringstream out;
+    EXPECT_THROW(
+        (void)engine::generate_to_stream(cfg, engine::ExecutionOptions{.requested_threads = 1}, out),
+        std::invalid_argument
+    );
+}
+
 TEST(UtilityGeneratorsTest, RegexInvalidPatternsThrow) {
     const auto root = nlohmann::json::parse(R"json(
 {

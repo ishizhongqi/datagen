@@ -47,6 +47,13 @@ AdaptedValue make_success_value(const std::string& converted, const std::string&
     return value;
 }
 
+std::optional<bool> parse_boolean_token(const std::string& raw) {
+    const std::string lower = to_lower(raw);
+    if (lower == "1" || lower == "true" || lower == "t" || lower == "yes") { return true; }
+    if (lower == "0" || lower == "false" || lower == "f" || lower == "no") { return false; }
+    return std::nullopt;
+}
+
 }  // namespace
 
 AdaptedValue
@@ -65,6 +72,9 @@ AdaptedValue
 
     switch (family) {
     case ColumnTypeFamily::Integer: {
+        if (const auto bool_value = parse_boolean_token(raw); bool_value.has_value()) {
+            return make_success_value(*bool_value ? "1" : "0", *bool_value ? "1" : "0");
+        }
         if (raw.empty()) { return make_error("type_conversion", "empty string cannot be converted to integer"); }
         long long parsed     = 0;
         const auto [ptr, ec] = std::from_chars(raw.data(), raw.data() + raw.size(), parsed);
@@ -77,6 +87,9 @@ AdaptedValue
         return make_success_value(std::to_string(parsed), std::to_string(parsed));
     }
     case ColumnTypeFamily::Decimal: {
+        if (const auto bool_value = parse_boolean_token(raw); bool_value.has_value()) {
+            return make_success_value(*bool_value ? "1" : "0", *bool_value ? "1" : "0");
+        }
         if (raw.empty()) { return make_error("type_conversion", "empty string cannot be converted to decimal"); }
         bool decimal_point_found = false;
         for (const char ch : raw) {
@@ -93,10 +106,13 @@ AdaptedValue
         return make_success_value(raw, raw);
     }
     case ColumnTypeFamily::Boolean: {
-        const std::string lower = to_lower(raw);
-        if (lower == "1" || lower == "true" || lower == "t" || lower == "yes") { return make_success_value("1", "1"); }
-        if (lower == "0" || lower == "false" || lower == "f" || lower == "no") { return make_success_value("0", "0"); }
-        return make_error("type_conversion", "invalid bool: " + raw);
+        const auto bool_value = parse_boolean_token(raw);
+        if (!bool_value.has_value()) { return make_error("type_conversion", "invalid bool: " + raw); }
+        const std::string lower_type = to_lower(column.data_type);
+        if (lower_type == "boolean" || lower_type == "bool") {
+            return make_success_value(*bool_value ? "true" : "false", *bool_value ? "TRUE" : "FALSE");
+        }
+        return make_success_value(*bool_value ? "1" : "0", *bool_value ? "1" : "0");
     }
     case ColumnTypeFamily::Date:
     case ColumnTypeFamily::Time:

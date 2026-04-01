@@ -47,13 +47,17 @@ TEST(TypeAdapterTest, AdaptsDecimalAndBooleanValues) {
     EXPECT_TRUE(ok.ok);
     EXPECT_EQ(ok.sql_literal, "12.50");
 
+    auto decimal_from_boolean = adapter.adapt(decimal, std::optional<std::string>("true"));
+    EXPECT_TRUE(decimal_from_boolean.ok);
+    EXPECT_EQ(decimal_from_boolean.sql_literal, "1");
+
     auto bad = adapter.adapt(decimal, std::optional<std::string>("12.1.3"));
     EXPECT_FALSE(bad.ok);
 
     ColumnMetadata boolean = make_column("flag", "boolean");
     auto yes = adapter.adapt(boolean, std::optional<std::string>("YES"));
     EXPECT_TRUE(yes.ok);
-    EXPECT_EQ(yes.sql_literal, "1");
+    EXPECT_EQ(yes.sql_literal, "TRUE");
 
     auto invalid = adapter.adapt(boolean, std::optional<std::string>("maybe"));
     EXPECT_FALSE(invalid.ok);
@@ -111,4 +115,17 @@ TEST(TypeAdapterTest, SupportsPolymorphicDeletion) {
     const auto result = adapter->adapt(column, std::optional<std::string>("abc"));
     EXPECT_TRUE(result.ok);
     EXPECT_EQ(result.sql_literal, "'abc'");
+}
+
+TEST(TypeAdapterTest, AdaptsBooleanTextIntoIntegerColumns) {
+    DefaultTypeAdapter adapter;
+    ColumnMetadata column = make_column("flag_value", "integer");
+
+    const auto true_value = adapter.adapt(column, std::optional<std::string>("true"));
+    EXPECT_TRUE(true_value.ok);
+    EXPECT_EQ(true_value.sql_literal, "1");
+
+    const auto false_value = adapter.adapt(column, std::optional<std::string>("false"));
+    EXPECT_TRUE(false_value.ok);
+    EXPECT_EQ(false_value.sql_literal, "0");
 }

@@ -39,6 +39,7 @@ using RuntimeField = GeneratorPtr;
 using Json         = config::Json;
 
 const std::unordered_set<std::string> kParallelEligibleGenerators = {
+    "boolean",
     "integer",
     "decimal",
     "date",
@@ -261,6 +262,10 @@ GenerateResult
     columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
+    std::vector<bool> boolean_columns;
+    boolean_columns.reserve(cfg.fields.size());
+    for (const auto& field : cfg.fields) { boolean_columns.push_back(field.generator == "boolean"); }
+
     const config::OutputFormat           format = cfg.output.file.format;
     output::file::DelimitedWriterOptions delimited_options;
     switch (format) {
@@ -285,9 +290,18 @@ GenerateResult
         delimited_options.line_ending = cfg.output.file.custom.line_ending;
         output::file::write_delimited(columns, rows, out, delimited_options);
         break;
-    case config::OutputFormat::JsonFormat: output::file::write_json(columns, rows, out, cfg.output.file.json); break;
+    case config::OutputFormat::JsonFormat:
+        output::file::write_json(columns, boolean_columns, rows, out, cfg.output.file.json);
+        break;
     case config::OutputFormat::Sql:
-        output::file::write_sql(columns, rows, cfg.output.file.sql.table, cfg.output.file.sql.create_table, out);
+        output::file::write_sql(
+            columns,
+            boolean_columns,
+            rows,
+            cfg.output.file.sql.table,
+            cfg.output.file.sql.create_table,
+            out
+        );
         break;
     }
 

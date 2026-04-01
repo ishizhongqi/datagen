@@ -138,8 +138,8 @@ std::vector<std::string> build_describe_text_lines(const config::GeneratorMetada
             meta.linkage_module.empty() ? (meta.module.empty() ? "module" : meta.module) : meta.linkage_module;
         example["data_linkage"] = module_hint + ":Group1";
     }
-    example["null_value"]    = OrderedJson{{"enabled", false}, {"percent", 0}};
-    example["default_value"] = OrderedJson{{"enabled", false}, {"percent", 0}, {"value", ""}};
+    example["null_value"]    = OrderedJson{{"enabled", false}, {"percentage", 0}};
+    example["default_value"] = OrderedJson{{"enabled", false}, {"percentage", 0}, {"value", ""}};
 
     std::istringstream stream(example.dump(2));
     std::string        line;

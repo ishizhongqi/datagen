@@ -98,11 +98,11 @@
       "default_value": {
         "enabled": true,
         "value": "N/A",
-        "percent": 10
+        "percentage": 10
       },
       "null_value": {
         "enabled": true,
-        "percent": 10
+        "percentage": 10
       }
     },
     {
@@ -153,6 +153,13 @@
       "config": {
         "country_codes_standard": "None",
         "languages": ["English"]
+      }
+    },
+    {
+      "name": "is_active",
+      "generator": "boolean",
+      "config": {
+        "true_percentage": 80
       }
     }
   ]

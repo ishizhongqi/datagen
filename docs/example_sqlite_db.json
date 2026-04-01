@@ -98,11 +98,11 @@
       "default_value": {
         "enabled": true,
         "value": "N/A",
-        "percent": 10
+        "percentage": 10
       },
       "null_value": {
         "enabled": true,
-        "percent": 10
+        "percentage": 10
       }
     },
     {

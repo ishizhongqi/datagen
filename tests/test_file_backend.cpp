@@ -311,7 +311,7 @@ TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
                 {"name", "nullable_value"},
                 {"generator", "regular_expression"},
                 {"config", {{"pattern", "x"}}},
-                {"null_value", {{"enabled", true}, {"percent", 100}}}
+                {"null_value", {{"enabled", true}, {"percentage", 100}}}
             }
         })}
     };

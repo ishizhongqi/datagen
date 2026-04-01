@@ -19,6 +19,7 @@ std::string sql_escape(const std::string& value);
 
 void write_sql_row(
     const std::vector<std::string>& columns,
+    const std::vector<bool>&        boolean_columns,
     const engine::Row&              row,
     const std::string&              table_name,
     std::ostream&                   out
@@ -26,6 +27,7 @@ void write_sql_row(
 
 void write_sql(
     const std::vector<std::string>& columns,
+    const std::vector<bool>&        boolean_columns,
     const std::vector<engine::Row>& rows,
     const std::string&              table_name,
     bool                            create_table,

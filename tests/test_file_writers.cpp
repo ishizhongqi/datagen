@@ -81,6 +81,7 @@ TEST(FileWriterTest, WriteDelimitedCollection) {
 
 TEST(FileWriterTest, JsonArrayAndLineOutput) {
     const std::vector<std::string> columns = {"id", "note"};
+    const std::vector<bool> boolean_columns = {false, true};
     Row row1;
     row1.emplace_back("1");
     row1.emplace_back(std::nullopt);
@@ -94,8 +95,8 @@ TEST(FileWriterTest, JsonArrayAndLineOutput) {
 
     std::ostringstream array_out;
     write_json_array_start(array_out);
-    write_json_row(columns, row1, array_out, true, array_options);
-    write_json_row(columns, row2, array_out, false, array_options);
+    write_json_row(columns, boolean_columns, row1, array_out, true, array_options);
+    write_json_row(columns, boolean_columns, row2, array_out, false, array_options);
     write_json_array_end(array_out);
 
     const auto parsed_array = nlohmann::json::parse(array_out.str());
@@ -109,8 +110,8 @@ TEST(FileWriterTest, JsonArrayAndLineOutput) {
     line_options.include_null = true;
 
     std::ostringstream line_out;
-    write_json_row(columns, row1, line_out, true, line_options);
-    write_json_row(columns, row2, line_out, false, line_options);
+    write_json_row(columns, boolean_columns, row1, line_out, true, line_options);
+    write_json_row(columns, boolean_columns, row2, line_out, false, line_options);
 
     std::istringstream line_in(line_out.str());
     std::string line;
@@ -122,9 +123,10 @@ TEST(FileWriterTest, JsonArrayAndLineOutput) {
 
 TEST(FileWriterTest, WriteJsonCollection) {
     const std::vector<std::string> columns = {"id"};
+    const std::vector<bool> boolean_columns = {true};
     std::vector<Row> rows;
     Row row;
-    row.emplace_back("42");
+    row.emplace_back("true");
     rows.push_back(row);
 
     JsonOptions options;
@@ -132,30 +134,32 @@ TEST(FileWriterTest, WriteJsonCollection) {
     options.include_null = true;
 
     std::ostringstream out;
-    write_json(columns, rows, out, options);
+    write_json(columns, boolean_columns, rows, out, options);
 
     const auto parsed = nlohmann::json::parse(out.str());
     ASSERT_TRUE(parsed.is_array());
-    EXPECT_EQ(parsed[0]["id"], "42");
+    EXPECT_TRUE(parsed[0]["id"].get<bool>());
 }
 
 TEST(FileWriterTest, SqlWriterEscapesAndCreatesTable) {
     EXPECT_EQ(sql_escape("O'Reilly"), "O''Reilly");
 
     const std::vector<std::string> columns = {"id", "note"};
+    const std::vector<bool> boolean_columns = {true, false};
     std::vector<Row> rows;
     Row row;
-    row.emplace_back("1");
+    row.emplace_back("false");
     row.emplace_back(std::nullopt);
     rows.push_back(row);
 
     std::ostringstream out;
-    write_sql(columns, rows, "t_data", true, out);
+    write_sql(columns, boolean_columns, rows, "t_data", true, out);
 
     const std::string sql = out.str();
     EXPECT_NE(sql.find("CREATE TABLE IF NOT EXISTS t_data"), std::string::npos);
+    EXPECT_NE(sql.find("id BOOLEAN"), std::string::npos);
 
     std::ostringstream row_out;
-    write_sql_row(columns, row, "t_data", row_out);
-    EXPECT_EQ(row_out.str(), "INSERT INTO t_data (id, note) VALUES ('1', NULL);\n");
+    write_sql_row(columns, boolean_columns, row, "t_data", row_out);
+    EXPECT_EQ(row_out.str(), "INSERT INTO t_data (id, note) VALUES (FALSE, NULL);\n");
 }

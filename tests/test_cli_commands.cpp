@@ -195,6 +195,7 @@ bool create_name_scoring_sqlite_table(const std::filesystem::path& db_path, std:
         "surname TEXT,"
         "description TEXT,"
         "province TEXT,"
+        "is_active_flag BOOLEAN,"
         "customer_zip_code TEXT,"
         "comp_group TEXT,"
         "choice_bucket ENUM,"
@@ -301,6 +302,11 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
     ASSERT_TRUE(schema_json["properties"].contains("fields"));
     ASSERT_TRUE(schema_json["properties"]["output"]["properties"].contains("database"));
     ASSERT_TRUE(schema_json["properties"]["fields"]["items"].contains("allOf"));
+    const auto generators =
+        schema_json["properties"]["fields"]["items"]["properties"]["generator"]["enum"];
+    EXPECT_TRUE(std::any_of(generators.begin(), generators.end(), [](const nlohmann::json& item) {
+        return item == "boolean";
+    }));
 }
 
 TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
@@ -622,7 +628,7 @@ TEST(CliCommandsTest, PreviewHandlesNullFieldAndInvalidConfig) {
                 {"name", "nickname"},
                 {"generator", "regular_expression"},
                 {"config", {{"pattern", "x"}}},
-                {"null_value", {{"enabled", true}, {"percent", 100}}}
+                {"null_value", {{"enabled", true}, {"percentage", 100}}}
             }
         })}
     };
@@ -805,8 +811,7 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
 
     const nlohmann::json* active_field = find_field_by_name(fields, "is_active");
     ASSERT_NE(active_field, nullptr);
-    EXPECT_EQ((*active_field)["generator"], "enum_item");
-    EXPECT_EQ((*active_field)["config"]["enums"], nlohmann::json::array({"1", "0"}));
+    EXPECT_EQ((*active_field)["generator"], "boolean");
 
     const nlohmann::json* summary_field = find_field_by_name(fields, "summary");
     ASSERT_NE(summary_field, nullptr);
@@ -977,6 +982,10 @@ TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMeta
     ASSERT_NE(serial_field, nullptr);
     EXPECT_EQ((*serial_field)["generator"], "integer");
     EXPECT_EQ((*serial_field)["config"]["end"], 999);
+
+    const nlohmann::json* active_field = find_field_by_name(fields, "is_active_flag");
+    ASSERT_NE(active_field, nullptr);
+    EXPECT_EQ((*active_field)["generator"], "boolean");
 }
 
 TEST(CliCommandsTest, SchemaOutputPathFailure) {

@@ -21,11 +21,11 @@
             "default_value": {
                 "enabled": true,
                 "value": "Hello",
-                "percent": 10
+                "percentage": 10
             },
             "null_value": {
                 "enabled": true,
-                "percent": 15
+                "percentage": 15
             }
         },
         {
@@ -42,11 +42,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -60,11 +60,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -80,11 +80,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -97,11 +97,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -114,11 +114,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -129,11 +129,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -152,11 +152,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -171,11 +171,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -191,11 +191,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -211,11 +211,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -235,11 +235,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -259,11 +259,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -285,11 +285,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -302,11 +302,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -330,11 +330,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -350,11 +350,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -370,11 +370,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -389,11 +389,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -409,11 +409,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -429,11 +429,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -449,11 +449,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -469,11 +469,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -489,11 +489,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -506,11 +506,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -524,11 +524,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -545,11 +545,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -571,11 +571,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -595,11 +595,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -619,11 +619,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -639,11 +639,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -663,11 +663,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -682,11 +682,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -705,11 +705,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -724,11 +724,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -746,11 +746,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -770,11 +770,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -789,11 +789,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -810,11 +810,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -838,11 +838,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -856,11 +856,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -874,11 +874,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -888,11 +888,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -907,11 +907,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -927,11 +927,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -944,11 +944,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -960,11 +960,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -979,11 +979,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         },
         {
@@ -995,11 +995,11 @@
             "default_value": {
                 "enabled": false,
                 "value": "",
-                "percent": 0
+                "percentage": 0
             },
             "null_value": {
                 "enabled": false,
-                "percent": 0
+                "percentage": 0
             }
         }
     ]

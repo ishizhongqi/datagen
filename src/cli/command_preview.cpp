@@ -82,6 +82,10 @@ int CommandPreview::run(const std::vector<std::string>& args) {
         columns.reserve(cfg.fields.size());
         for (const auto& field : cfg.fields) { columns.push_back(field.name); }
 
+        std::vector<bool> boolean_columns;
+        boolean_columns.reserve(cfg.fields.size());
+        for (const auto& field : cfg.fields) { boolean_columns.push_back(field.generator == "boolean"); }
+
         std::vector<engine::Row>   rows            = {row};
         const bool                 use_csv_preview = cfg.output.type == config::OutputType::Database;
         const config::OutputFormat format = use_csv_preview ? config::OutputFormat::Csv : cfg.output.file.format;
@@ -109,14 +113,15 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             output::file::write_delimited(columns, rows, std::cout, delimited_options);
             break;
         case config::OutputFormat::JsonFormat:
-            output::file::write_json(columns, rows, std::cout, cfg.output.file.json);
+            output::file::write_json(columns, boolean_columns, rows, std::cout, cfg.output.file.json);
             break;
         case config::OutputFormat::Sql:
             if (cfg.output.file.sql.table.empty()) {
-                output::file::write_sql(columns, rows, "preview_table", false, std::cout);
+                output::file::write_sql(columns, boolean_columns, rows, "preview_table", false, std::cout);
             } else {
                 output::file::write_sql(
                     columns,
+                    boolean_columns,
                     rows,
                     cfg.output.file.sql.table,
                     cfg.output.file.sql.create_table,

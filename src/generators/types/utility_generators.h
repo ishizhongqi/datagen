@@ -11,7 +11,7 @@
 
 namespace data_generator::generator {
 
-/// @brief Register utility generators (sequence, regular_expression).
+/// @brief Register utility generators (boolean, sequence, regular_expression).
 void register_utility_generators(GeneratorRegistry& registry);
 
 }  // namespace data_generator::generator

@@ -18,7 +18,7 @@ using Json = nlohmann::json;
 
 struct OverrideRule {
     bool        enabled = false;
-    int         percent = 0;
+    int         percentage = 0;
     std::string value;
 };
 

@@ -27,9 +27,10 @@ TEST(SerializationTest, EscapeHelpers) {
 
 TEST(SerializationTest, WriteCsvJsonSql) {
     const std::vector<std::string> columns = {"c1", "c2"};
+    const std::vector<bool> boolean_columns = {false, true};
     const std::vector<engine::Row> rows = {
         engine::Row{std::optional<std::string>("v1"), std::nullopt},
-        engine::Row{std::optional<std::string>("a,b"), std::optional<std::string>("x'y")},
+        engine::Row{std::optional<std::string>("a,b"), std::optional<std::string>("true")},
     };
 
     std::ostringstream csv;
@@ -42,15 +43,16 @@ TEST(SerializationTest, WriteCsvJsonSql) {
     config::JsonOptions json_options;
     json_options.array = true;
     json_options.include_null = true;
-    output::file::write_json(columns, rows, json, json_options);
+    output::file::write_json(columns, boolean_columns, rows, json, json_options);
     EXPECT_NE(json.str().find("\"c1\""), std::string::npos);
     EXPECT_NE(json.str().find("null"), std::string::npos);
+    EXPECT_NE(json.str().find("true"), std::string::npos);
 
     std::ostringstream sql_out;
-    output::file::write_sql(columns, rows, "t1", false, sql_out);
+    output::file::write_sql(columns, boolean_columns, rows, "t1", false, sql_out);
     EXPECT_EQ(sql_out.str().find("CREATE TABLE"), std::string::npos);
     EXPECT_NE(sql_out.str().find("INSERT INTO t1"), std::string::npos);
-    EXPECT_NE(sql_out.str().find("x''y"), std::string::npos);
+    EXPECT_NE(sql_out.str().find("TRUE"), std::string::npos);
 }
 
 }  // namespace

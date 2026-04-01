@@ -183,15 +183,15 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 `default_value` 对象：
 
 - `enabled`：boolean。是否启用默认值覆盖。
-- `percent`：integer。`0` 到 `100`。
+- `percentage`：integer。`0` 到 `100`。
 - `value`：string。覆盖时使用的固定值。
 
 `null_value` 对象：
 
 - `enabled`：boolean。是否启用空值覆盖。
-- `percent`：integer。`0` 到 `100`。
+- `percentage`：integer。`0` 到 `100`。
 
-若同时启用 `default_value` 与 `null_value`，两者 `percent` 之和必须 `<= 100`。
+若同时启用 `default_value` 与 `null_value`，两者 `percentage` 之和必须 `<= 100`。
 
 支持的生成器(来自库 `faker` 的接口)：
 
@@ -201,10 +201,36 @@ file_extension, url, hostname, date, time, datetime, address_line1, address_line
 full_address, city, region, integer, decimal(decimal_string), payment_method, card_type, card_number, card_date,
 first_name, last_name, full_name, gender, title, marital_status, phone_number, email, job_title,
 social_network_id, product_name, product_category, color, size, barcode, enum_item, text, uuid,
-sequence, regular_expression
+boolean, sequence, regular_expression
 ```
 
 使用 `data-generator info <name>` 可查看每个生成器的配置字段与支持的值。
+
+`boolean` 生成器：
+
+- 所属模块：`utility`
+- 配置项：
+  - `true_percentage`：number。必填。范围 `0` 到 `100`。示例默认值为 `50`
+- 输出行为：
+  - JSON 文件：输出原生 JSON 布尔值 `true` / `false`
+  - SQL 文件：输出 SQL 字面量 `TRUE` / `FALSE`
+  - CSV / Tab-Delimited / Custom 文件：输出文本 `true` / `false`
+  - 数据库输出：
+    - PostgreSQL `BOOLEAN`：写入 `TRUE` / `FALSE`
+    - MySQL `TINYINT(1)`、Oracle `NUMBER(1)`、SQLite `INTEGER`：写入 `1` / `0`
+    - 其他字符串类列：如果 schema 校验允许，则按文本 `true` / `false` 写入
+
+字段示例：
+
+```json
+{
+  "name": "is_active",
+  "generator": "boolean",
+  "config": {
+    "true_percentage": 80
+  }
+}
+```
 
 **示例**
 
@@ -213,10 +239,14 @@ sequence, regular_expression
 - `docs/schema_mysql.sql`
 - `docs/schema_oracle.sql`
 - `docs/schema_postgresql.sql`
+- `docs/schema_sqlite.sql`
 
 JSON 配置示例：
 
 - `docs/example_mysql_db.json`
+- `docs/example_postgresql_db.json`
+- `docs/example_oracle_db.json`
+- `docs/example_sqlite_db.json`
 - `docs/example_file.json`
 
 示例命令：

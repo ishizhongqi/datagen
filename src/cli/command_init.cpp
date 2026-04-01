@@ -70,6 +70,20 @@ std::vector<std::string> tokenize_identifier_for_match(const std::string& raw) {
 }
 
 const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
+    {"bool", "boolean"},
+    {"boolean", "boolean"},
+    {"flag", "boolean"},
+    {"isactive", "boolean"},
+    {"isenabled", "boolean"},
+    {"isdisabled", "boolean"},
+    {"isdeleted", "boolean"},
+    {"isverified", "boolean"},
+    {"isvisible", "boolean"},
+    {"ispublic", "boolean"},
+    {"isvalid", "boolean"},
+    {"isavailable", "boolean"},
+    {"islocked", "boolean"},
+    {"isarchived", "boolean"},
     {"id", "sequence"},
     {"seq", "sequence"},
     {"sequenceid", "sequence"},
@@ -183,6 +197,20 @@ const std::unordered_map<std::string, std::string> kGeneratorAliasMap = {
 };
 
 const std::unordered_map<std::string, std::string> kGeneratorKeywordMap = {
+    {"bool", "boolean"},
+    {"boolean", "boolean"},
+    {"flag", "boolean"},
+    {"active", "boolean"},
+    {"enabled", "boolean"},
+    {"disabled", "boolean"},
+    {"deleted", "boolean"},
+    {"verified", "boolean"},
+    {"visible", "boolean"},
+    {"public", "boolean"},
+    {"valid", "boolean"},
+    {"available", "boolean"},
+    {"locked", "boolean"},
+    {"archived", "boolean"},
     {"comp", "company_name"},
     {"company", "company_name"},
     {"vendor", "company_name"},
@@ -253,12 +281,24 @@ const std::unordered_map<std::string, std::string>& generator_keyword_map() {
     return kGeneratorKeywordMap;
 }
 
-bool is_name_infer_compatible(const std::string& generator_name, const database::ColumnTypeFamily family) {
+bool is_boolean_like_numeric_column(const database::ColumnMetadata& column) {
+    const auto family = database::classify_column_type(column);
+    if (family == database::ColumnTypeFamily::Boolean) { return true; }
+    if (family != database::ColumnTypeFamily::Integer && family != database::ColumnTypeFamily::Decimal) {
+        return false;
+    }
+    return column.numeric_precision.has_value() && *column.numeric_precision == 1 && column.numeric_scale.value_or(0) == 0;
+}
+
+bool is_name_infer_compatible(const std::string& generator_name, const database::ColumnMetadata& column) {
+    const auto family = database::classify_column_type(column);
     if (family == database::ColumnTypeFamily::Integer) {
-        return generator_name == "integer" || generator_name == "decimal" || generator_name == "sequence";
+        return generator_name == "integer" || generator_name == "decimal" || generator_name == "sequence" ||
+               (is_boolean_like_numeric_column(column) && generator_name == "boolean");
     }
     if (family == database::ColumnTypeFamily::Decimal) {
-        return generator_name == "decimal" || generator_name == "integer" || generator_name == "sequence";
+        return generator_name == "decimal" || generator_name == "integer" || generator_name == "sequence" ||
+               (is_boolean_like_numeric_column(column) && generator_name == "boolean");
     }
     if (family == database::ColumnTypeFamily::Date) { return generator_name == "date" || generator_name == "datetime"; }
     if (family == database::ColumnTypeFamily::Time) { return generator_name == "time" || generator_name == "datetime"; }
@@ -267,7 +307,7 @@ bool is_name_infer_compatible(const std::string& generator_name, const database:
     }
     if (family == database::ColumnTypeFamily::Enum) { return generator_name == "enum_item"; }
     if (family == database::ColumnTypeFamily::Boolean) {
-        return generator_name == "enum_item" || generator_name == "integer";
+        return generator_name == "boolean" || generator_name == "enum_item" || generator_name == "integer";
     }
     if (family == database::ColumnTypeFamily::Binary) { return generator_name == "text"; }
     return true;
@@ -284,7 +324,6 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     const auto& alias_map = generator_alias_map();
     if (const auto alias = alias_map.find(normalized_column); alias != alias_map.end()) { return alias->second; }
 
-    const auto family = database::classify_column_type(column);
     const auto tokens = tokenize_identifier_for_match(column.name);
     if (tokens.empty()) { return std::nullopt; }
 
@@ -309,7 +348,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     }
 
     for (const auto& meta : config::get_generator_catalog()) {
-        if (!is_name_infer_compatible(meta.name, family)) { continue; }
+        if (!is_name_infer_compatible(meta.name, column)) { continue; }
 
         const std::string normalized_generator = normalize_identifier_for_match(meta.name);
         if (normalized_generator.empty()) { continue; }
@@ -357,7 +396,8 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
     case database::ColumnTypeFamily::Time    : return "time";
     case database::ColumnTypeFamily::DateTime: return "datetime";
     case database::ColumnTypeFamily::Enum    :
-    case database::ColumnTypeFamily::Boolean : return "enum_item";
+        return "enum_item";
+    case database::ColumnTypeFamily::Boolean : return "boolean";
     case database::ColumnTypeFamily::String  :
     case database::ColumnTypeFamily::Binary  :
     default                                  : return "text";
@@ -371,11 +411,11 @@ bool is_unique_column(const database::TableMetadata& metadata, const std::string
 }
 
 OrderedJson make_null_value_defaults() {
-    return OrderedJson{{"enabled", false}, {"percent", 0}};
+    return OrderedJson{{"enabled", false}, {"percentage", 0}};
 }
 
 OrderedJson make_default_value_defaults() {
-    return OrderedJson{{"enabled", false}, {"percent", 0}, {"value", ""}};
+    return OrderedJson{{"enabled", false}, {"percentage", 0}, {"value", ""}};
 }
 
 void apply_supported_field_attributes(

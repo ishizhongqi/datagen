@@ -2518,6 +2518,64 @@
             "if": {
               "properties": {
                 "generator": {
+                  "const": "boolean"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "data_linkage"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_data_linkage"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "true_percentage": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "true_percentage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
                   "const": "sequence"
                 }
               },
@@ -2699,6 +2757,7 @@
               "enum_item",
               "text",
               "uuid",
+              "boolean",
               "sequence",
               "regular_expression"
             ],
