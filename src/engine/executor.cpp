@@ -100,7 +100,7 @@ bool is_parallel_eligible_generator(const std::string& name) {
 }
 
 bool can_parallelize_safely(const config::GenerationConfig& cfg, std::string& reason) {
-    for (size_t i = 0; i < cfg.fields.size(); ++i) {
+    for (std::string::size_type i = 0; i < cfg.fields.size(); ++i) {
         const auto&       field = cfg.fields[i];
         const std::string id    = "fields[" + std::to_string(i) + "]";
         if (!is_parallel_eligible_generator(field.generator)) {

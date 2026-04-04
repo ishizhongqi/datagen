@@ -108,7 +108,7 @@ std::string log_level_to_string(const LogLevel level) {
 
 std::string format_progress_bar(const std::uint64_t done, const std::uint64_t total) {
     constexpr int kWidth   = 20;
-    const double  progress = (total == 0) ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
+    const double  progress = total == 0 ? 1.0 : static_cast<double>(done) / static_cast<double>(total);
     const int     filled   = static_cast<int>(progress * static_cast<double>(kWidth));
 
     std::string bar;

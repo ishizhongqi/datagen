@@ -14,9 +14,7 @@ namespace data_generator::generator {
 namespace {
 
 void validate_percentage(const int percentage, const std::string& name) {
-    if (percentage < 0 || percentage > 100) {
-        throw std::invalid_argument(name + " percentage must be in [0, 100]");
-    }
+    if (percentage < 0 || percentage > 100) { throw std::invalid_argument(name + " percentage must be in [0, 100]"); }
 }
 
 bool roll_remaining(int& remaining, const int rows_left) {
@@ -25,8 +23,8 @@ bool roll_remaining(int& remaining, const int rows_left) {
         --remaining;
         return true;
     }
-    thread_local std::mt19937_64       rng{std::random_device{}()};
-    std::uniform_int_distribution<int> dist(1, rows_left);
+    thread_local std::mt19937_64  rng{std::random_device{}()};
+    std::uniform_int_distribution dist(1, rows_left);
     if (dist(rng) <= remaining) {
         --remaining;
         return true;
@@ -37,8 +35,8 @@ bool roll_remaining(int& remaining, const int rows_left) {
 bool roll_percentage(const int percentage) {
     if (percentage <= 0) { return false; }
     if (percentage >= 100) { return true; }
-    thread_local std::mt19937_64       rng{std::random_device{}()};
-    std::uniform_int_distribution<int> dist(1, 100);
+    thread_local std::mt19937_64  rng{std::random_device{}()};
+    std::uniform_int_distribution dist(1, 100);
     return dist(rng) <= percentage;
 }
 
@@ -52,16 +50,16 @@ OverrideState parse_overrides(const Json& filed) {
     OverrideState overrides;
 
     if (filed.contains("default_value")) {
-        const auto& cfg                = filed.at("default_value");
-        overrides.default_rule.enabled = cfg.value("enabled", false);
+        const auto& cfg                   = filed.at("default_value");
+        overrides.default_rule.enabled    = cfg.value("enabled", false);
         overrides.default_rule.percentage = read_percentage_value(cfg);
         validate_percentage(overrides.default_rule.percentage, "default_value");
         if (cfg.contains("value")) { overrides.default_rule.value = cfg.at("value").get<std::string>(); }
     }
 
     if (filed.contains("null_value")) {
-        const auto& cfg             = filed.at("null_value");
-        overrides.null_rule.enabled = cfg.value("enabled", false);
+        const auto& cfg                = filed.at("null_value");
+        overrides.null_rule.enabled    = cfg.value("enabled", false);
         overrides.null_rule.percentage = read_percentage_value(cfg);
         validate_percentage(overrides.null_rule.percentage, "null_value");
         if (overrides.null_rule.enabled) { overrides.null_literal = std::string(kNullSentinel); }
@@ -78,9 +76,9 @@ OverrideState parse_overrides(const Json& filed) {
             throw std::invalid_argument("default_value percentage + null_value percentage must be <= 100");
         }
         overrides.null_remaining =
-            overrides.null_rule.enabled ? (overrides.total_rows * overrides.null_rule.percentage) / 100 : 0;
+            overrides.null_rule.enabled ? overrides.total_rows * overrides.null_rule.percentage / 100 : 0;
         overrides.default_remaining =
-            overrides.default_rule.enabled ? (overrides.total_rows * overrides.default_rule.percentage) / 100 : 0;
+            overrides.default_rule.enabled ? overrides.total_rows * overrides.default_rule.percentage / 100 : 0;
     }
 
     return overrides;

@@ -23,8 +23,6 @@ namespace data_generator::generator {
 
 namespace {
 
-using PatternSize = std::string::size_type;
-
 class BooleanGenerator : public IGenerator {
 public:
     BooleanGenerator(const double true_percentage, OverrideState overrides) :
@@ -115,7 +113,7 @@ public:
 private:
     int pick_repeat(const int min_repeat, const int max_repeat) {
         if (min_repeat == max_repeat) { return min_repeat; }
-        std::uniform_int_distribution<int> dist(min_repeat, max_repeat);
+        std::uniform_int_distribution dist(min_repeat, max_repeat);
         return dist(rng_);
     }
 
@@ -197,7 +195,7 @@ private:
         }
         while (pos_ < pattern_.size() && pattern_[pos_] != ']') {
             const char start = pattern_[pos_++];
-            if (pos_ + static_cast<PatternSize>(1) < pattern_.size() && pattern_[pos_] == '-') {
+            if (pos_ + static_cast<std::string::size_type>(1) < pattern_.size() && pattern_[pos_] == '-') {
                 ++pos_;
                 const char end = pattern_[pos_++];
                 for (char c = start; c <= end; ++c) { charset.push_back(c); }
@@ -267,7 +265,7 @@ private:
 
     std::string             pattern_;
     std::vector<RegexToken> tokens_;
-    PatternSize             pos_ = 0;
+    std::string::size_type             pos_ = 0;
     std::mt19937_64         rng_{std::random_device{}()};
     OverrideState           overrides_;
 };

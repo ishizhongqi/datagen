@@ -97,7 +97,7 @@ public:
         }
         if (filed.contains("unique")) {
             const auto parsed = filed.at("unique").get<bool>();
-            unique_           = unique_.has_value() ? (unique_.value() || parsed) : parsed;
+            unique_           = unique_.has_value() ? unique_.value() || parsed : parsed;
         }
     }
 

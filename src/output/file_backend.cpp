@@ -24,6 +24,8 @@ namespace data_generator::output {
 
 namespace {
 
+constexpr double kMinElapsedSeconds = 0.001;
+
 std::string now_compact_timestamp() {
     const auto now = std::chrono::system_clock::now();
     const auto tt  = std::chrono::system_clock::to_time_t(now);
@@ -119,7 +121,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     boolean_columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) { boolean_columns.push_back(field.generator == "boolean"); }
 
-    output::file::DelimitedWriterOptions delimited_options;
+    file::DelimitedWriterOptions delimited_options;
     if (format == config::OutputFormat::Csv) {
         delimited_options.delimiter   = ",";
         delimited_options.quote       = "\"";
@@ -139,9 +141,9 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
         delimited_options.line_ending = cfg.output.file.custom.line_ending;
         output::file::write_delimited_header(columns, output_stream, delimited_options);
     } else if (format == config::OutputFormat::JsonFormat) {
-        if (cfg.output.file.json.array) { output::file::write_json_array_start(output_stream); }
+        if (cfg.output.file.json.array) { file::write_json_array_start(output_stream); }
     } else if (format == config::OutputFormat::Sql) {
-        output::file::write_sql(
+        file::write_sql(
             columns,
             boolean_columns,
             {},
@@ -165,7 +167,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
                 format == config::OutputFormat::Custom) {
                 output::file::write_delimited_row(row, output_stream, delimited_options);
             } else if (format == config::OutputFormat::JsonFormat) {
-                output::file::write_json_row(
+                file::write_json_row(
                     columns,
                     boolean_columns,
                     row,
@@ -174,7 +176,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
                     cfg.output.file.json
                 );
             } else {
-                output::file::write_sql_row(columns, boolean_columns, row, cfg.output.file.sql.table, output_stream);
+                file::write_sql_row(columns, boolean_columns, row, cfg.output.file.sql.table, output_stream);
             }
 
             ++generated;
@@ -201,9 +203,9 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     output_stream.flush();
     if (!output_stream) { throw std::runtime_error("failed to flush output file: " + output_path.string()); }
 
-    const auto   ended_at    = std::chrono::steady_clock::now();
-    const auto   elapsed_ms  = std::chrono::duration_cast<std::chrono::milliseconds>(ended_at - started_at).count();
-    const double elapsed_sec = std::max(0.001, static_cast<double>(elapsed_ms) / 1000.0);
+    const auto ended_at = std::chrono::steady_clock::now();
+    double elapsed_sec  = std::chrono::duration<double>(ended_at - started_at).count();
+    if (elapsed_sec < kMinElapsedSeconds) { elapsed_sec = kMinElapsedSeconds; }
     const auto   rate        = static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec);
     logger.info("Generated rows=" + std::to_string(generated) + " rate=" + std::to_string(rate) + " rows/s");
 

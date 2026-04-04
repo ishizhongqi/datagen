@@ -40,7 +40,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
             state,
             &native_error,
             text,
-            static_cast<SQLSMALLINT>(sizeof(text)),
+            sizeof(text),
             &text_length
         );
         if (rc == SQL_NO_DATA) { break; }
@@ -80,9 +80,9 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
         return false;
     }
 
-    SQLCHAR     desc[kBufferSize]  = {0};
+    SQLCHAR     desc[kBufferSize]  = {};
     SQLSMALLINT desc_length        = 0;
-    SQLCHAR     attrs[kBufferSize] = {0};
+    SQLCHAR     attrs[kBufferSize] = {};
     SQLSMALLINT attrs_length       = 0;
 
     for (SQLUSMALLINT direction = SQL_FETCH_FIRST; rc != SQL_NO_DATA; direction = SQL_FETCH_NEXT) {

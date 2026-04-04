@@ -271,7 +271,7 @@ bool SqliteDriver::load_table_metadata(
         column.name      = row[1];
         column.data_type = row[2];
         if (!row[4].empty()) { column.default_value = row[4]; }
-        const bool        is_pk      = (row[5] == "1");
+        const bool        is_pk      = row[5] == "1";
         const std::string lower_type = to_lower(row[2]);
         column.auto_increment        = is_pk && lower_type.find("int") != std::string::npos;
         if (!create_sql.empty() && create_sql.find("autoincrement") != std::string::npos) {
@@ -300,7 +300,7 @@ bool SqliteDriver::load_table_metadata(
         if (row.size() < 3) { continue; }
         IndexMetadata index;
         index.name   = row[1];
-        index.unique = (row[2] == "1");
+        index.unique = row[2] == "1";
 
         std::vector<std::vector<std::string>> index_rows;
         if (!run_query("PRAGMA index_info(" + quote_identifier(index.name) + ")", &index_rows, error_message)) {

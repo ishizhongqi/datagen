@@ -64,7 +64,7 @@ int CommandPreview::run(const std::vector<std::string>& args) {
         const std::string field_filter = result.count("field") ? result["field"].as<std::string>() : "";
 
         if (!field_filter.empty()) {
-            for (size_t i = 0; i < cfg.fields.size(); ++i) {
+            for (std::string::size_type i = 0; i < cfg.fields.size(); ++i) {
                 if (cfg.fields[i].name == field_filter) {
                     if (!row[i].has_value()) {
                         std::cout << "NULL\n";

@@ -32,7 +32,7 @@ void print_generator_list_text(const std::vector<config::GeneratorMetadata>& cat
         const auto it = module_to_index.find(meta.module);
         if (it == module_to_index.end()) {
             const std::size_t index = grouped.size();
-            grouped.emplace_back(meta.module, std::vector<std::string>{meta.name});
+            grouped.emplace_back(meta.module, std::vector{meta.name});
             module_to_index.emplace(meta.module, index);
         } else {
             grouped[it->second].second.push_back(meta.name);
@@ -101,7 +101,7 @@ std::vector<std::string> build_describe_text_lines(const config::GeneratorMetada
                 values_text = "true, false";
             } else if (!param.supported_values.empty()) {
                 values_text.clear();
-                for (size_t i = 0; i < param.supported_values.size(); ++i) {
+                for (std::string::size_type i = 0; i < param.supported_values.size(); ++i) {
                     if (i > 0) { values_text += ", "; }
                     values_text += param.supported_values[i];
                 }

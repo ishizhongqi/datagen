@@ -44,12 +44,12 @@ void write_sql_row(
     std::ostream&                   out
 ) {
     out << "INSERT INTO " << table_name << " (";
-    for (size_t i = 0; i < columns.size(); ++i) {
+    for (std::string::size_type i = 0; i < columns.size(); ++i) {
         if (i > 0) { out << ", "; }
         out << columns[i];
     }
     out << ") VALUES (";
-    for (size_t i = 0; i < row.size(); ++i) {
+    for (std::string::size_type i = 0; i < row.size(); ++i) {
         if (i > 0) { out << ", "; }
         if (!row[i].has_value()) {
             out << "NULL";
@@ -76,7 +76,7 @@ void write_sql(
 ) {
     if (create_table) {
         out << "CREATE TABLE IF NOT EXISTS " << table_name << " (";
-        for (size_t i = 0; i < columns.size(); ++i) {
+        for (std::string::size_type i = 0; i < columns.size(); ++i) {
             if (i > 0) { out << ", "; }
             out << columns[i] << (i < boolean_columns.size() && boolean_columns[i] ? " BOOLEAN" : " TEXT");
         }

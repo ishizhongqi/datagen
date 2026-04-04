@@ -32,7 +32,7 @@ nlohmann::json
         const bool                      include_null
     ) {
     nlohmann::json entry = nlohmann::json::object();
-    for (size_t i = 0; i < columns.size(); ++i) {
+    for (std::string::size_type i = 0; i < columns.size(); ++i) {
         if (i >= row.size() || !row[i].has_value()) {
             if (include_null) { entry[columns[i]] = nullptr; }
         } else {

@@ -4,6 +4,8 @@
 
 Data Generator is a C++ CLI that generates synthetic datasets from a JSON configuration. It can write CSV/JSON/SQL files or insert rows into databases via ODBC or SQLite.
 
+> Note: Most of the code in this project was generated with AI assistance.
+
 **Usage**
 
 **CLI**

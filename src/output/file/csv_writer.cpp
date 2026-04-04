@@ -50,7 +50,7 @@ void write_delimited_header(
     const DelimitedWriterOptions&   options
 ) {
     if (!options.header) { return; }
-    for (size_t i = 0; i < columns.size(); ++i) {
+    for (std::string::size_type i = 0; i < columns.size(); ++i) {
         if (i > 0) { out << options.delimiter; }
         out << escape_delimited_value(columns[i], options);
     }
@@ -58,7 +58,7 @@ void write_delimited_header(
 }
 
 void write_delimited_row(const engine::Row& row, std::ostream& out, const DelimitedWriterOptions& options) {
-    for (size_t i = 0; i < row.size(); ++i) {
+    for (std::string::size_type i = 0; i < row.size(); ++i) {
         if (i > 0) { out << options.delimiter; }
         out << escape_delimited_value(row[i].value_or(""), options);
     }

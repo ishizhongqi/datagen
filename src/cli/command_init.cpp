@@ -287,17 +287,30 @@ bool is_boolean_like_numeric_column(const database::ColumnMetadata& column) {
     if (family != database::ColumnTypeFamily::Integer && family != database::ColumnTypeFamily::Decimal) {
         return false;
     }
-    return column.numeric_precision.has_value() && *column.numeric_precision == 1 && column.numeric_scale.value_or(0) == 0;
+    return column.numeric_precision.has_value() &&
+           *column.numeric_precision ==
+           1 &&
+           column.numeric_scale.value_or(0) == 0;
 }
 
 bool is_name_infer_compatible(const std::string& generator_name, const database::ColumnMetadata& column) {
     const auto family = database::classify_column_type(column);
     if (family == database::ColumnTypeFamily::Integer) {
-        return generator_name == "integer" || generator_name == "decimal" || generator_name == "sequence" ||
+        return generator_name ==
+               "integer" ||
+               generator_name ==
+               "decimal" ||
+               generator_name ==
+               "sequence" ||
                (is_boolean_like_numeric_column(column) && generator_name == "boolean");
     }
     if (family == database::ColumnTypeFamily::Decimal) {
-        return generator_name == "decimal" || generator_name == "integer" || generator_name == "sequence" ||
+        return generator_name ==
+               "decimal" ||
+               generator_name ==
+               "integer" ||
+               generator_name ==
+               "sequence" ||
                (is_boolean_like_numeric_column(column) && generator_name == "boolean");
     }
     if (family == database::ColumnTypeFamily::Date) { return generator_name == "date" || generator_name == "datetime"; }
@@ -327,7 +340,7 @@ std::optional<std::string> infer_generator_name_from_column_name(const database:
     const auto tokens = tokenize_identifier_for_match(column.name);
     if (tokens.empty()) { return std::nullopt; }
 
-    const auto& keyword_map = generator_keyword_map();
+    const auto&                          keyword_map = generator_keyword_map();
     std::unordered_map<std::string, int> scores;
     for (const auto& token : tokens) {
         const std::string normalized_token = normalize_identifier_for_match(token);
@@ -395,8 +408,7 @@ std::string infer_generator_name(const database::ColumnMetadata& column) {
     case database::ColumnTypeFamily::Date    : return "date";
     case database::ColumnTypeFamily::Time    : return "time";
     case database::ColumnTypeFamily::DateTime: return "datetime";
-    case database::ColumnTypeFamily::Enum    :
-        return "enum_item";
+    case database::ColumnTypeFamily::Enum    : return "enum_item";
     case database::ColumnTypeFamily::Boolean : return "boolean";
     case database::ColumnTypeFamily::String  :
     case database::ColumnTypeFamily::Binary  :
@@ -580,8 +592,8 @@ int CommandInit::run(const std::vector<std::string>& args) {
         std::cerr << "--template must be file or database\n";
         return exit_codes::kUsage;
     }
-    const bool is_file_template     = (template_type == "file");
-    const bool is_database_template = (template_type == "database");
+    const bool is_file_template     = template_type == "file";
+    const bool is_database_template = template_type == "database";
 
     std::string file_format = "csv";
     if (result.count("format")) {
@@ -621,7 +633,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
     if (is_file_template && has_table && file_format != "sql") {
         std::cerr << "Warning: --table is ignored for non-sql file templates\n";
     }
-    if (is_database_template && (has_from_database != has_table)) {
+    if (is_database_template && has_from_database != has_table) {
         std::cerr << "Warning: --from-database and --table must be provided together to infer fields\n";
     }
 
@@ -631,9 +643,10 @@ int CommandInit::run(const std::vector<std::string>& args) {
         "odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;";
     const std::string default_table = "generated_data";
 
-    const std::string output_connection =
-        should_infer ? from_database_connection : (has_from_database ? from_database_connection : default_connection);
-    const std::string output_table = has_table ? table_name : default_table;
+    const std::string output_connection = should_infer        ? from_database_connection
+                                          : has_from_database ? from_database_connection
+                                                              : default_connection;
+    const std::string output_table      = has_table ? table_name : default_table;
 
     OrderedJson output = OrderedJson::object();
     output["$schema"]  = "./schema/data-generator.schema.json";

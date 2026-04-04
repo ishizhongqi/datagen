@@ -4,6 +4,8 @@
 
 Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
 
+> 说明：本项目中的多数代码由 AI 辅助生成。
+
 **使用方法**
 
 **CLI**

@@ -41,9 +41,9 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
     std::ostringstream message;
 
     for (int rec_number = 1; rec_number <= std::numeric_limits<SQLSMALLINT>::max(); ++rec_number) {
-        SQLCHAR         state[6]                  = {0};
+        SQLCHAR         state[6]                  = {};
         SQLINTEGER      native_error              = 0;
-        SQLCHAR         text[kOdbcTextBufferSize] = {0};
+        SQLCHAR         text[kOdbcTextBufferSize] = {};
         SQLSMALLINT     text_length               = 0;
         const SQLRETURN rc                        = SQLGetDiagRec(
             handle_type,
@@ -52,7 +52,7 @@ std::string parse_odbc_diagnostics(const SQLSMALLINT handle_type, SQLHANDLE hand
             state,
             &native_error,
             text,
-            static_cast<SQLSMALLINT>(sizeof(text)),
+            sizeof(text),
             &text_length
         );
         if (rc == SQL_NO_DATA) { break; }
@@ -89,7 +89,7 @@ std::optional<int> normalize_character_length(std::optional<int> value) {
 
 bool load_info_string(SQLHDBC dbc, const SQLUSMALLINT info_type, std::string* value) {
     if (!value) { return false; }
-    SQLCHAR         buffer[kOdbcTextBufferSize] = {0};
+    SQLCHAR         buffer[kOdbcTextBufferSize] = {};
     SQLSMALLINT     output_length               = 0;
     const SQLRETURN rc                          = SQLGetInfo(dbc, info_type, buffer, sizeof(buffer), &output_length);
     if (!SQL_SUCCEEDED(rc)) { return false; }
@@ -121,7 +121,7 @@ void load_index_metadata(
         if (it == name_to_index.end()) {
             IndexMetadata index;
             index.name   = index_name;
-            index.unique = (row[1] == "0");
+            index.unique = row[1] == "0";
             index.columns.push_back(row[2]);
             metadata.indexes.push_back(std::move(index));
             name_to_index.emplace(index_name, metadata.indexes.size() - 1);
@@ -184,7 +184,7 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
         return false;
     }
 
-    SQLCHAR     out_buffer[1024] = {0};
+    SQLCHAR     out_buffer[1024] = {};
     SQLSMALLINT out_length       = 0;
     rc                           = SQLDriverConnect(
         dbc_,
@@ -192,7 +192,7 @@ bool OdbcDriver::connect(const DbUrl& url, std::string* error_message) {
         reinterpret_cast<SQLCHAR*>(const_cast<char*>(connection_.odbc_connection_string.c_str())),
         SQL_NTS,
         out_buffer,
-        static_cast<SQLSMALLINT>(sizeof(out_buffer)),
+        sizeof(out_buffer),
         &out_length,
         SQL_DRIVER_NOPROMPT
     );
@@ -245,7 +245,7 @@ bool OdbcDriver::test_connection(std::string* error_message) {
         return false;
     }
 
-    const std::string                     sql = (db_type_ == DbType::Oracle) ? "SELECT 1 FROM DUAL" : "SELECT 1";
+    const std::string                     sql = db_type_ == DbType::Oracle ? "SELECT 1 FROM DUAL" : "SELECT 1";
     std::vector<std::vector<std::string>> rows;
     if (!run_query(sql, &rows, error_message)) { return false; }
     return !rows.empty();
@@ -361,7 +361,7 @@ bool OdbcDriver::run_query(
             std::string value;
             bool        read_complete = false;
             while (!read_complete) {
-                SQLCHAR         buffer[kOdbcTextBufferSize] = {0};
+                SQLCHAR         buffer[kOdbcTextBufferSize] = {};
                 SQLLEN          indicator                   = 0;
                 const SQLRETURN data_rc = SQLGetData(stmt, col, SQL_C_CHAR, buffer, sizeof(buffer), &indicator);
 
@@ -415,10 +415,10 @@ bool OdbcDriver::load_mysql_metadata(
         ColumnMetadata column;
         column.name                = row[0];
         column.data_type           = row[1];
-        const bool default_is_null = (row[3] == "1");
-        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.auto_increment      = (to_lower_ascii(row[4]).find("auto_increment") != std::string::npos);
-        column.unsigned_number     = (to_lower_ascii(row[1]).find("unsigned") != std::string::npos);
+        const bool default_is_null = row[3] == "1";
+        column.default_value       = default_is_null ? std::nullopt : std::optional(row[2]);
+        column.auto_increment      = to_lower_ascii(row[4]).find("auto_increment") != std::string::npos;
+        column.unsigned_number     = to_lower_ascii(row[1]).find("unsigned") != std::string::npos;
         column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
         column.numeric_precision   = try_parse_optional_int(row[6]);
         column.numeric_scale       = try_parse_optional_int(row[7]);
@@ -516,8 +516,8 @@ bool OdbcDriver::load_postgresql_metadata(
         ColumnMetadata column;
         column.name                = row[0];
         column.data_type           = row[1];
-        const bool default_is_null = (row[3] == "1" || to_lower_ascii(row[3]) == "true");
-        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
+        const bool default_is_null = row[3] == "1" || to_lower_ascii(row[3]) == "true";
+        column.default_value       = default_is_null ? std::nullopt : std::optional(row[2]);
         column.auto_increment      = false;
         column.unsigned_number     = false;
         column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
@@ -625,9 +625,9 @@ bool OdbcDriver::load_oracle_metadata(
         ColumnMetadata column;
         column.name                = row[0];
         column.data_type           = row[1];
-        const bool default_is_null = (row[3] == "1");
-        column.default_value       = default_is_null ? std::nullopt : std::optional<std::string>(row[2]);
-        column.auto_increment      = (row[4] == "1");
+        const bool default_is_null = row[3] == "1";
+        column.default_value       = default_is_null ? std::nullopt : std::optional(row[2]);
+        column.auto_increment      = row[4] == "1";
         column.unsigned_number     = false;
         column.character_length    = normalize_character_length(try_parse_optional_int(row[5]));
         column.numeric_precision   = try_parse_optional_int(row[6]);

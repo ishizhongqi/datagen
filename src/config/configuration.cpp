@@ -147,7 +147,7 @@ bool parse_positive_int(
 }
 
 bool parse_rows(const Json& root, const ParseMode mode, int* rows, std::vector<ValidationIssue>& issues) {
-    const bool required = (mode == ParseMode::RequireOutputSettings);
+    const bool required = mode == ParseMode::RequireOutputSettings;
     return parse_positive_int(root, kKeyRows, rows, issues, 1, required, !required);
 }
 
@@ -306,7 +306,7 @@ bool parse_file_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    const std::string base_path = "$.output.file";
+    constexpr std::string base_path = "$.output.file";
     if (!output.contains(kKeyOutputFile)) {
         add_issue(
             issues,
@@ -357,7 +357,7 @@ bool parse_database_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    const std::string base_path = "$.output.database";
+    constexpr std::string base_path = "$.output.database";
     if (!output.contains(kKeyOutputDatabase)) {
         add_issue(
             issues,
@@ -515,7 +515,7 @@ void validate_and_collect_fields(
         return;
     }
 
-    for (size_t i = 0; i < root.at("fields").size(); ++i) {
+    for (std::string::size_type i = 0; i < root.at("fields").size(); ++i) {
         const std::string path  = "$.fields[" + std::to_string(i) + "]";
         const auto&       field = root.at("fields").at(i);
         if (!field.is_object()) {
