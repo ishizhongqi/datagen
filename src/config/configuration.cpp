@@ -306,7 +306,7 @@ bool parse_file_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    constexpr std::string base_path = "$.output.file";
+    const std::string base_path = "$.output.file";
     if (!output.contains(kKeyOutputFile)) {
         add_issue(
             issues,
@@ -357,7 +357,7 @@ bool parse_database_output(
     GenerationConfig*             cfg,
     std::vector<ValidationIssue>& issues
 ) {
-    constexpr std::string base_path = "$.output.database";
+    const std::string base_path = "$.output.database";
     if (!output.contains(kKeyOutputDatabase)) {
         add_issue(
             issues,
