@@ -67,7 +67,7 @@ std::uint64_t estimate_row_size(const config::GenerationConfig& cfg) {
         }
     }
 
-    size += static_cast<std::uint64_t>(cfg.fields.size() * 3);
+    size += cfg.fields.size() * 3;
     return std::max<std::uint64_t>(size, 1);
 }
 
