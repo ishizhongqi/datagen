@@ -1,8 +1,8 @@
-# Data Generator
+# Datagen
 
-[![codecov](https://codecov.io/gh/ishizhongqi/data-generator/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/data-generator)
+[![codecov](https://codecov.io/gh/ishizhongqi/datagen/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/datagen)
 
-Data Generator is a C++ CLI that generates synthetic datasets from a JSON configuration. It can write CSV/JSON/SQL files or insert rows into databases via ODBC or SQLite.
+Datagen is a C++ CLI that generates synthetic datasets from a JSON configuration. It can write CSV/JSON/SQL files or insert rows into databases via ODBC or SQLite.
 
 > Note: Most of the code in this project was generated with AI assistance.
 
@@ -10,13 +10,13 @@ Data Generator is a C++ CLI that generates synthetic datasets from a JSON config
 
 **CLI**
 
-`data-generator <command> [options]`
+`datagen <command> [options]`
 
 Command summary:
 
 - `help`: Show help for all commands.
 - `init`: Generate a JSON configuration template.
-- `preview`: Generate a single-row preview.
+- `preview`: Generate preview rows.
 - `run`: Generate full dataset from JSON config.
 - `info`: List generators or show generator details.
 - `drivers`: List installed ODBC drivers.
@@ -44,6 +44,7 @@ Options:
 Options:
 
 - `<json>`: Input JSON config file. Required.
+- `--rows <N>`: Preview row count. Integer `>= 1`. Default `1`.
 - `--field <name>`: Field name to preview. Optional.
 - `-h, --help`: Show help.
 
@@ -108,41 +109,47 @@ Root keys:
 - `database`: object. Required when `type=database`.
   - `connection`: string. Required. Use `odbc://...` or `sqlite://...`.
   - `table`: string. Required.
-  - `insert_mode`: string. `auto`, `insert`, `bulk`, `load`.
-  - `batch_size`: integer. `>= 1`.
-  - `queue_size`: integer. `>= 1`.
-  - `threads`: integer. `>= 1`.
+  - `mode`: string. `fast`, `balanced`, or `safe`. Default `balanced`.
+  - `write_mode`: string. `append`, `truncate`, or `upsert`. Default `append`.
   - `transaction_mode`: string. `per-batch`, `per-run`, `none`.
-  - `error_policy`: string. `stop`, `continue`, `rollback-batch`, `rollback-all`.
-  - `rate_limit_rows_per_sec`: integer. `>= 1`.
+  - `error_policy`: string. `stop`, `continue`, or `rollback`. Default `stop`.
+  - `advanced`: object. Optional. Overrides the defaults implied by `mode`.
+    - `insert_mode`: string. `insert` or `load`.
+    - `batch_size`: integer. `>= 1`.
+    - `queue_size`: integer. `>= 1`.
+    - `threads`: integer. `>= 1`.
+    - `rate_limit_rows_per_sec`: integer. `>= 0`. `0` means unlimited.
 
 `output.database` details:
 
-- `insert_mode`: controls how rows are written.
-  - `auto`: chooses `load` when the driver supports load mode and `rows >= 50000`; otherwise chooses `bulk` when `batch_size > 1`; otherwise chooses `insert`.
-  - `insert`: executes one `INSERT INTO ... VALUES (...)` per row.
-  - `bulk`: writes one batch at a time.
-    - MySQL/PostgreSQL/SQLite: `INSERT INTO ... VALUES (...), (...), ...`
-    - Oracle: `INSERT ALL ... INTO ... VALUES (...) ... SELECT 1 FROM DUAL`
-    - If the current database does not support multi-row `VALUES`, the backend falls back to row-by-row `insert`.
-  - `load`: writes a temporary data file under `<workspace>/tmp/`, then asks the database to import it.
-    - MySQL: `LOAD DATA LOCAL INFILE`
-    - PostgreSQL: `COPY ... FROM`
-    - SQLite: not supported
-    - Oracle: not supported in the current backend
-  - Notes:
-    - SQLite uses `insert` or `bulk`; `load` is rejected at runtime.
-    - MySQL load mode can fall back to `bulk` if `LOAD DATA LOCAL INFILE` is disabled by the driver or server.
-- `batch_size`: rows per write batch. Default `1000`.
-  - Used by `bulk` and `load`, and also defines the transaction chunk when `transaction_mode=per-batch`.
-  - With `insert`, rows are still grouped in memory by batch, but each row in the batch is sent as its own `INSERT`.
-- `queue_size`: capacity of the in-memory queue between the generator thread and database writer thread(s). Default `1024`.
-  - Larger values can smooth producer/consumer imbalance.
-  - Smaller values reduce memory usage and apply backpressure earlier.
-- `threads`: number of database writer threads. Default `2`.
-  - SQLite is forced to `1` because it only supports a single writer in this backend.
-  - `transaction_mode=per-run` is also forced to `1`, because one transaction cannot be safely shared across multiple writer threads here.
-  - In the internal config this field maps to `db_threads`.
+- `mode`: quick presets for the advanced parameters.
+  - `fast`: `load`, `5000`, `5120`, `8`, `0`
+  - `balanced`: `insert`, `2000`, `2048`, `2`, `20000`
+  - `safe`: `insert`, `1000`, `1024`, `1`, `5000`
+  - The values above are, in order: `insert_mode`, `batch_size`, `queue_size`, `threads`, `rate_limit_rows_per_sec`.
+- `advanced`: explicit overrides for the defaults implied by `mode`.
+  - If `advanced` is omitted, the current `mode` is used as-is.
+  - If one key is present under `advanced`, only that key is overridden.
+- `write_mode`: controls what happens before a row is written.
+  - `append`: append new rows.
+  - `truncate`: clear the target table before generation.
+  - `upsert`: update existing rows when a generated primary key or unique key already exists, otherwise insert.
+- `insert_mode`: controls how rows reach the database.
+  - `insert`: batched SQL inserts. This is the old bulk-insert behavior.
+  - `load`: write a temporary data file under `<workspace>/tmp/`, then ask the database to import it.
+  - If the database or current `write_mode` does not support `load`, the backend falls back to `insert` and logs the reason.
+- `batch_size`: rows per write batch.
+  - This affects SQL batch size, and also the transaction chunk when `transaction_mode=per-batch`.
+- `queue_size`: capacity of the in-memory queue between the generator side and the database writer side.
+  - The queue stores generated rows waiting to be imported.
+  - If the queue becomes full, generation blocks until writers catch up. So this is a throughput-vs-memory knob, not a correctness knob.
+  - As a practical rule, start with the preset default from `mode`. Increase it when generation is much faster than imports and you want smoother throughput. Decrease it when memory usage matters more than peak throughput.
+  - In most cases, keeping `queue_size` around `1x` to `4x` of `batch_size` is a reasonable starting point.
+- `threads`: number of database writer threads, not the number of generator threads.
+  - It does take effect: the backend starts that many writer workers when the database and transaction mode allow it.
+  - SQLite is forced to `1`, because this backend only supports a single SQLite writer.
+  - `transaction_mode=per-run` is also forced to `1`, because one run-wide transaction is not shared across multiple writers here.
+  - So if you set `threads=8`, the log may still show `Threads: 1 (...)` when the runtime has to downgrade it.
 - `transaction_mode`: controls transaction boundaries.
   - `per-batch`: begin one transaction for each batch, then `COMMIT` or `ROLLBACK` that batch.
   - `per-run`: begin one transaction for the whole run, then `COMMIT` or `ROLLBACK` once at the end.
@@ -154,13 +161,13 @@ Root keys:
 - `error_policy`: controls what happens after a batch or statement error.
   - `stop`: stop immediately and report the first error.
   - `continue`: log a warning and keep processing later rows/batches.
-  - `rollback-batch`: roll back only the current batch when a batch transaction exists, then continue.
-  - `rollback-all`: stop further processing and roll back the whole run when a per-run transaction exists.
+  - `rollback`: only available with `insert_mode=insert`.
+  - With `transaction_mode=per-batch`, `rollback` rolls back the current batch and continues.
+  - With `transaction_mode=per-run`, `rollback` rolls back the full run and stops.
   - Notes:
-    - `rollback-batch` is most meaningful with `transaction_mode=per-batch`.
-    - `rollback-all` is most meaningful with `transaction_mode=per-run`.
-    - With `transaction_mode=none`, there is no explicit transaction to roll back, so rollback policies mainly affect whether processing stops or continues.
-- `rate_limit_rows_per_sec`: maximum import speed target after successful writes. Default `20000`.
+    - If `insert_mode` is not `insert`, rollback is downgraded to `stop`.
+    - With `transaction_mode=none`, there is no explicit transaction to roll back.
+- `rate_limit_rows_per_sec`: maximum import speed target after successful writes.
   - The backend sleeps after each successful batch so the effective import rate stays near this value.
   - This limits database write throughput, not just row generation speed.
 
@@ -176,9 +183,10 @@ Field object keys:
 
 - `name`: string. Column/field name.
 - `generator`: string. See supported generators below.
-- `config`: object. Generator-specific config. Use `data-generator info <name>` for details.
+- `config`: object. Generator-specific config. Use `datagen info <name>` for details.
 - `unique`: boolean. Only for generators that support unique output.
-- `data_linkage`: string. Format `module:Group1` (module depends on generator).
+- `group`: string. Any non-empty string.
+  - Group linkage is still isolated by generator module internally, so the same group value in different modules does not mix records together.
 - `default_value`: object. Overrides a percentage of rows with a fixed value.
 - `null_value`: object. Overrides a percentage of rows with nulls.
 
@@ -206,7 +214,7 @@ social_network_id, product_name, product_category, color, size, barcode, enum_it
 boolean, sequence, regular_expression
 ```
 
-Use `data-generator info <name>` to see required config keys and supported values for each generator.
+Use `datagen info <name>` to see required config keys and supported values for each generator.
 
 `boolean` generator:
 
@@ -255,16 +263,16 @@ Example commands:
 
 ```sh
 # Validate config
-data-generator check example_mysql_db.json
+datagen check example_mysql_db.json
 
-# Preview one row (format comes from JSON config)
-data-generator preview example_file.json
+# Preview five rows (file output keeps the configured file format, database output uses CSV)
+datagen preview example_file.json --rows 5
 
 # Generate CSV to file
-data-generator run example_file.json --output out.csv
+datagen run example_file.json --output out.csv
 
 # Generate data into MySQL (ODBC)
-data-generator run example_mysql_db.json
+datagen run example_mysql_db.json
 ```
 
 **License**

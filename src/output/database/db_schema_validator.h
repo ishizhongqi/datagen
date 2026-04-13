@@ -4,8 +4,8 @@
 
 /// @file db_schema_validator.h
 
-#ifndef DATA_GENERATOR_DB_SCHEMA_VALIDATOR_H
-#define DATA_GENERATOR_DB_SCHEMA_VALIDATOR_H
+#ifndef DATAGEN_DB_SCHEMA_VALIDATOR_H
+#define DATAGEN_DB_SCHEMA_VALIDATOR_H
 
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@
 #include "config/configuration.h"
 #include "output/database/db_metadata.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 enum class ValidationLevel {
     Info,
@@ -37,6 +37,6 @@ SchemaValidationReport validate_table_schema(const config::GenerationConfig& cfg
 
 std::string validation_level_to_string(ValidationLevel level);
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

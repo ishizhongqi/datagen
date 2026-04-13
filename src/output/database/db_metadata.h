@@ -4,14 +4,14 @@
 
 /// @file db_metadata.h
 
-#ifndef DATA_GENERATOR_DB_METADATA_H
-#define DATA_GENERATOR_DB_METADATA_H
+#ifndef DATAGEN_DB_METADATA_H
+#define DATAGEN_DB_METADATA_H
 
 #include <optional>
 #include <string>
 #include <vector>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 enum class DbType {
     Odbc,
@@ -88,6 +88,6 @@ std::string db_type_to_string(DbType type);
 
 ColumnTypeFamily classify_column_type(const ColumnMetadata& column);
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

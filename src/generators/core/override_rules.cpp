@@ -9,7 +9,7 @@
 #include <random>
 #include <stdexcept>
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 namespace {
 
@@ -111,4 +111,4 @@ void next_row(OverrideState& state) {
     if (state.total_rows > 0 && state.row_index < state.total_rows) { ++state.row_index; }
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

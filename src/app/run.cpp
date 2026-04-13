@@ -16,7 +16,7 @@
 #include "cli/command_help.h"
 #include "cli/exit_codes.h"
 
-namespace data_generator {
+namespace datagen {
 
 int run(int argc, char** argv) {
     if (argc >= 2) {
@@ -28,7 +28,7 @@ int run(int argc, char** argv) {
         }
     }
 
-    cxxopts::Options options("data-generator", "Data generator CLI.");
+    cxxopts::Options options(cli::program_display_name(), "Datagen CLI.");
     options.allow_unrecognised_options();
     options.add_options()("command", "Command to run", cxxopts::value<std::string>()->default_value(""));
     options.parse_positional({"command"});
@@ -40,4 +40,4 @@ int run(int argc, char** argv) {
     return cli::CliDispatcher::dispatch(command, sub_args);
 }
 
-}  // namespace data_generator
+}  // namespace datagen

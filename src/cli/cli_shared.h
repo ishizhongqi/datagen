@@ -4,8 +4,8 @@
 
 /// @file cli_shared.h
 
-#ifndef DATA_GENERATOR_CLI_SHARED_H
-#define DATA_GENERATOR_CLI_SHARED_H
+#ifndef DATAGEN_CLI_SHARED_H
+#define DATAGEN_CLI_SHARED_H
 
 #include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
@@ -16,7 +16,7 @@
 #include "config/configuration.h"
 #include "config/generator_catalog.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 using Json        = nlohmann::json;
 using OrderedJson = nlohmann::ordered_json;
@@ -32,9 +32,11 @@ cxxopts::ParseResult parse_options(cxxopts::Options& options, const std::vector<
 void print_validation_issues(const std::vector<config::ValidationIssue>& issues, std::ostream& output);
 
 std::string version_string();
+std::string program_display_name();
+std::string github_url();
 
 void print_version(std::ostream& output);
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli
 
 #endif

@@ -7,8 +7,8 @@
 
 #include "output/database/odbc_registry.h"
 
-using data_generator::database::OdbcDriverInfo;
-using data_generator::database::list_odbc_drivers;
+using datagen::database::OdbcDriverInfo;
+using datagen::database::list_odbc_drivers;
 
 TEST(OdbcRegistryTest, HandlesNullPointerAndListsDrivers) {
     std::string error;

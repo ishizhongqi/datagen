@@ -8,7 +8,7 @@
 
 #include <cstring>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -81,4 +81,4 @@ bool parse_db_connection(const std::string& connection, DbUrl* parsed, std::stri
     return false;
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

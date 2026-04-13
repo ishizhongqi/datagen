@@ -20,7 +20,7 @@
 #include "output/file/json_writer.h"
 #include "output/file/sql_writer.h"
 
-namespace data_generator::output {
+namespace datagen::output {
 
 namespace {
 
@@ -95,14 +95,6 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
 
     const std::uint64_t estimated_row_size   = estimate_row_size(cfg);
     const std::uint64_t estimated_total_size = estimated_row_size * static_cast<std::uint64_t>(cfg.rows);
-    logger.info(
-        "Estimated row size=" +
-        std::to_string(estimated_row_size) +
-        " bytes, estimated total file size=" +
-        std::to_string(estimated_total_size) +
-        " bytes"
-    );
-
     constexpr std::uint64_t kLargeOutputThresholdBytes = 128ULL * 1024ULL * 1024ULL;
     if (!prompt_large_output_if_needed(estimated_total_size, kLargeOutputThresholdBytes)) {
         throw std::runtime_error("generation cancelled by user");
@@ -111,7 +103,7 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     std::ofstream output_stream(output_path, std::ios::trunc);
     if (!output_stream) { throw std::runtime_error("failed to open output file: " + output_path.string()); }
 
-    logger.info("Output backend=file path=" + output_path.string());
+    logger.info("Generation started");
 
     std::vector<std::string> columns;
     columns.reserve(cfg.fields.size());
@@ -207,7 +199,15 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     double elapsed_sec  = std::chrono::duration<double>(ended_at - started_at).count();
     if (elapsed_sec < kMinElapsedSeconds) { elapsed_sec = kMinElapsedSeconds; }
     const auto   rate        = static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec);
-    logger.info("Generated rows=" + std::to_string(generated) + " rate=" + std::to_string(rate) + " rows/s");
+    logger.info(
+        "Generated rows: generated=" +
+        std::to_string(generated) +
+        ", success=" +
+        std::to_string(generated) +
+        ", failed=0, rate=" +
+        std::to_string(rate) +
+        " rows/s"
+    );
 
     OutputStats stats;
     stats.execution_info = result.info;
@@ -216,4 +216,4 @@ OutputStats FileBackend::generate(const config::GenerationConfig& cfg, const eng
     return stats;
 }
 
-}  // namespace data_generator::output
+}  // namespace datagen::output

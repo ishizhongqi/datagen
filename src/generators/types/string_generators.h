@@ -4,16 +4,16 @@
 
 /// @file string_generators.h
 
-#ifndef DATA_GENERATOR_STRING_GENERATORS_H
-#define DATA_GENERATOR_STRING_GENERATORS_H
+#ifndef DATAGEN_STRING_GENERATORS_H
+#define DATAGEN_STRING_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register string-related generators.
 void register_string_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_STRING_GENERATORS_H
+#endif  // DATAGEN_STRING_GENERATORS_H

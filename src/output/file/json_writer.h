@@ -4,8 +4,8 @@
 
 /// @file json_writer.h
 
-#ifndef DATA_GENERATOR_JSON_WRITER_H
-#define DATA_GENERATOR_JSON_WRITER_H
+#ifndef DATAGEN_JSON_WRITER_H
+#define DATAGEN_JSON_WRITER_H
 
 #include <ostream>
 #include <string>
@@ -14,7 +14,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 void write_json_array_start(std::ostream& out);
 void write_json_row(
@@ -35,6 +35,6 @@ void write_json(
     const config::JsonOptions&      options
 );
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file
 
 #endif

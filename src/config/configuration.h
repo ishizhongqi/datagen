@@ -4,8 +4,8 @@
 
 /// @file configuration.h
 
-#ifndef DATA_GENERATOR_CONFIGURATION_H
-#define DATA_GENERATOR_CONFIGURATION_H
+#ifndef DATAGEN_CONFIGURATION_H
+#define DATAGEN_CONFIGURATION_H
 
 #include <cstdint>
 #include <nlohmann/json.hpp>
@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace data_generator::config {
+namespace datagen::config {
 
 using Json = nlohmann::json;
 
@@ -35,10 +35,20 @@ enum class LineEnding {
     CRLF,
 };
 
+enum class DatabaseMode {
+    Fast,
+    Balanced,
+    Safe,
+};
+
+enum class WriteMode {
+    Append,
+    Truncate,
+    Upsert,
+};
+
 enum class InsertMode {
-    Auto,
     Insert,
-    Bulk,
     Load,
 };
 
@@ -51,8 +61,7 @@ enum class TransactionMode {
 enum class ErrorPolicy {
     Stop,
     Continue,
-    RollbackBatch,
-    RollbackAll,
+    Rollback,
 };
 
 struct ValidationIssue {
@@ -101,9 +110,11 @@ struct FileOutputConfig {
 struct DatabaseOutputConfig {
     std::string     connection;
     std::string     table                   = "generated_data";
-    InsertMode      insert_mode             = InsertMode::Auto;
-    int             batch_size              = 1000;
-    int             queue_size              = 1024;
+    DatabaseMode    mode                    = DatabaseMode::Balanced;
+    WriteMode       write_mode              = WriteMode::Append;
+    InsertMode      insert_mode             = InsertMode::Insert;
+    int             batch_size              = 2000;
+    int             queue_size              = 2048;
     int             db_threads              = 2;
     TransactionMode transaction_mode        = TransactionMode::PerBatch;
     ErrorPolicy     error_policy            = ErrorPolicy::Stop;
@@ -120,7 +131,7 @@ struct FieldSpec {
     std::string                name;
     std::string                generator;
     Json                       raw;
-    std::optional<std::string> data_linkage;
+    std::optional<std::string> group;
     bool                       unique = false;
 };
 
@@ -138,6 +149,10 @@ std::optional<OutputType>      parse_output_type(const std::string& value);
 std::string                    output_type_to_string(OutputType type);
 std::optional<LineEnding>      parse_line_ending(const std::string& value);
 std::string                    line_ending_to_string(LineEnding ending);
+std::optional<DatabaseMode>    parse_database_mode(const std::string& value);
+std::string                    database_mode_to_string(DatabaseMode mode);
+std::optional<WriteMode>       parse_write_mode(const std::string& value);
+std::string                    write_mode_to_string(WriteMode mode);
 std::optional<InsertMode>      parse_insert_mode(const std::string& value);
 std::string                    insert_mode_to_string(InsertMode mode);
 std::optional<TransactionMode> parse_transaction_mode(const std::string& value);
@@ -163,6 +178,6 @@ struct CliOverrides {
 
 void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides);
 
-}  // namespace data_generator::config
+}  // namespace datagen::config
 
 #endif

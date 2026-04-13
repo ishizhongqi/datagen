@@ -4,8 +4,8 @@
 
 /// @file output_backend.h
 
-#ifndef DATA_GENERATOR_OUTPUT_BACKEND_H
-#define DATA_GENERATOR_OUTPUT_BACKEND_H
+#ifndef DATAGEN_OUTPUT_BACKEND_H
+#define DATAGEN_OUTPUT_BACKEND_H
 
 #include <cstdint>
 #include <memory>
@@ -13,7 +13,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-namespace data_generator::output {
+namespace datagen::output {
 
 struct OutputStats {
     engine::ExecutionInfo execution_info;
@@ -30,6 +30,6 @@ public:
 
 std::unique_ptr<IOutputBackend> make_output_backend(const config::GenerationConfig& cfg);
 
-}  // namespace data_generator::output
+}  // namespace datagen::output
 
 #endif

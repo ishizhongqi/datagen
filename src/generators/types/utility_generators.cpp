@@ -19,7 +19,7 @@
 #include "generators/core/generator_registry.h"
 #include "generators/core/override_rules.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 namespace {
 
@@ -299,4 +299,4 @@ void register_utility_generators(GeneratorRegistry& registry) {
     });
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

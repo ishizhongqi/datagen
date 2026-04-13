@@ -14,7 +14,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -654,4 +654,4 @@ bool OdbcDriver::load_oracle_metadata(
     return true;
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

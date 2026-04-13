@@ -19,15 +19,15 @@
 #include "output/file/json_writer.h"
 #include "output/file/sql_writer.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 int CommandPreview::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator preview", "Generate a single row preview.");
-    options
-        .add_options()("config", "Input JSON file", cxxopts::value<std::string>())("field", "Field name", cxxopts::value<std::string>())(
-            "h,help",
-            "Show help"
-        );
+    cxxopts::Options options(program_display_name() + " preview", "Generate preview rows.");
+    options.add_options()
+        ("config", "Input JSON file", cxxopts::value<std::string>())
+        ("rows", "Preview row count", cxxopts::value<int>()->default_value("1"))
+        ("field", "Field name", cxxopts::value<std::string>())
+        ("h,help", "Show help");
     options.parse_positional({"config"});
 
     cxxopts::ParseResult result;
@@ -60,16 +60,24 @@ int CommandPreview::run(const std::vector<std::string>& args) {
             return exit_codes::kRuntimeFailure;
         }
 
-        const auto        row          = engine::preview_row(cfg);
+        const int preview_rows = result["rows"].as<int>();
+        if (preview_rows <= 0) {
+            std::cerr << "--rows must be a positive integer\n";
+            return exit_codes::kUsage;
+        }
+
+        const auto        rows         = engine::preview_rows(cfg, static_cast<std::size_t>(preview_rows));
         const std::string field_filter = result.count("field") ? result["field"].as<std::string>() : "";
 
         if (!field_filter.empty()) {
             for (std::string::size_type i = 0; i < cfg.fields.size(); ++i) {
                 if (cfg.fields[i].name == field_filter) {
-                    if (!row[i].has_value()) {
-                        std::cout << "NULL\n";
-                    } else {
-                        std::cout << *row[i] << "\n";
+                    for (const auto& row : rows) {
+                        if (!row[i].has_value()) {
+                            std::cout << "NULL\n";
+                        } else {
+                            std::cout << *row[i] << "\n";
+                        }
                     }
                     return exit_codes::kOk;
                 }
@@ -86,7 +94,6 @@ int CommandPreview::run(const std::vector<std::string>& args) {
         boolean_columns.reserve(cfg.fields.size());
         for (const auto& field : cfg.fields) { boolean_columns.push_back(field.generator == "boolean"); }
 
-        std::vector<engine::Row>   rows            = {row};
         const bool                 use_csv_preview = cfg.output.type == config::OutputType::Database;
         const config::OutputFormat format = use_csv_preview ? config::OutputFormat::Csv : cfg.output.file.format;
         output::file::DelimitedWriterOptions delimited_options;
@@ -138,4 +145,4 @@ int CommandPreview::run(const std::vector<std::string>& args) {
     }
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

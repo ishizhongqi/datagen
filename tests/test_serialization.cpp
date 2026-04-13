@@ -11,7 +11,7 @@
 #include "output/file/json_writer.h"
 #include "output/file/sql_writer.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 

@@ -19,14 +19,14 @@
 #include "output/database/db_url_parser.h"
 #include "test_paths.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 
 int invoke_cli(const std::vector<std::string>& args) {
     std::vector<std::string> storage;
     storage.reserve(args.size() + 1);
-    storage.emplace_back("data-generator");
+    storage.emplace_back("datagen");
     for (const auto& arg : args) {
         storage.push_back(arg);
     }
@@ -41,8 +41,8 @@ int invoke_cli(const std::vector<std::string>& args) {
 }
 
 std::filesystem::path write_json_file(const std::string& name, const std::string& payload) {
-    const auto path = data_generator::test::artifact_path(name);
-    data_generator::test::reset_path(path);
+    const auto path = datagen::test::artifact_path(name);
+    datagen::test::reset_path(path);
     std::ofstream out(path, std::ios::trunc);
     out << payload;
     out.close();
@@ -274,7 +274,7 @@ TEST(CliCommandsTest, InfoDriversAndVersion) {
 }
 
 TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
-    const auto init_out = data_generator::test::artifact_path("dg_cli_init_template.json");
+    const auto init_out = datagen::test::artifact_path("dg_cli_init_template.json");
     EXPECT_EQ(
         invoke_cli({"init", init_out.string(), "--template", "file", "--format", "csv"}),
         cli::exit_codes::kOk
@@ -293,7 +293,7 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
     const auto invalid_schema = write_json_file("dg_cli_invalid_schema.json", kInvalidConfigJson);
     EXPECT_EQ(invoke_cli({"check", invalid_schema.string()}), cli::exit_codes::kRuntimeFailure);
 
-    const auto schema_out = data_generator::test::artifact_path("dg_cli_schema.json");
+    const auto schema_out = datagen::test::artifact_path("dg_cli_schema.json");
     EXPECT_EQ(invoke_cli({"schema", schema_out.string()}), cli::exit_codes::kOk);
     EXPECT_TRUE(std::filesystem::exists(schema_out));
 
@@ -310,7 +310,7 @@ TEST(CliCommandsTest, InitPreviewCheckAndSchema) {
 }
 
 TEST(CliCommandsTest, InitFormatsWarningsAndInference) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
 
     EXPECT_EQ(
         invoke_cli({"init", (temp_dir / "dg_init_bad_template.json").string(), "--template", "bad"}),
@@ -398,7 +398,7 @@ TEST(CliCommandsTest, InitRejectsInvalidArgumentsAndOpenFailure) {
     EXPECT_EQ(invoke_cli({"init"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"init", "--bad"}), cli::exit_codes::kUsage);
 
-    const auto dir_path = data_generator::test::artifact_path("dg_init_dir");
+    const auto dir_path = datagen::test::artifact_path("dg_init_dir");
     std::error_code ec;
     std::filesystem::create_directories(dir_path, ec);
 
@@ -409,7 +409,7 @@ TEST(CliCommandsTest, InitRejectsInvalidArgumentsAndOpenFailure) {
 }
 
 TEST(CliCommandsTest, InitBuildsJsonAndTabDelimitedTemplates) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
 
     const auto json_out = temp_dir / "dg_init_json.json";
     EXPECT_EQ(
@@ -434,7 +434,7 @@ TEST(CliCommandsTest, InitBuildsJsonAndTabDelimitedTemplates) {
 
 TEST(CliCommandsTest, RunErrorAndHelpBranches) {
     const auto valid_input = write_json_file("dg_cli_valid_run.json", kValidConfigJson);
-    const auto output_path = data_generator::test::artifact_path("dg_cli_out.csv");
+    const auto output_path = datagen::test::artifact_path("dg_cli_out.csv");
 
     EXPECT_EQ(invoke_cli({"run"}), cli::exit_codes::kUsage);
     EXPECT_EQ(invoke_cli({"run", valid_input.string(), "--rows", "0"}), cli::exit_codes::kUsage);
@@ -513,7 +513,7 @@ TEST(CliCommandsTest, CheckWarningsAndFailures) {
 }
 
 TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionTest) {
-    const auto sqlite_path = data_generator::test::artifact_path("dg_cli_check_warn.sqlite");
+    const auto sqlite_path = datagen::test::artifact_path("dg_cli_check_warn.sqlite");
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
 
@@ -538,7 +538,7 @@ TEST(CliCommandsTest, CheckSupportsDatabaseWarningAndSuccessfulSqliteConnectionT
 }
 
 TEST(CliCommandsTest, PreviewFormatsAndDatabasePreview) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
 
     nlohmann::json db_root = {
         {"rows", 1},
@@ -640,7 +640,7 @@ TEST(CliCommandsTest, PreviewHandlesNullFieldAndInvalidConfig) {
 }
 
 TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
 
     const auto file_db_out = temp_dir / "dg_init_file_db_warn.json";
     EXPECT_EQ(
@@ -755,7 +755,7 @@ TEST(CliCommandsTest, InitDatabaseWarningsAndFailures) {
 }
 
 TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_infer_rich.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -791,7 +791,7 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
     const nlohmann::json* first_name_field = find_field_by_name(fields, "firstName");
     ASSERT_NE(first_name_field, nullptr);
     EXPECT_EQ((*first_name_field)["generator"], "first_name");
-    EXPECT_TRUE(first_name_field->contains("data_linkage"));
+    EXPECT_TRUE(first_name_field->contains("group"));
     EXPECT_TRUE(first_name_field->contains("default_value"));
     EXPECT_TRUE(first_name_field->contains("null_value"));
 
@@ -824,7 +824,7 @@ TEST(CliCommandsTest, InitInfersFieldTemplatesFromSqliteMetadata) {
 }
 
 TEST(CliCommandsTest, InitInfersTemporalAndNumericFallbackGeneratorsFromSqliteMetadata) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_infer_temporal.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -874,7 +874,7 @@ TEST(CliCommandsTest, InitInfersTemporalAndNumericFallbackGeneratorsFromSqliteMe
 }
 
 TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMetadata) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_init_name_score.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -989,7 +989,7 @@ TEST(CliCommandsTest, InitInfersNameScoringAndEnumFallbackBranchesFromSqliteMeta
 }
 
 TEST(CliCommandsTest, SchemaOutputPathFailure) {
-    const auto dir_path = data_generator::test::artifact_path("dg_schema_dir");
+    const auto dir_path = datagen::test::artifact_path("dg_schema_dir");
     std::error_code ec;
     std::filesystem::create_directories(dir_path, ec);
 
@@ -1003,7 +1003,7 @@ TEST(CliCommandsTest, SchemaAndDriversRejectInvalidArguments) {
 }
 
 TEST(CliCommandsTest, RunCoversDatabaseOverrideAndArgumentFailures) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
     const auto sqlite_path = temp_dir / "dg_cli_run.sqlite";
     std::error_code ec;
     std::filesystem::remove(sqlite_path, ec);
@@ -1042,15 +1042,15 @@ TEST(CliCommandsTest, RunCoversDatabaseOverrideAndArgumentFailures) {
 }
 
 TEST(CliCommandsTest, CheckDatabaseConnectionWhenAvailable) {
-    const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
+    const char* pg_url = std::getenv("DATAGEN_TEST_PG_URL");
     if (!pg_url || std::string(pg_url).empty()) {
-        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL not set.";
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL not set.";
     }
 
-    data_generator::database::DbUrl parsed;
+    datagen::database::DbUrl parsed;
     std::string error;
-    if (!data_generator::database::parse_db_connection(pg_url, &parsed, &error)) {
-        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL is not in the new connection format: " << error;
+    if (!datagen::database::parse_db_connection(pg_url, &parsed, &error)) {
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL is not in the new connection format: " << error;
     }
 
     nlohmann::json root = {

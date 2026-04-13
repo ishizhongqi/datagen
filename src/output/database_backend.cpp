@@ -36,7 +36,7 @@
 #include "output/database/type_adapter.h"
 #include "utils/env_utils.h"
 
-namespace data_generator::output {
+namespace datagen::output {
 
 namespace {
 
@@ -56,12 +56,96 @@ bool stdout_is_tty() {
 #endif
 }
 
-config::InsertMode choose_insert_mode(const config::GenerationConfig& cfg, const database::IDatabaseDriver& driver) {
-    if (cfg.output.database.insert_mode != config::InsertMode::Auto) { return cfg.output.database.insert_mode; }
+std::string bool_to_text(const bool value) {
+    return value ? "true" : "false";
+}
 
-    if (driver.supports_load_mode() && cfg.rows >= 50000) { return config::InsertMode::Load; }
-    if (cfg.output.database.batch_size > 1) { return config::InsertMode::Bulk; }
-    return config::InsertMode::Insert;
+std::string escape_log_text(const std::string& text) {
+    std::string escaped;
+    escaped.reserve(text.size());
+    for (const char ch : text) {
+        switch (ch) {
+        case '\\': escaped += "\\\\"; break;
+        case '\n': escaped += "\\n"; break;
+        case '\r': escaped += "\\r"; break;
+        case '\t': escaped += "\\t"; break;
+        default  : escaped.push_back(ch); break;
+        }
+    }
+    return escaped;
+}
+
+std::string json_value_to_log_text(const config::Json& value) {
+    if (value.is_string()) { return escape_log_text(value.get<std::string>()); }
+    if (value.is_boolean()) { return bool_to_text(value.get<bool>()); }
+    if (value.is_number_integer() || value.is_number_unsigned() || value.is_number_float()) { return value.dump(); }
+    if (value.is_null()) { return "null"; }
+    return value.dump();
+}
+
+bool is_scalar_json_value(const config::Json& value) {
+    return value.is_string() || value.is_boolean() || value.is_number() || value.is_null();
+}
+
+void append_field_log_entries(
+    const config::Json&       value,
+    const std::string&        prefix,
+    std::vector<std::string>* entries
+) {
+    if (!entries || prefix.empty()) { return; }
+
+    if (value.is_object()) {
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            append_field_log_entries(it.value(), prefix + "." + it.key(), entries);
+        }
+        return;
+    }
+
+    if (value.is_array()) {
+        bool all_scalar = true;
+        for (const auto& item : value) {
+            if (!is_scalar_json_value(item)) {
+                all_scalar = false;
+                break;
+            }
+        }
+
+        if (all_scalar) {
+            std::ostringstream oss;
+            bool               first = true;
+            for (const auto& item : value) {
+                if (!first) { oss << "|"; }
+                first = false;
+                oss << json_value_to_log_text(item);
+            }
+            entries->push_back(prefix + "=" + oss.str());
+        } else {
+            entries->push_back(prefix + "=" + value.dump());
+        }
+        return;
+    }
+
+    entries->push_back(prefix + "=" + json_value_to_log_text(value));
+}
+
+std::string build_field_log_line(const config::FieldSpec& field) {
+    std::ostringstream       oss;
+    std::vector<std::string> entries;
+    oss << "Field name=" << field.name << ", generator=" << field.generator;
+
+    if (field.raw.is_object()) {
+        for (auto it = field.raw.begin(); it != field.raw.end(); ++it) {
+            if (it.key() == "name" || it.key() == "generator") { continue; }
+            append_field_log_entries(it.value(), it.key(), &entries);
+        }
+    }
+
+    for (const auto& entry : entries) { oss << ", " << entry; }
+    return oss.str();
+}
+
+config::InsertMode choose_insert_mode(const config::GenerationConfig& cfg) {
+    return cfg.output.database.insert_mode;
 }
 
 template <typename T>
@@ -189,21 +273,10 @@ std::string build_insert_sql(
     const database::DbType                       db_type,
     const std::string&                           table_name,
     const std::vector<std::string>&              columns,
-    const std::vector<std::vector<std::string>>& rows,
-    const config::InsertMode                     mode
+    const std::vector<std::vector<std::string>>& rows
 ) {
     std::ostringstream oss;
-
-    if (mode == config::InsertMode::Insert) {
-        if (rows.empty()) { return ""; }
-        oss << "INSERT INTO " << table_name << " (" << join_columns(columns) << ") VALUES (";
-        for (std::string::size_type i = 0; i < rows[0].size(); ++i) {
-            if (i > 0) { oss << ", "; }
-            oss << rows[0][i];
-        }
-        oss << ")";
-        return oss.str();
-    }
+    if (rows.empty()) { return ""; }
 
     if (db_type == database::DbType::Oracle) {
         oss << "INSERT ALL ";
@@ -231,6 +304,131 @@ std::string build_insert_sql(
     }
 
     return oss.str();
+}
+
+std::string build_sqlite_postgresql_upsert_sql(
+    const std::string&                           table_name,
+    const std::vector<std::string>&              columns,
+    const std::vector<std::string>&              key_columns,
+    const std::vector<std::vector<std::string>>& rows
+) {
+    std::ostringstream oss;
+    oss << build_insert_sql(database::DbType::Postgresql, table_name, columns, rows)
+        << " ON CONFLICT (" << join_columns(key_columns) << ") DO UPDATE SET ";
+    for (std::string::size_type i = 0; i < columns.size(); ++i) {
+        if (i > 0) { oss << ", "; }
+        oss << columns[i] << " = excluded." << columns[i];
+    }
+    return oss.str();
+}
+
+std::string build_mysql_upsert_sql(
+    const std::string&                           table_name,
+    const std::vector<std::string>&              columns,
+    const std::vector<std::vector<std::string>>& rows
+) {
+    std::ostringstream oss;
+    oss << build_insert_sql(database::DbType::Mysql, table_name, columns, rows) << " ON DUPLICATE KEY UPDATE ";
+    for (std::string::size_type i = 0; i < columns.size(); ++i) {
+        if (i > 0) { oss << ", "; }
+        oss << columns[i] << " = VALUES(" << columns[i] << ")";
+    }
+    return oss.str();
+}
+
+std::string build_oracle_upsert_sql(
+    const std::string&                           table_name,
+    const std::vector<std::string>&              columns,
+    const std::vector<std::size_t>&              key_indexes,
+    const std::vector<std::vector<std::string>>& rows
+) {
+    if (rows.empty()) { return ""; }
+
+    std::ostringstream oss;
+    oss << "MERGE INTO " << table_name << " target USING (";
+    for (std::string::size_type row_index = 0; row_index < rows.size(); ++row_index) {
+        if (row_index > 0) { oss << " UNION ALL "; }
+        oss << "SELECT ";
+        for (std::string::size_type col_index = 0; col_index < columns.size(); ++col_index) {
+            if (col_index > 0) { oss << ", "; }
+            oss << rows[row_index][col_index] << " AS c" << col_index;
+        }
+        oss << " FROM DUAL";
+    }
+    oss << ") source ON (";
+    for (std::string::size_type key_pos = 0; key_pos < key_indexes.size(); ++key_pos) {
+        if (key_pos > 0) { oss << " AND "; }
+        oss << "target." << columns[key_indexes[key_pos]] << " = source.c" << key_indexes[key_pos];
+    }
+    oss << ") WHEN MATCHED THEN UPDATE SET ";
+    for (std::string::size_type col_index = 0; col_index < columns.size(); ++col_index) {
+        if (col_index > 0) { oss << ", "; }
+        oss << "target." << columns[col_index] << " = source.c" << col_index;
+    }
+    oss << " WHEN NOT MATCHED THEN INSERT (" << join_columns(columns) << ") VALUES (";
+    for (std::string::size_type col_index = 0; col_index < columns.size(); ++col_index) {
+        if (col_index > 0) { oss << ", "; }
+        oss << "source.c" << col_index;
+    }
+    oss << ")";
+    return oss.str();
+}
+
+std::optional<std::vector<std::size_t>> determine_upsert_key_indexes(
+    const database::TableMetadata&      metadata,
+    const std::vector<std::string>&     columns,
+    const std::vector<const database::ColumnMetadata*>& mapped_columns
+) {
+    for (std::string::size_type i = 0; i < mapped_columns.size(); ++i) {
+        if (mapped_columns[i]->auto_increment) { return std::vector<std::size_t>{i}; }
+    }
+
+    std::unordered_map<std::string, std::size_t> column_to_index;
+    for (std::string::size_type i = 0; i < columns.size(); ++i) { column_to_index[columns[i]] = i; }
+
+    std::optional<std::vector<std::size_t>> best_key;
+    for (const auto& index : metadata.indexes) {
+        if (!index.unique || index.columns.empty()) { continue; }
+
+        std::vector<std::size_t> indexes;
+        bool                     all_present = true;
+        for (const auto& column_name : index.columns) {
+            if (!column_to_index.contains(column_name)) {
+                all_present = false;
+                break;
+            }
+            indexes.push_back(column_to_index.at(column_name));
+        }
+
+        if (!all_present) { continue; }
+        if (!best_key.has_value() || indexes.size() < best_key->size()) { best_key = std::move(indexes); }
+    }
+
+    return best_key;
+}
+
+std::string build_upsert_sql(
+    const database::DbType                       db_type,
+    const std::string&                           table_name,
+    const std::vector<std::string>&              columns,
+    const std::vector<std::size_t>&              key_indexes,
+    const std::vector<std::vector<std::string>>& rows
+) {
+    std::vector<std::string> key_columns;
+    key_columns.reserve(key_indexes.size());
+    for (const std::size_t key_index : key_indexes) { key_columns.push_back(columns[key_index]); }
+
+    switch (db_type) {
+    case database::DbType::Mysql:
+        return build_mysql_upsert_sql(table_name, columns, rows);
+    case database::DbType::Postgresql:
+    case database::DbType::Sqlite:
+        return build_sqlite_postgresql_upsert_sql(table_name, columns, key_columns, rows);
+    case database::DbType::Oracle:
+        return build_oracle_upsert_sql(table_name, columns, key_indexes, rows);
+    default:
+        return "";
+    }
 }
 
 std::string build_load_sql(
@@ -427,7 +625,7 @@ void parse_oracle_dbq(const std::string& dbq, std::string* host, std::string* po
 }
 
 std::string build_connection_info_line(const database::DbUrl& db_url) {
-    if (db_url.type == database::DbType::Sqlite) { return "Database path=" + db_url.database; }
+    if (db_url.type == database::DbType::Sqlite) { return "Database connection: PATH=" + db_url.database; }
     std::string driver;
     std::string dsn;
     std::string host     = db_url.host;
@@ -523,30 +721,36 @@ std::string build_connection_info_line(const database::DbUrl& db_url) {
     }
 
     std::vector<std::string> parts;
-    if (!dsn.empty()) { parts.push_back("dsn=" + dsn); }
-    if (!user.empty()) { parts.push_back("user=" + user); }
-    if (!host.empty()) { parts.push_back("host=" + host); }
-    if (!port.empty()) { parts.push_back("port=" + port); }
-    if (!database.empty()) { parts.push_back("database=" + database); }
-    if (!driver.empty()) { parts.push_back("driver=" + driver); }
+    if (!dsn.empty()) { parts.push_back("DSN=" + dsn); }
+    if (!driver.empty()) { parts.push_back("DRIVER=" + driver); }
+    if (!user.empty()) { parts.push_back("USER=" + user); }
+    if (!host.empty()) { parts.push_back("HOST=" + host); }
+    if (!port.empty()) { parts.push_back("PORT=" + port); }
+    if (!database.empty()) { parts.push_back("DATABASE=" + database); }
 
-    if (parts.empty()) { return "Database connection=<unavailable>"; }
+    if (parts.empty()) { return "Database connection: <unavailable>"; }
 
     std::ostringstream oss;
-    oss << "Database connection";
-    for (const auto& part : parts) {
-        oss << " ";
-        oss << part;
+    oss << "Database connection: ";
+    for (std::string::size_type i = 0; i < parts.size(); ++i) {
+        if (i > 0) { oss << ", "; }
+        oss << parts[i];
     }
     return oss.str();
 }
 
 std::string build_generated_line(const std::uint64_t generated, const std::uint64_t total) {
-    return "[Rows Generated] " + logging::format_progress_bar(generated, total);
+    return "Rows Generated: " + logging::format_progress_bar(generated, total);
 }
 
 std::string build_imported_line(const std::uint64_t imported, const std::uint64_t total) {
-    return "[Data Imported ] " + logging::format_progress_bar(imported, total);
+    return "Data Imported: " + logging::format_progress_bar(imported, total);
+}
+
+std::string format_elapsed_seconds(const double elapsed_seconds) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(3) << elapsed_seconds << "s";
+    return oss.str();
 }
 
 }  // namespace
@@ -554,50 +758,47 @@ std::string build_imported_line(const std::uint64_t imported, const std::uint64_
 OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const engine::ExecutionOptions& options) {
     logging::Logger& logger = logging::Logger::instance();
 
+    auto format_config_line = [](const std::string& label, const std::string& value, const std::string& note) {
+        if (note.empty()) { return label + ": " + value; }
+        return label + ": " + value + " (" + note + ")";
+    };
+
+    auto log_field_lines = [&](logging::Logger* current_logger) {
+        if (!current_logger) { return; }
+        for (const auto& field : cfg.fields) { current_logger->info(build_field_log_line(field)); }
+    };
+
     database::DbUrl db_url;
     std::string     error;
     if (!database::parse_db_connection(cfg.output.database.connection, &db_url, &error)) {
+        logger.error("Run failed: invalid database connection: " + error);
         throw std::runtime_error("invalid database connection: " + error);
     }
 
     auto driver = database::make_database_driver(db_url.type);
-    if (!driver) { throw std::runtime_error("unsupported database type: " + database::db_type_to_string(db_url.type)); }
-    if (!driver->connect(db_url, &error)) { throw std::runtime_error("database connection failed: " + error); }
+    if (!driver) {
+        const std::string message = "unsupported database type: " + database::db_type_to_string(db_url.type);
+        logger.error("Run failed: " + message);
+        throw std::runtime_error(message);
+    }
+    if (!driver->connect(db_url, &error)) {
+        logger.error("Run failed: database connection failed: " + error);
+        throw std::runtime_error("database connection failed: " + error);
+    }
 
     const std::string table_name = cfg.output.database.table;
-    if (table_name.empty()) { throw std::runtime_error("database output requires table name"); }
+    if (table_name.empty()) {
+        logger.error("Run failed: database output requires table name");
+        throw std::runtime_error("database output requires table name");
+    }
 
     database::TableMetadata metadata;
     if (!driver->get_table_metadata(table_name, &metadata, &error)) {
+        logger.error("Run failed: failed to load table metadata: " + error);
         throw std::runtime_error("failed to load table metadata: " + error);
     }
 
     const database::DbType db_type = driver->type();
-
-    logger.info("Database type=" + database::db_type_to_string(db_type));
-    logger.info("DBMS name=" + driver->dbms_name());
-    logger.info("DBMS version=" + driver->dbms_version());
-    logger.info(build_connection_info_line(db_url));
-    logger.info("Insert mode=" + config::insert_mode_to_string(cfg.output.database.insert_mode));
-    logger.info("Batch size=" + std::to_string(cfg.output.database.batch_size));
-    logger.info("Queue size=" + std::to_string(cfg.output.database.queue_size));
-    logger.info("DB threads=" + std::to_string(cfg.output.database.db_threads));
-
-    const database::SchemaValidationReport report = database::validate_table_schema(cfg, metadata);
-    for (const auto& message : report.messages) {
-        const std::string text = "[schema] " + message.message;
-        if (message.level == database::ValidationLevel::Error) {
-            logger.error(text);
-        } else if (message.level == database::ValidationLevel::Warn) {
-            logger.warn(text);
-        } else {
-            logger.info(text);
-        }
-    }
-    if (report.error_count() > 0) { throw std::runtime_error("table schema validation failed"); }
-
-    const config::InsertMode resolved_mode = choose_insert_mode(cfg, *driver);
-    logger.info("Resolved insert mode=" + config::insert_mode_to_string(resolved_mode));
 
     std::unordered_map<std::string, const database::ColumnMetadata*> column_map;
     for (const auto& column : metadata.columns) { column_map[column.name] = &column; }
@@ -610,6 +811,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     mapped_columns.reserve(cfg.fields.size());
     for (const auto& field : cfg.fields) {
         if (!column_map.contains(field.name)) {
+            logger.error("Run failed: column not found in metadata: " + field.name);
             throw std::runtime_error("column not found in metadata: " + field.name);
         }
         columns.push_back(field.name);
@@ -618,19 +820,92 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     }
     const std::string sql_table_name = quote_identifier_path(db_type, table_name);
 
-    const int total_rows = cfg.rows;
-    const int batch_size = std::max(1, cfg.output.database.batch_size);
-    const int queue_size = std::max(1, cfg.output.database.queue_size);
-    int       db_threads = std::max(1, cfg.output.database.db_threads);
+    config::InsertMode resolved_mode = choose_insert_mode(cfg);
+    std::string        insert_mode_note;
+    if (cfg.output.database.write_mode == config::WriteMode::Upsert && resolved_mode == config::InsertMode::Load) {
+        resolved_mode     = config::InsertMode::Insert;
+        insert_mode_note  = "requested load, upsert requires insert";
+    } else if (resolved_mode == config::InsertMode::Load && !driver->supports_load_mode()) {
+        resolved_mode     = config::InsertMode::Insert;
+        insert_mode_note  = "requested load, current database does not support load mode";
+    }
+
+    config::ErrorPolicy effective_error_policy = cfg.output.database.error_policy;
+    std::string         error_policy_note;
+    if (effective_error_policy == config::ErrorPolicy::Rollback && resolved_mode != config::InsertMode::Insert) {
+        effective_error_policy = config::ErrorPolicy::Stop;
+        error_policy_note      = "requested rollback, rollback only works with insert_mode=insert";
+    }
+
+    const int total_rows        = cfg.rows;
+    const int batch_size        = std::max(1, cfg.output.database.batch_size);
+    const int queue_size        = std::max(1, cfg.output.database.queue_size);
+    const int requested_threads = std::max(1, cfg.output.database.db_threads);
+    int       db_threads        = requested_threads;
+    std::string threads_note;
 
     if (cfg.output.database.transaction_mode == config::TransactionMode::PerRun && db_threads > 1) {
-        logger.warn("transaction_mode=per-run only supports db_threads=1, forcing db_threads=1");
-        db_threads = 1;
+        db_threads   = 1;
+        threads_note = "requested " + std::to_string(requested_threads) + ", per-run transaction uses one writer";
     }
     if (db_type == database::DbType::Sqlite && db_threads > 1) {
-        logger.warn("SQLite supports a single writer; forcing db_threads=1");
-        db_threads = 1;
+        db_threads   = 1;
+        threads_note = "requested " + std::to_string(requested_threads) + ", SQLite supports a single writer";
     }
+
+    logger.info("Output type: database");
+    logger.info(build_connection_info_line(db_url));
+    logger.info("Connection established: " + driver->dbms_name() + " " + driver->dbms_version());
+    logger.info("Table: " + table_name);
+    logger.info(format_config_line("Mode", config::database_mode_to_string(cfg.output.database.mode), ""));
+    logger.info(format_config_line("Write mode", config::write_mode_to_string(cfg.output.database.write_mode), ""));
+    logger.info(format_config_line(
+        "Error policy",
+        config::error_policy_to_string(effective_error_policy),
+        error_policy_note
+    ));
+    logger.info(format_config_line(
+        "Transaction mode",
+        config::transaction_mode_to_string(cfg.output.database.transaction_mode),
+        ""
+    ));
+    logger.info("Advanced parameters:");
+    logger.info(format_config_line("Insert mode", config::insert_mode_to_string(resolved_mode), insert_mode_note));
+    logger.info(format_config_line("Batch size", std::to_string(batch_size), ""));
+    logger.info(format_config_line("Queue size", std::to_string(queue_size), ""));
+    logger.info(format_config_line("Threads", std::to_string(db_threads), threads_note));
+    logger.info(format_config_line(
+        "Rate limit rows per sec",
+        std::to_string(cfg.output.database.rate_limit_rows_per_sec),
+        cfg.output.database.rate_limit_rows_per_sec == 0 ? "0 means unlimited" : ""
+    ));
+
+    const database::SchemaValidationReport report = database::validate_table_schema(cfg, metadata);
+    for (const auto& message : report.messages) {
+        if (message.level == database::ValidationLevel::Warn) { logger.warn(message.message); }
+        if (message.level == database::ValidationLevel::Error) { logger.error(message.message); }
+    }
+    if (report.error_count() > 0) { throw std::runtime_error("table schema validation failed"); }
+
+    if (cfg.output.database.write_mode == config::WriteMode::Truncate) {
+        if (!driver->execute("DELETE FROM " + sql_table_name, &error)) {
+            logger.error("Run failed: failed to clear table before generation: " + error);
+            throw std::runtime_error("failed to clear table before generation: " + error);
+        }
+        logger.info("Table cleared: " + table_name);
+    }
+
+    std::optional<std::vector<std::size_t>> upsert_key_indexes;
+    if (cfg.output.database.write_mode == config::WriteMode::Upsert) {
+        upsert_key_indexes = determine_upsert_key_indexes(metadata, columns, mapped_columns);
+        if (!upsert_key_indexes.has_value()) {
+            logger.error("Run failed: upsert requires at least one generated primary key or unique key");
+            throw std::runtime_error("upsert requires at least one generated primary key or unique key");
+        }
+    }
+
+    log_field_lines(&logger);
+    logger.info("Generation started");
 
     std::atomic                        stop{false};
     std::atomic                        rollback_all{false};
@@ -639,8 +914,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     std::atomic<std::uint64_t>         rows_imported{0};
     std::vector<std::filesystem::path> temp_files;
     std::mutex                         temp_files_mutex;
-
-    BoundedQueue<RowWithIndex> queue(static_cast<std::size_t>(queue_size));
+    BoundedQueue<RowWithIndex>         queue(static_cast<std::size_t>(queue_size));
 
     std::mutex  error_mutex;
     std::string first_error;
@@ -679,11 +953,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         std::lock_guard lock(progress_mutex);
         if (progress_active.load()) { clear_progress_line(); }
         log_fn(message);
-        if (progress_active.load()) {
-            const std::uint64_t generated = rows_generated.load();
-            const std::uint64_t imported  = rows_imported.load();
-            render_progress(generated, imported, false);
-        }
+        if (progress_active.load()) { render_progress(rows_generated.load(), rows_imported.load(), false); }
     };
 
     auto register_error = [&](const std::string& text) {
@@ -692,18 +962,34 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         log_with_progress(text, [&](const std::string& message) { logger.error(message); });
     };
 
-    auto handle_policy = [&](const config::ErrorPolicy policy, const std::string& context_error) {
-        if (policy == config::ErrorPolicy::Continue) {
+    auto should_continue_after_error = [&] {
+        if (effective_error_policy == config::ErrorPolicy::Continue) { return true; }
+        if (effective_error_policy == config::ErrorPolicy::Rollback &&
+            cfg.output.database.transaction_mode == config::TransactionMode::PerBatch) {
+            return true;
+        }
+        return false;
+    };
+
+    auto handle_policy = [&](const std::string& context_error) {
+        if (effective_error_policy == config::ErrorPolicy::Continue) {
             log_with_progress(context_error + " (continue)", [&](const std::string& message) { logger.warn(message); });
             return;
         }
-        if (policy == config::ErrorPolicy::RollbackBatch) {
-            log_with_progress(context_error + " (rollback current batch)", [&](const std::string& message) {
-                logger.warn(message);
-            });
-            return;
+        if (effective_error_policy == config::ErrorPolicy::Rollback) {
+            if (cfg.output.database.transaction_mode == config::TransactionMode::PerBatch) {
+                log_with_progress(context_error + " (rollback current batch and continue)", [&](const std::string& message) {
+                    logger.warn(message);
+                });
+                return;
+            }
+            if (cfg.output.database.transaction_mode == config::TransactionMode::PerRun) {
+                rollback_all.store(true);
+                log_with_progress(context_error + " (rollback full run)", [&](const std::string& message) {
+                    logger.warn(message);
+                });
+            }
         }
-        if (policy == config::ErrorPolicy::RollbackAll) { rollback_all.store(true); }
         stop.store(true);
     };
 
@@ -711,17 +997,16 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     progress_active.store(true);
     std::thread progress_thread([&] {
         while (!progress_stop.load()) {
-            const std::uint64_t generated = rows_generated.load();
-            const std::uint64_t imported  = rows_imported.load();
             {
                 std::lock_guard lock(progress_mutex);
-                render_progress(generated, imported, false);
+                render_progress(rows_generated.load(), rows_imported.load(), false);
             }
             std::this_thread::sleep_for(std::chrono::duration<double>(kProgressSleepSeconds));
         }
     });
 
     const auto started_at = std::chrono::steady_clock::now();
+    auto       generation_finished_at = started_at;
 
     std::vector<std::thread> workers;
     workers.reserve(static_cast<std::size_t>(db_threads));
@@ -734,6 +1019,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 stop.store(true);
                 return;
             }
+
             std::string worker_error;
             if (!worker_driver->connect(db_url, &worker_error)) {
                 register_error("worker connection failed: " + worker_error);
@@ -742,26 +1028,23 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
             }
 
             const database::DefaultTypeAdapter adapter;
-
             const bool per_run_tx = cfg.output.database.transaction_mode == config::TransactionMode::PerRun;
-            if (per_run_tx) {
-                if (!begin_transaction(db_type, worker_driver.get(), &worker_error)) {
-                    register_error("worker failed to start transaction: " + worker_error);
-                    stop.store(true);
-                    return;
-                }
+            if (per_run_tx && !begin_transaction(db_type, worker_driver.get(), &worker_error)) {
+                register_error("worker failed to start transaction: " + worker_error);
+                stop.store(true);
+                return;
             }
 
             std::vector<RowWithIndex> batch;
             batch.reserve(static_cast<std::size_t>(batch_size));
 
-            auto process_batch = [&](const std::vector<RowWithIndex>& rows) {
-                if (rows.empty()) { return true; }
+            auto process_batch = [&](const std::vector<RowWithIndex>& batch_rows) {
+                if (batch_rows.empty()) { return true; }
 
                 std::vector<std::vector<std::string>> sql_rows;
-                sql_rows.reserve(rows.size());
+                sql_rows.reserve(batch_rows.size());
 
-                for (const auto& [row_index, row] : rows) {
+                for (const auto& [row_index, row] : batch_rows) {
                     std::vector<std::string> sql_values;
                     sql_values.reserve(mapped_columns.size());
 
@@ -769,24 +1052,20 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                         const auto adapted = adapter.adapt(*mapped_columns[i], row[i]);
                         if (!adapted.ok) {
                             std::ostringstream oss;
-                            oss << "row=" << row_index << " field=" << cfg.fields[i].name
-                                << " raw=" << (row[i].has_value() ? *row[i] : "<NULL>")
-                                << " converted=" << adapted.converted_value << " error_type=" << adapted.error_type
-                                << " message=" << adapted.error_message;
+                            oss << "Type conversion failed: row=" << row_index << ", field=" << cfg.fields[i].name
+                                << ", raw=" << (row[i].has_value() ? *row[i] : "<NULL>")
+                                << ", message=" << adapted.error_message;
                             register_error(oss.str());
-                            handle_policy(cfg.output.database.error_policy, "type conversion failed");
-                            return cfg.output.database.error_policy ==
-                                   config::ErrorPolicy::Continue ||
-                                   cfg.output.database.error_policy == config::ErrorPolicy::RollbackBatch;
+                            handle_policy("Type conversion failed");
+                            return should_continue_after_error();
                         }
+
                         std::string sql_literal = adapted.sql_literal;
                         if (db_type == database::DbType::Oracle && !adapted.is_null) {
                             const database::ColumnTypeFamily family =
                                 database::classify_column_type(*mapped_columns[i]);
-                            if (family ==
-                                database::ColumnTypeFamily::DateTime ||
-                                family ==
-                                database::ColumnTypeFamily::Date ||
+                            if (family == database::ColumnTypeFamily::DateTime ||
+                                family == database::ColumnTypeFamily::Date ||
                                 family == database::ColumnTypeFamily::Time) {
                                 sql_literal = build_oracle_temporal_literal(family, adapted.converted_value);
                             }
@@ -798,62 +1077,42 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 }
 
                 auto execute_sql = [&](const std::string& sql) {
-                    if (sql.empty()) { return true; }
+                    if (sql.empty()) {
+                        register_error("upsert is not supported for the current database type");
+                        stop.store(true);
+                        return false;
+                    }
                     if (!worker_driver->execute(sql, &worker_error)) {
-                        register_error("sql execution failed: " + worker_error + " sql=" + truncate_for_log(sql, 4096));
-                        handle_policy(cfg.output.database.error_policy, "sql execution failed");
+                        register_error("SQL execution failed: " + worker_error + " sql=" + truncate_for_log(sql, 4096));
+                        handle_policy("SQL execution failed");
                         return false;
                     }
                     return true;
                 };
 
                 const bool per_batch_tx = cfg.output.database.transaction_mode == config::TransactionMode::PerBatch;
-                if (per_batch_tx) {
-                    if (!begin_transaction(db_type, worker_driver.get(), &worker_error)) {
-                        register_error("failed to start batch transaction: " + worker_error);
-                        stop.store(true);
-                        return false;
-                    }
+                if (per_batch_tx && !begin_transaction(db_type, worker_driver.get(), &worker_error)) {
+                    register_error("failed to start batch transaction: " + worker_error);
+                    stop.store(true);
+                    return false;
                 }
 
                 bool ok = true;
-                if (resolved_mode == config::InsertMode::Insert) {
-                    for (const auto& row_values : sql_rows) {
-                        if (!execute_sql(build_insert_sql(
-                                db_type,
-                                sql_table_name,
-                                sql_columns,
-                                {row_values},
-                                config::InsertMode::Insert
-                            ))) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                } else if (resolved_mode == config::InsertMode::Bulk) {
-                    if (!supports_multi_row_values(db_type)) {
-                        for (const auto& row_values : sql_rows) {
-                            if (!execute_sql(build_insert_sql(
-                                    db_type,
-                                    sql_table_name,
-                                    sql_columns,
-                                    {row_values},
-                                    config::InsertMode::Insert
-                                ))) {
-                                ok = false;
-                                break;
-                            }
-                        }
-                    } else {
-                        ok = execute_sql(
-                            build_insert_sql(db_type, sql_table_name, sql_columns, sql_rows, config::InsertMode::Bulk)
-                        );
-                    }
+                if (cfg.output.database.write_mode == config::WriteMode::Upsert) {
+                    ok = execute_sql(build_upsert_sql(
+                        db_type,
+                        sql_table_name,
+                        sql_columns,
+                        *upsert_key_indexes,
+                        sql_rows
+                    ));
+                } else if (resolved_mode == config::InsertMode::Insert) {
+                    ok = execute_sql(build_insert_sql(db_type, sql_table_name, sql_columns, sql_rows));
                 } else {
                     const std::filesystem::path load_file =
                         std::filesystem::path(cfg.workspace) /
                         "tmp" /
-                        ("load_" + std::to_string(worker_id) + "_" + std::to_string(rows.front().first) + ".tmp");
+                        ("load_" + std::to_string(worker_id) + "_" + std::to_string(batch_rows.front().first) + ".tmp");
                     std::ofstream temp(load_file, std::ios::trunc);
                     if (!temp) {
                         register_error("failed to open temp load file: " + load_file.string());
@@ -866,39 +1125,32 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                             std::lock_guard lock(temp_files_mutex);
                             temp_files.push_back(load_file);
                         }
+
                         const std::string load_sql =
                             build_load_sql(db_type, sql_table_name, sql_columns, load_file.string());
                         if (load_sql.empty()) {
-                            ok = false;
                             register_error("load mode is not supported for current database type");
-                            handle_policy(cfg.output.database.error_policy, "load mode not supported");
+                            handle_policy("Load mode is not supported");
+                            ok = false;
                         } else if (!worker_driver->execute(load_sql, &worker_error)) {
-                            const bool can_fallback_to_bulk =
+                            const bool can_fallback_to_insert =
                                 db_type == database::DbType::Mysql && is_load_data_disabled_error(worker_error);
-                            if (can_fallback_to_bulk) {
+                            if (can_fallback_to_insert) {
                                 bool expected = false;
                                 if (load_fallback_warned.compare_exchange_strong(expected, true)) {
                                     log_with_progress(
-                                        "LOAD DATA LOCAL INFILE is disabled, fallback to bulk insert",
+                                        "Insert mode fallback: requested load, using insert because LOAD DATA LOCAL INFILE is disabled",
                                         [&](const std::string& message) { logger.warn(message); }
                                     );
                                 }
-                                ok = execute_sql(build_insert_sql(
-                                    db_type,
-                                    sql_table_name,
-                                    sql_columns,
-                                    sql_rows,
-                                    config::InsertMode::Bulk
-                                ));
+                                ok = execute_sql(build_insert_sql(db_type, sql_table_name, sql_columns, sql_rows));
                             } else {
                                 register_error(
-                                    "sql execution failed: " + worker_error + " sql=" + truncate_for_log(load_sql, 4096)
+                                    "SQL execution failed: " + worker_error + " sql=" + truncate_for_log(load_sql, 4096)
                                 );
-                                handle_policy(cfg.output.database.error_policy, "sql execution failed");
+                                handle_policy("SQL execution failed");
                                 ok = false;
                             }
-                        } else {
-                            ok = true;
                         }
                     }
                 }
@@ -916,12 +1168,11 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 }
 
                 if (ok) {
-                    rows_imported.fetch_add(rows.size());
-
+                    rows_imported.fetch_add(batch_rows.size());
                     const int rate_limit = cfg.output.database.rate_limit_rows_per_sec;
                     if (rate_limit > 0) {
-                        const double sec     = static_cast<double>(rows.size()) / static_cast<double>(rate_limit);
-                        const auto   wait_ms = static_cast<int>(sec * 1000.0);
+                        const double seconds = static_cast<double>(batch_rows.size()) / static_cast<double>(rate_limit);
+                        const auto   wait_ms = static_cast<int>(seconds * 1000.0);
                         if (wait_ms > 0) { std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms)); }
                     }
                 }
@@ -937,7 +1188,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
                 if (static_cast<int>(batch.size()) >= batch_size) {
                     const bool ok = process_batch(batch);
                     batch.clear();
-                    if (!ok && cfg.output.database.error_policy == config::ErrorPolicy::Stop) { break; }
+                    if (!ok && !should_continue_after_error()) { break; }
                     if (stop.load()) { break; }
                 }
             }
@@ -969,6 +1220,7 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
         register_error(std::string("generator failed: ") + ex.what());
         stop.store(true);
     }
+    generation_finished_at = std::chrono::steady_clock::now();
 
     queue.close();
     for (auto& worker : workers) { worker.join(); }
@@ -984,6 +1236,10 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     const auto ended_at    = std::chrono::steady_clock::now();
     double     elapsed_sec = std::chrono::duration<double>(ended_at - started_at).count();
     if (elapsed_sec < kMinElapsedSeconds) { elapsed_sec = kMinElapsedSeconds; }
+    double generation_elapsed_sec = std::chrono::duration<double>(generation_finished_at - started_at).count();
+    double import_drain_elapsed_sec = std::chrono::duration<double>(ended_at - generation_finished_at).count();
+    if (generation_elapsed_sec < 0.0) { generation_elapsed_sec = 0.0; }
+    if (import_drain_elapsed_sec < 0.0) { import_drain_elapsed_sec = 0.0; }
 
     const std::uint64_t generated = rows_generated.load();
     const std::uint64_t imported  = rows_imported.load();
@@ -994,22 +1250,48 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     }
     progress_active.store(false);
 
-    logger.info("Generated rows=" + std::to_string(generated));
     logger.info(
-        "Generated rate=" +
-        std::to_string(static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec)) +
-        " rows/s"
-    );
-    logger.info("Imported rows=" + std::to_string(imported));
-    logger.info(
-        "Import rate=" +
-        std::to_string(static_cast<std::uint64_t>(static_cast<double>(imported) / elapsed_sec)) +
-        " rows/s"
+        "Elapsed: generation=" +
+        format_elapsed_seconds(generation_elapsed_sec) +
+        ", import=" +
+        format_elapsed_seconds(elapsed_sec) +
+        ", drain=" +
+        format_elapsed_seconds(import_drain_elapsed_sec)
     );
 
-    if (!first_error.empty() && cfg.output.database.error_policy == config::ErrorPolicy::Stop) {
-        throw std::runtime_error(first_error);
-    }
+    const std::uint64_t generated_failed = generated <= static_cast<std::uint64_t>(total_rows)
+                                               ? static_cast<std::uint64_t>(total_rows) - generated
+                                               : 0;
+    const std::uint64_t imported_failed  = generated >= imported ? generated - imported : 0;
+    const auto          generated_rate =
+        static_cast<std::uint64_t>(static_cast<double>(generated) / elapsed_sec);
+    const auto imported_rate = static_cast<std::uint64_t>(static_cast<double>(imported) / elapsed_sec);
+
+    logger.info(
+        "Generated rows: total=" +
+        std::to_string(generated) +
+        ", success=" +
+        std::to_string(generated) +
+        ", failed=" +
+        std::to_string(generated_failed) +
+        ", rate=" +
+        std::to_string(generated_rate) +
+        " rows/s"
+    );
+    logger.info(
+        "Imported rows: total=" +
+        std::to_string(imported) +
+        ", success=" +
+        std::to_string(imported) +
+        ", failed=" +
+        std::to_string(imported_failed) +
+        ", rate=" +
+        std::to_string(imported_rate) +
+        " rows/s"
+    );
+    logger.info("Completed");
+
+    if (!first_error.empty() && stop.load()) { throw std::runtime_error(first_error); }
 
     OutputStats stats;
     stats.execution_info = generate_result.info;
@@ -1018,4 +1300,4 @@ OutputStats DatabaseBackend::generate(const config::GenerationConfig& cfg, const
     return stats;
 }
 
-}  // namespace data_generator::output
+}  // namespace datagen::output

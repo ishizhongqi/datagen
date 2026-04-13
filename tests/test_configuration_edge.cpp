@@ -9,7 +9,7 @@
 
 #include "config/configuration.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 
@@ -80,7 +80,7 @@ TEST(ConfigurationEdgeTest, RootAndOutputValidationBranches) {
 
     EXPECT_TRUE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"$schema":"./schema/data-generator.schema.json","rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"$schema":"./schema/datagen.schema.json","rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -159,7 +159,7 @@ TEST(ConfigurationEdgeTest, FieldValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"data_linkage":123}]})json"
+            R"json({"rows":1,"output":{"type":"file","file":{"format":"csv"}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2},"group":123}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -248,7 +248,7 @@ TEST(ConfigurationEdgeTest, DatabaseOutputParsingAndHelperRoundtripBranches) {
 
     EXPECT_TRUE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":2,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","insert_mode":"load","batch_size":8,"queue_size":16,"threads":3,"transaction_mode":"none","error_policy":"rollback-all","rate_limit_rows_per_sec":32}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"rows":2,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","mode":"safe","write_mode":"truncate","transaction_mode":"none","error_policy":"rollback","advanced":{"insert_mode":"load","batch_size":8,"queue_size":16,"threads":3,"rate_limit_rows_per_sec":32}}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
@@ -258,13 +258,31 @@ TEST(ConfigurationEdgeTest, DatabaseOutputParsingAndHelperRoundtripBranches) {
     EXPECT_EQ(cfg.output.type, config::OutputType::Database);
     EXPECT_EQ(cfg.output.database.connection, "sqlite:///tmp/data.db");
     EXPECT_EQ(cfg.output.database.table, "t_data");
+    EXPECT_EQ(cfg.output.database.mode, config::DatabaseMode::Safe);
+    EXPECT_EQ(cfg.output.database.write_mode, config::WriteMode::Truncate);
     EXPECT_EQ(cfg.output.database.insert_mode, config::InsertMode::Load);
     EXPECT_EQ(cfg.output.database.batch_size, 8);
     EXPECT_EQ(cfg.output.database.queue_size, 16);
     EXPECT_EQ(cfg.output.database.db_threads, 3);
     EXPECT_EQ(cfg.output.database.transaction_mode, config::TransactionMode::None);
-    EXPECT_EQ(cfg.output.database.error_policy, config::ErrorPolicy::RollbackAll);
+    EXPECT_EQ(cfg.output.database.error_policy, config::ErrorPolicy::Rollback);
     EXPECT_EQ(cfg.output.database.rate_limit_rows_per_sec, 32);
+
+    EXPECT_EQ(config::parse_database_mode("fast"), config::DatabaseMode::Fast);
+    EXPECT_EQ(config::parse_database_mode("balanced"), config::DatabaseMode::Balanced);
+    EXPECT_EQ(config::parse_database_mode("safe"), config::DatabaseMode::Safe);
+    EXPECT_FALSE(config::parse_database_mode("bad").has_value());
+    EXPECT_EQ(config::database_mode_to_string(config::DatabaseMode::Fast), "fast");
+    EXPECT_EQ(config::database_mode_to_string(config::DatabaseMode::Balanced), "balanced");
+    EXPECT_EQ(config::database_mode_to_string(config::DatabaseMode::Safe), "safe");
+
+    EXPECT_EQ(config::parse_write_mode("append"), config::WriteMode::Append);
+    EXPECT_EQ(config::parse_write_mode("truncate"), config::WriteMode::Truncate);
+    EXPECT_EQ(config::parse_write_mode("upsert"), config::WriteMode::Upsert);
+    EXPECT_FALSE(config::parse_write_mode("bad").has_value());
+    EXPECT_EQ(config::write_mode_to_string(config::WriteMode::Append), "append");
+    EXPECT_EQ(config::write_mode_to_string(config::WriteMode::Truncate), "truncate");
+    EXPECT_EQ(config::write_mode_to_string(config::WriteMode::Upsert), "upsert");
 
     EXPECT_EQ(config::parse_output_type("file"), config::OutputType::File);
     EXPECT_EQ(config::parse_output_type("database"), config::OutputType::Database);
@@ -294,15 +312,13 @@ TEST(ConfigurationEdgeTest, DatabaseOutputParsingAndHelperRoundtripBranches) {
 
     EXPECT_EQ(config::parse_error_policy("stop"), config::ErrorPolicy::Stop);
     EXPECT_EQ(config::parse_error_policy("continue"), config::ErrorPolicy::Continue);
-    EXPECT_EQ(config::parse_error_policy("rollback-batch"), config::ErrorPolicy::RollbackBatch);
-    EXPECT_EQ(config::parse_error_policy("rollback-all"), config::ErrorPolicy::RollbackAll);
+    EXPECT_EQ(config::parse_error_policy("rollback"), config::ErrorPolicy::Rollback);
     EXPECT_FALSE(config::parse_error_policy("bad").has_value());
     EXPECT_EQ(config::error_policy_to_string(config::ErrorPolicy::Stop), "stop");
     EXPECT_EQ(config::error_policy_to_string(config::ErrorPolicy::Continue), "continue");
-    EXPECT_EQ(config::error_policy_to_string(config::ErrorPolicy::RollbackBatch), "rollback-batch");
-    EXPECT_EQ(config::error_policy_to_string(config::ErrorPolicy::RollbackAll), "rollback-all");
+    EXPECT_EQ(config::error_policy_to_string(config::ErrorPolicy::Rollback), "rollback");
     EXPECT_EQ(config::error_policy_to_string(static_cast<config::ErrorPolicy>(99)), "stop");
-    EXPECT_EQ(config::insert_mode_to_string(static_cast<config::InsertMode>(99)), "auto");
+    EXPECT_EQ(config::insert_mode_to_string(static_cast<config::InsertMode>(99)), "insert");
 }
 
 TEST(ConfigurationEdgeTest, FileOutputValidationBranches) {
@@ -451,31 +467,35 @@ TEST(ConfigurationEdgeTest, DatabaseOutputValidationBranches) {
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","insert_mode":1,"transaction_mode":1,"error_policy":1}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"rows":1,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","mode":1,"write_mode":1,"transaction_mode":1,"error_policy":1,"advanced":{"insert_mode":1}}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
-    EXPECT_TRUE(has_issue(issues, "$.output.database.insert_mode", "must be a string"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.mode", "must be a string"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.write_mode", "must be a string"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.insert_mode", "must be a string"));
     EXPECT_TRUE(has_issue(issues, "$.output.database.transaction_mode", "must be a string"));
     EXPECT_TRUE(has_issue(issues, "$.output.database.error_policy", "must be a string"));
 
     EXPECT_FALSE(config::parse_generation_config(
         nlohmann::json::parse(
-            R"json({"rows":1,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","insert_mode":"bad","transaction_mode":"bad","error_policy":"bad","batch_size":0,"queue_size":"bad","threads":0,"rate_limit_rows_per_sec":0}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
+            R"json({"rows":1,"output":{"type":"database","database":{"connection":"sqlite:///tmp/data.db","table":"t_data","mode":"bad","write_mode":"bad","transaction_mode":"bad","error_policy":"bad","advanced":{"insert_mode":"bad","batch_size":0,"queue_size":"bad","threads":0,"rate_limit_rows_per_sec":-1}}},"fields":[{"name":"f","generator":"integer","config":{"start":1,"end":2}}]})json"
         ),
         config::ParseMode::RequireOutputSettings,
         &cfg,
         &issues
     ));
-    EXPECT_TRUE(has_issue(issues, "$.output.database.insert_mode", "must be one of"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.mode", "must be one of"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.write_mode", "must be one of"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.insert_mode", "must be one of"));
     EXPECT_TRUE(has_issue(issues, "$.output.database.transaction_mode", "must be one of"));
     EXPECT_TRUE(has_issue(issues, "$.output.database.error_policy", "must be one of"));
-    EXPECT_TRUE(has_issue(issues, "$.batch_size", "must be >="));
-    EXPECT_TRUE(has_issue(issues, "$.queue_size", "must be an integer"));
-    EXPECT_TRUE(has_issue(issues, "$.threads", "must be >="));
-    EXPECT_TRUE(has_issue(issues, "$.rate_limit_rows_per_sec", "must be >="));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.batch_size", "must be >="));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.queue_size", "must be an integer"));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.threads", "must be >="));
+    EXPECT_TRUE(has_issue(issues, "$.output.database.advanced.rate_limit_rows_per_sec", "must be >="));
 }
 
 }  // namespace

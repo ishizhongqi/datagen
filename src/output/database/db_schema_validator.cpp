@@ -10,7 +10,7 @@
 #include <cctype>
 #include <unordered_map>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -212,4 +212,4 @@ std::string validation_level_to_string(const ValidationLevel level) {
     }
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

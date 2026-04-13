@@ -7,5 +7,5 @@
 #include "app/run.h"
 
 int main(int argc, char** argv) {
-    return data_generator::run(argc, argv);
+    return datagen::run(argc, argv);
 }

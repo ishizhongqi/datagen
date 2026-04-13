@@ -4,12 +4,12 @@
 
 /// @file generator_base.h
 
-#ifndef DATA_GENERATOR_GENERATOR_BASE_H
-#define DATA_GENERATOR_GENERATOR_BASE_H
+#ifndef DATAGEN_GENERATOR_BASE_H
+#define DATAGEN_GENERATOR_BASE_H
 
 #include <string>
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Base interface for all generators.
 ///        One generator instance corresponds to one filed behavior.
@@ -26,6 +26,6 @@ public:
     virtual void next() {}
 };
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_GENERATOR_BASE_H
+#endif  // DATAGEN_GENERATOR_BASE_H

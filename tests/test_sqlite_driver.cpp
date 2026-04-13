@@ -11,13 +11,13 @@
 #include "output/database/drivers/sqlite_driver.h"
 #include "test_paths.h"
 
-using data_generator::database::DbType;
-using data_generator::database::DbUrl;
-using data_generator::database::IDatabaseDriver;
-using data_generator::database::make_database_driver;
-using data_generator::database::OdbcDriver;
-using data_generator::database::SqliteDriver;
-using data_generator::database::TableMetadata;
+using datagen::database::DbType;
+using datagen::database::DbUrl;
+using datagen::database::IDatabaseDriver;
+using datagen::database::make_database_driver;
+using datagen::database::OdbcDriver;
+using datagen::database::SqliteDriver;
+using datagen::database::TableMetadata;
 
 namespace {
 
@@ -32,8 +32,8 @@ DbUrl make_sqlite_url(const std::filesystem::path& path) {
 }  // namespace
 
 TEST(SqliteDriverTest, ConnectionAndMetadataCoverage) {
-    const auto db_path = data_generator::test::artifact_path("dg_sqlite_driver_test.db");
-    data_generator::test::reset_path(db_path);
+    const auto db_path = datagen::test::artifact_path("dg_sqlite_driver_test.db");
+    datagen::test::reset_path(db_path);
 
     SqliteDriver driver;
     std::string error;
@@ -87,8 +87,8 @@ TEST(SqliteDriverTest, ConnectionAndMetadataCoverage) {
 }
 
 TEST(SqliteDriverTest, QueryExecuteAndMetadataErrorBranches) {
-    const auto db_path = data_generator::test::artifact_path("dg_sqlite_driver_error.db");
-    data_generator::test::reset_path(db_path);
+    const auto db_path = datagen::test::artifact_path("dg_sqlite_driver_error.db");
+    datagen::test::reset_path(db_path);
 
     SqliteDriver driver;
     std::string error;

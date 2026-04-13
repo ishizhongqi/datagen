@@ -4,16 +4,16 @@
 
 /// @file person_generators.h
 
-#ifndef DATA_GENERATOR_PERSON_GENERATORS_H
-#define DATA_GENERATOR_PERSON_GENERATORS_H
+#ifndef DATAGEN_PERSON_GENERATORS_H
+#define DATAGEN_PERSON_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register person-related generators.
 void register_person_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_PERSON_GENERATORS_H
+#endif  // DATAGEN_PERSON_GENERATORS_H

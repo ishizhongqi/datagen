@@ -30,7 +30,7 @@
 #include "output/file/json_writer.h"
 #include "output/file/sql_writer.h"
 
-namespace data_generator::engine {
+namespace datagen::engine {
 
 namespace {
 
@@ -114,8 +114,8 @@ bool can_parallelize_safely(const config::GenerationConfig& cfg, std::string& re
             reason = id + " enables unique output, which is global-state sensitive";
             return false;
         }
-        if (field.data_linkage.has_value()) {
-            reason = id + " uses data_linkage, which requires cross-field row state";
+        if (field.group.has_value()) {
+            reason = id + " uses group, which requires cross-field row state";
             return false;
         }
         if (has_enabled_override(field.raw, "null_value") || has_enabled_override(field.raw, "default_value")) {
@@ -314,4 +314,21 @@ std::vector<std::optional<std::string>> preview_row(const config::GenerationConf
     return row;
 }
 
-}  // namespace data_generator::engine
+std::vector<Row> preview_rows(const config::GenerationConfig& cfg, const std::size_t rows) {
+    config::GenerationConfig preview_cfg = cfg;
+    preview_cfg.rows                     = static_cast<int>(std::max<std::size_t>(1, rows));
+
+    std::vector<Row> collected_rows;
+    collected_rows.reserve(static_cast<std::size_t>(preview_cfg.rows));
+
+    ExecutionOptions options;
+    options.requested_threads = 1;
+    (void)generate_with_consumer(preview_cfg, options, [&](Row&& row, std::uint64_t) {
+        collected_rows.push_back(std::move(row));
+        return true;
+    });
+
+    return collected_rows;
+}
+
+}  // namespace datagen::engine

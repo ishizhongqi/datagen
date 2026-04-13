@@ -136,7 +136,7 @@ set(LOGGING_SOURCE
         ${LOGGING_DIRECTORY}/logger.cpp
 )
 
-add_library(data-generator-lib
+add_library(datagen-lib
         ${APP_SOURCE}
         ${CLI_SOURCE}
         ${GENERATOR_SOURCE}
@@ -148,11 +148,11 @@ add_library(data-generator-lib
         ${LOGGING_SOURCE}
 )
 
-add_executable(data-generator ${MAIN_SOURCE})
+add_executable(datagen ${MAIN_SOURCE})
 
-target_link_libraries(data-generator PRIVATE data-generator-lib)
+target_link_libraries(datagen PRIVATE datagen-lib)
 
-target_include_directories(data-generator-lib
+target_include_directories(datagen-lib
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )

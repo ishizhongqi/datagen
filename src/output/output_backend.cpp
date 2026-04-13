@@ -9,11 +9,11 @@
 #include "output/database_backend.h"
 #include "output/file_backend.h"
 
-namespace data_generator::output {
+namespace datagen::output {
 
 std::unique_ptr<IOutputBackend> make_output_backend(const config::GenerationConfig& cfg) {
     if (cfg.output.type == config::OutputType::Database) { return std::make_unique<DatabaseBackend>(); }
     return std::make_unique<FileBackend>();
 }
 
-}  // namespace data_generator::output
+}  // namespace datagen::output

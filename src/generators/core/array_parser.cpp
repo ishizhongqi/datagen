@@ -10,7 +10,7 @@
 
 #include "generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 std::vector<std::string> parse_string_array(const std::string& key, const Json& config) {
     if (!config.contains(key)) { return {}; }
@@ -360,4 +360,4 @@ bool parse_use_translation(const Json& config) {
     return config.value("use_translation", false);
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

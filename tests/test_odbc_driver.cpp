@@ -9,27 +9,27 @@
 #include "output/database/db_url_parser.h"
 #include "output/database/drivers/odbc_driver.h"
 
-using data_generator::database::DbUrl;
-using data_generator::database::OdbcDriver;
-using data_generator::database::parse_db_connection;
+using datagen::database::DbUrl;
+using datagen::database::OdbcDriver;
+using datagen::database::parse_db_connection;
 
 TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
-    const char* pg_url = std::getenv("DATA_GENERATOR_TEST_PG_URL");
+    const char* pg_url = std::getenv("DATAGEN_TEST_PG_URL");
     if (!pg_url || std::string(pg_url).empty()) {
-        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL not set.";
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL not set.";
     }
 
     DbUrl parsed;
     std::string error;
     if (!parse_db_connection(pg_url, &parsed, &error)) {
-        GTEST_SKIP() << "DATA_GENERATOR_TEST_PG_URL is not in the new connection format: " << error;
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL is not in the new connection format: " << error;
     }
 
     OdbcDriver driver;
     EXPECT_FALSE(driver.test_connection(&error));
 
     ASSERT_TRUE(driver.connect(parsed, &error)) << error;
-    EXPECT_EQ(driver.type(), data_generator::database::DbType::Postgresql);
+    EXPECT_EQ(driver.type(), datagen::database::DbType::Postgresql);
     EXPECT_FALSE(driver.dbms_name().empty());
     EXPECT_FALSE(driver.dbms_version().empty());
     EXPECT_TRUE(driver.test_connection(&error));
@@ -52,12 +52,12 @@ TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
     ASSERT_FALSE(rows.empty());
     EXPECT_EQ(rows[0][0], "1");
 
-    data_generator::database::TableMetadata metadata;
+    datagen::database::TableMetadata metadata;
     ASSERT_TRUE(driver.get_table_metadata("odbc_test", &metadata, &error)) << error;
     EXPECT_EQ(metadata.table_name, "odbc_test");
     EXPECT_FALSE(metadata.columns.empty());
 
-    data_generator::database::TableMetadata child_meta;
+    datagen::database::TableMetadata child_meta;
     ASSERT_TRUE(driver.get_table_metadata("public.odbc_child", &child_meta, &error)) << error;
     EXPECT_FALSE(child_meta.columns.empty());
     EXPECT_FALSE(child_meta.indexes.empty());
@@ -69,10 +69,10 @@ TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
 }
 
 TEST(OdbcDriverTest, ReturnsErrorsWhenDisconnected) {
-    OdbcDriver driver(data_generator::database::DbType::Postgresql);
+    OdbcDriver driver(datagen::database::DbType::Postgresql);
     std::string error;
     std::vector<std::vector<std::string>> rows;
-    data_generator::database::TableMetadata metadata;
+    datagen::database::TableMetadata metadata;
 
     EXPECT_FALSE(driver.test_connection(&error));
     EXPECT_FALSE(driver.execute("SELECT 1;", &error));

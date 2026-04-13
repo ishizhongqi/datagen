@@ -19,7 +19,7 @@
 #include <limits>
 #include <sstream>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -107,4 +107,4 @@ bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_
     return true;
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

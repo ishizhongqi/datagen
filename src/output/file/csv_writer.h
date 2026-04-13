@@ -4,8 +4,8 @@
 
 /// @file csv_writer.h
 
-#ifndef DATA_GENERATOR_CSV_WRITER_H
-#define DATA_GENERATOR_CSV_WRITER_H
+#ifndef DATAGEN_CSV_WRITER_H
+#define DATAGEN_CSV_WRITER_H
 
 #include <ostream>
 #include <string>
@@ -14,7 +14,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 struct DelimitedWriterOptions {
     std::string        delimiter   = ",";
@@ -38,6 +38,6 @@ void write_delimited(
     const DelimitedWriterOptions&   options
 );
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file
 
 #endif

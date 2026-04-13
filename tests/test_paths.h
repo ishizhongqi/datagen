@@ -1,14 +1,14 @@
 /// @file test_paths.h
 
-#ifndef DATA_GENERATOR_TEST_PATHS_H
-#define DATA_GENERATOR_TEST_PATHS_H
+#ifndef DATAGEN_TEST_PATHS_H
+#define DATAGEN_TEST_PATHS_H
 
 #include <filesystem>
 #include <string>
 
 #include "utils/workspace.h"
 
-namespace data_generator::test {
+namespace datagen::test {
 
 inline std::filesystem::path test_root() {
     return utils::default_workspace_root() / "test_artifacts";
@@ -41,6 +41,6 @@ inline void reset_path(const std::filesystem::path& path) {
     }
 }
 
-}  // namespace data_generator::test
+}  // namespace datagen::test
 
 #endif

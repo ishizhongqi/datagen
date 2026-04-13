@@ -7,9 +7,9 @@
 
 #include "output/database/type_adapter.h"
 
-using data_generator::database::ColumnMetadata;
-using data_generator::database::DefaultTypeAdapter;
-using data_generator::database::ITypeAdapter;
+using datagen::database::ColumnMetadata;
+using datagen::database::DefaultTypeAdapter;
+using datagen::database::ITypeAdapter;
 
 namespace {
 

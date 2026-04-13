@@ -4,13 +4,13 @@
 
 /// @file run.h
 
-#ifndef DATA_GENERATOR_RUN_H
-#define DATA_GENERATOR_RUN_H
+#ifndef DATAGEN_RUN_H
+#define DATAGEN_RUN_H
 
-namespace data_generator {
+namespace datagen {
 
 int run(int argc, char** argv);
 
-}  // namespace data_generator
+}  // namespace datagen
 
 #endif

@@ -6,7 +6,7 @@
 
 #include "output/file/csv_writer.h"
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 namespace {
 
@@ -75,4 +75,4 @@ void write_delimited(
     for (const auto& row : rows) { write_delimited_row(row, out, options); }
 }
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file

@@ -4,16 +4,16 @@
 
 /// @file number_generators.h
 
-#ifndef DATA_GENERATOR_NUMBER_GENERATORS_H
-#define DATA_GENERATOR_NUMBER_GENERATORS_H
+#ifndef DATAGEN_NUMBER_GENERATORS_H
+#define DATAGEN_NUMBER_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register number-related generators.
 void register_number_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_NUMBER_GENERATORS_H
+#endif  // DATAGEN_NUMBER_GENERATORS_H

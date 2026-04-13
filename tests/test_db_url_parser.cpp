@@ -6,9 +6,9 @@
 
 #include "output/database/db_url_parser.h"
 
-using data_generator::database::DbType;
-using data_generator::database::DbUrl;
-using data_generator::database::parse_db_connection;
+using datagen::database::DbType;
+using datagen::database::DbUrl;
+using datagen::database::parse_db_connection;
 
 TEST(DbUrlParserTest, RejectsNullOutputPointer) {
     std::string error;

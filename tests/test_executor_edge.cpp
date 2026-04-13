@@ -9,7 +9,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 
@@ -123,12 +123,12 @@ TEST(ExecutorEdgeTest, ParallelFallbackReasonsForUniqueAndLinkage) {
     EXPECT_NE(res1.info.fallback_reason.find("unique"), std::string::npos);
 
     auto cfg_linkage = cfg_base;
-    cfg_linkage.fields[0].data_linkage = std::string("num:g");
+    cfg_linkage.fields[0].group = std::string("num:g");
     std::ostringstream out2;
     const auto res2 =
         engine::generate_to_stream(cfg_linkage, engine::ExecutionOptions{.requested_threads = 4}, out2);
     EXPECT_TRUE(res2.info.fallback_to_single_thread);
-    EXPECT_NE(res2.info.fallback_reason.find("data_linkage"), std::string::npos);
+    EXPECT_NE(res2.info.fallback_reason.find("group"), std::string::npos);
 }
 
 TEST(ExecutorEdgeTest, ParallelWorkerExceptionPath) {

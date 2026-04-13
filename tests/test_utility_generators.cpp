@@ -10,7 +10,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 

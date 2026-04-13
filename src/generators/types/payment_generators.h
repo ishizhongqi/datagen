@@ -4,16 +4,16 @@
 
 /// @file payment_generators.h
 
-#ifndef DATA_GENERATOR_PAYMENT_GENERATORS_H
-#define DATA_GENERATOR_PAYMENT_GENERATORS_H
+#ifndef DATAGEN_PAYMENT_GENERATORS_H
+#define DATAGEN_PAYMENT_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register payment-related generators.
 void register_payment_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_PAYMENT_GENERATORS_H
+#endif  // DATAGEN_PAYMENT_GENERATORS_H

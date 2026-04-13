@@ -4,15 +4,15 @@
 
 /// @file override_rules.h
 
-#ifndef DATA_GENERATOR_OVERRIDE_RULES_H
-#define DATA_GENERATOR_OVERRIDE_RULES_H
+#ifndef DATAGEN_OVERRIDE_RULES_H
+#define DATAGEN_OVERRIDE_RULES_H
 
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 using Json = nlohmann::json;
 
@@ -40,6 +40,6 @@ std::optional<std::string> apply_override(OverrideState& state);
 
 void next_row(OverrideState& state);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_OVERRIDE_RULES_H
+#endif  // DATAGEN_OVERRIDE_RULES_H

@@ -4,18 +4,18 @@
 
 /// @file database_backend.h
 
-#ifndef DATA_GENERATOR_DATABASE_BACKEND_H
-#define DATA_GENERATOR_DATABASE_BACKEND_H
+#ifndef DATAGEN_DATABASE_BACKEND_H
+#define DATAGEN_DATABASE_BACKEND_H
 
 #include "output/output_backend.h"
 
-namespace data_generator::output {
+namespace datagen::output {
 
 class DatabaseBackend final : public IOutputBackend {
 public:
     OutputStats generate(const config::GenerationConfig& cfg, const engine::ExecutionOptions& options) override;
 };
 
-}  // namespace data_generator::output
+}  // namespace datagen::output
 
 #endif

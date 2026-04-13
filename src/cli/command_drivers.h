@@ -4,19 +4,19 @@
 
 /// @file command_drivers.h
 
-#ifndef DATA_GENERATOR_COMMAND_DRIVERS_H
-#define DATA_GENERATOR_COMMAND_DRIVERS_H
+#ifndef DATAGEN_COMMAND_DRIVERS_H
+#define DATAGEN_COMMAND_DRIVERS_H
 
 #include <string>
 #include <vector>
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 class CommandDrivers {
 public:
     static int run(const std::vector<std::string>& args);
 };
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli
 
 #endif

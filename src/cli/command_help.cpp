@@ -8,17 +8,18 @@
 
 #include <iostream>
 
+#include "cli/cli_shared.h"
 #include "cli/exit_codes.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 int CommandHelp::run(const std::vector<std::string>& /*args*/) {
     std::cout
-        << "data-generator CLI\n"
+        << program_display_name() << " CLI\n"
         << "\n"
         << "Commands:\n"
         << "  init       Generate JSON configuration template.\n"
-        << "  preview    Generate a single row preview from JSON config.\n"
+        << "  preview    Generate preview rows from JSON config.\n"
         << "  run        Generate dataset from JSON config.\n"
         << "  info       List or describe generators.\n"
         << "  drivers    List installed ODBC drivers.\n"
@@ -27,30 +28,30 @@ int CommandHelp::run(const std::vector<std::string>& /*args*/) {
         << "  help       Show this help message.\n"
         << "\n"
         << "Command usage:\n"
-        << "  data-generator init <json> [--template file|database] [--format <format>] [--from-database <connection>] "
+        << "  " << program_display_name() << " init <json> [--template file|database] [--format <format>] [--from-database <connection>] "
            "[--table <name>]\n"
-        << "  data-generator preview <json> [--field <name>]\n"
-        << "  data-generator run <json> [--rows <N>] [--output <file>]\n"
-        << "  data-generator info [<name>] [--json]\n"
-        << "  data-generator drivers [--json]\n"
-        << "  data-generator check <json>\n"
-        << "  data-generator schema <file>\n"
+        << "  " << program_display_name() << " preview <json> [--rows <N>] [--field <name>]\n"
+        << "  " << program_display_name() << " run <json> [--rows <N>] [--output <file>]\n"
+        << "  " << program_display_name() << " info [<name>] [--json]\n"
+        << "  " << program_display_name() << " drivers [--json]\n"
+        << "  " << program_display_name() << " check <json>\n"
+        << "  " << program_display_name() << " schema <file>\n"
         << "\n"
         << "Examples:\n"
-        << "  data-generator init template.json\n"
-        << "  data-generator init template.json --template file --format csv\n"
-        << "  data-generator init template.json --template database --from-database \"odbc://DRIVER={MySQL ODBC 8.0 "
+        << "  " << program_display_name() << " init template.json\n"
+        << "  " << program_display_name() << " init template.json --template file --format csv\n"
+        << "  " << program_display_name() << " init template.json --template database --from-database \"odbc://DRIVER={MySQL ODBC 8.0 "
            "Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;\" --table t_orders\n"
-        << "  data-generator preview config.json\n"
-        << "  data-generator preview config.json --field email\n"
-        << "  data-generator run config.json\n"
-        << "  data-generator run config.json --output ./out.sql\n"
-        << "  data-generator drivers --json\n"
-        << "  data-generator info sequence --json\n"
-        << "  data-generator info\n"
-        << "  data-generator check config.json\n"
-        << "  data-generator schema schema/data-generator.schema.json\n";
+        << "  " << program_display_name() << " preview config.json --rows 5\n"
+        << "  " << program_display_name() << " preview config.json --field email\n"
+        << "  " << program_display_name() << " run config.json\n"
+        << "  " << program_display_name() << " run config.json --output ./out.sql\n"
+        << "  " << program_display_name() << " drivers --json\n"
+        << "  " << program_display_name() << " info sequence --json\n"
+        << "  " << program_display_name() << " info\n"
+        << "  " << program_display_name() << " check config.json\n"
+        << "  " << program_display_name() << " schema schema/datagen.schema.json\n";
     return exit_codes::kOk;
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

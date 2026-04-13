@@ -8,7 +8,7 @@
 
 #include "generators/core/array_parser.h"
 
-using namespace data_generator::generator;
+using namespace datagen::generator;
 
 namespace {
 

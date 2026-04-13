@@ -10,7 +10,7 @@
 #include "config/configuration.h"
 #include "engine/executor.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 
@@ -34,8 +34,8 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
     }
   },
   "fields": [
-    {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"data_linkage":"person:x"},
-    {"name":"f2","generator":"last_name","config":{"languages":["Japanese"],"use_translation":false},"data_linkage":"person:x"}
+    {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"group":"person:x"},
+    {"name":"f2","generator":"last_name","config":{"languages":["Japanese"],"use_translation":false},"group":"person:x"}
   ]
 }
 )json");
@@ -55,8 +55,8 @@ TEST(LinkageConflictTest, PersonConflictBranches) {
     }
   },
   "fields": [
-    {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"data_linkage":"person:g"},
-    {"name":"f2","generator":"first_name","config":{"languages":["English"],"genders":["F"],"use_translation":false},"data_linkage":"person:g"}
+    {"name":"f1","generator":"first_name","config":{"languages":["English"],"genders":["M"],"use_translation":false},"group":"person:g"},
+    {"name":"f2","generator":"first_name","config":{"languages":["English"],"genders":["F"],"use_translation":false},"group":"person:g"}
   ]
 }
 )json");
@@ -78,8 +78,8 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     }
   },
   "fields": [
-    {"name":"p1","generator":"phone_number","config":{"regions":["United States"]},"data_linkage":"person:r"},
-    {"name":"p2","generator":"phone_number","config":{"regions":["China"]},"data_linkage":"person:r"}
+    {"name":"p1","generator":"phone_number","config":{"regions":["United States"]},"group":"person:r"},
+    {"name":"p2","generator":"phone_number","config":{"regions":["China"]},"group":"person:r"}
   ]
 }
 )json");
@@ -99,8 +99,8 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     }
   },
   "fields": [
-    {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:d"},
-    {"name":"e2","generator":"email","unique":true,"config":{"languages":["English"],"domains":["b.com"]},"data_linkage":"person:d"}
+    {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"group":"person:d"},
+    {"name":"e2","generator":"email","unique":true,"config":{"languages":["English"],"domains":["b.com"]},"group":"person:d"}
   ]
 }
 )json");
@@ -120,8 +120,8 @@ TEST(LinkageConflictTest, PersonConflictRegionsDomainsAndUnique) {
     }
   },
   "fields": [
-    {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:u"},
-    {"name":"e2","generator":"email","unique":false,"config":{"languages":["English"],"domains":["a.com"]},"data_linkage":"person:u"}
+    {"name":"e1","generator":"email","unique":true,"config":{"languages":["English"],"domains":["a.com"]},"group":"person:u"},
+    {"name":"e2","generator":"email","unique":false,"config":{"languages":["English"],"domains":["a.com"]},"group":"person:u"}
   ]
 }
     )json");
@@ -140,8 +140,8 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
     }
   },
   "fields": [
-    {"name":"c1","generator":"card_type","config":{"languages":["English"],"card_types":["Visa"]},"data_linkage":"payment:x"},
-    {"name":"c2","generator":"card_type","config":{"languages":["Japanese"],"card_types":["Visa"]},"data_linkage":"payment:x"}
+    {"name":"c1","generator":"card_type","config":{"languages":["English"],"card_types":["Visa"]},"group":"payment:x"},
+    {"name":"c2","generator":"card_type","config":{"languages":["Japanese"],"card_types":["Visa"]},"group":"payment:x"}
   ]
 }
 )json");
@@ -161,8 +161,8 @@ TEST(LinkageConflictTest, PaymentConflictBranches) {
     }
   },
   "fields": [
-    {"name":"n1","generator":"card_number","config":{"card_types":["Visa"]},"data_linkage":"payment:c"},
-    {"name":"n2","generator":"card_number","config":{"card_types":["MasterCard"]},"data_linkage":"payment:c"}
+    {"name":"n1","generator":"card_number","config":{"card_types":["Visa"]},"group":"payment:c"},
+    {"name":"n2","generator":"card_number","config":{"card_types":["MasterCard"]},"group":"payment:c"}
   ]
 }
 )json");
@@ -188,8 +188,8 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     }
   },
   "fields": [
-    {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"data_linkage":"payment:s"},
-    {"name":"d2","generator":"card_date","config":{"start_month":"02/20","end_month":"12/30"},"data_linkage":"payment:s"}
+    {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"group":"payment:s"},
+    {"name":"d2","generator":"card_date","config":{"start_month":"02/20","end_month":"12/30"},"group":"payment:s"}
   ]
 }
 )json");
@@ -209,8 +209,8 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     }
   },
   "fields": [
-    {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"11/30"},"data_linkage":"payment:e"},
-    {"name":"d2","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"data_linkage":"payment:e"}
+    {"name":"d1","generator":"card_date","config":{"start_month":"01/20","end_month":"11/30"},"group":"payment:e"},
+    {"name":"d2","generator":"card_date","config":{"start_month":"01/20","end_month":"12/30"},"group":"payment:e"}
   ]
 }
 )json");
@@ -230,8 +230,8 @@ TEST(LinkageConflictTest, PaymentConflictCardDateAndUnique) {
     }
   },
   "fields": [
-    {"name":"n1","generator":"card_number","unique":true,"config":{"card_types":["Visa"]},"data_linkage":"payment:u"},
-    {"name":"n2","generator":"card_number","unique":false,"config":{"card_types":["Visa"]},"data_linkage":"payment:u"}
+    {"name":"n1","generator":"card_number","unique":true,"config":{"card_types":["Visa"]},"group":"payment:u"},
+    {"name":"n2","generator":"card_number","unique":false,"config":{"card_types":["Visa"]},"group":"payment:u"}
   ]
 }
     )json");
@@ -250,8 +250,8 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     }
   },
   "fields": [
-    {"name":"l1","generator":"address_line1","config":{"regions":["United States"],"use_translation":false},"data_linkage":"location:x"},
-    {"name":"l2","generator":"city","config":{"regions":["China"],"use_translation":false},"data_linkage":"location:x"}
+    {"name":"l1","generator":"address_line1","config":{"regions":["United States"],"use_translation":false},"group":"location:x"},
+    {"name":"l2","generator":"city","config":{"regions":["China"],"use_translation":false},"group":"location:x"}
   ]
 }
 )json");
@@ -271,8 +271,8 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     }
   },
   "fields": [
-    {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:x"},
-    {"name":"f2","generator":"file_name","config":{"extensions":["csv"]},"data_linkage":"file:x"}
+    {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"group":"file:x"},
+    {"name":"f2","generator":"file_name","config":{"extensions":["csv"]},"group":"file:x"}
   ]
 }
 )json");
@@ -292,8 +292,8 @@ TEST(LinkageConflictTest, LocationAndComputerConflictBranches) {
     }
   },
   "fields": [
-    {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:os"},
-    {"name":"f2","generator":"file_path","config":{"operating_systems":["Linux"],"extensions":["txt"]},"data_linkage":"file:os"}
+    {"name":"f1","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"group":"file:os"},
+    {"name":"f2","generator":"file_path","config":{"operating_systems":["Linux"],"extensions":["txt"]},"group":"file:os"}
   ]
 }
 )json");
@@ -398,7 +398,7 @@ TEST(LinkageConflictTest, ComputerAndUtilityErrorBranches) {
     }
   },
   "fields": [
-    {"name":"d","generator":"file_directory","config":{"operating_systems":["Windows"]},"data_linkage":"file:missing"}
+    {"name":"d","generator":"file_directory","config":{"operating_systems":["Windows"]},"group":"file:missing"}
   ]
 }
 )json");
@@ -420,8 +420,8 @@ TEST(LinkageConflictTest, FileExtensionLinkagePath) {
     }
   },
   "fields": [
-    {"name":"p","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"data_linkage":"file:ext"},
-    {"name":"e","generator":"file_extension","config":{"extensions":["txt"]},"data_linkage":"file:ext"}
+    {"name":"p","generator":"file_path","config":{"operating_systems":["Windows"],"extensions":["txt"]},"group":"file:ext"},
+    {"name":"e","generator":"file_extension","config":{"extensions":["txt"]},"group":"file:ext"}
   ]
 }
 )json");

@@ -4,16 +4,16 @@
 
 /// @file utility_generators.h
 
-#ifndef DATA_GENERATOR_UTILITY_GENERATORS_H
-#define DATA_GENERATOR_UTILITY_GENERATORS_H
+#ifndef DATAGEN_UTILITY_GENERATORS_H
+#define DATAGEN_UTILITY_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register utility generators (boolean, sequence, regular_expression).
 void register_utility_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_UTILITY_GENERATORS_H
+#endif  // DATAGEN_UTILITY_GENERATORS_H

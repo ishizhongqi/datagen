@@ -15,14 +15,14 @@
 #include "cli/exit_codes.h"
 #include "test_paths.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 
 int invoke_cli(const std::vector<std::string>& args) {
     std::vector<std::string> storage;
     storage.reserve(args.size() + 1);
-    storage.emplace_back("data-generator");
+    storage.emplace_back("datagen");
     for (const auto& arg : args) {
         storage.push_back(arg);
     }
@@ -37,7 +37,7 @@ int invoke_cli(const std::vector<std::string>& args) {
 }
 
 std::filesystem::path test_input(const std::string& filename) {
-    return std::filesystem::path(DATA_GENERATOR_TEST_INPUT_DIR) / filename;
+    return std::filesystem::path(DATAGEN_TEST_INPUT_DIR) / filename;
 }
 
 bool create_sqlite_table(const std::filesystem::path& db_path, std::string* error_message) {
@@ -99,10 +99,10 @@ TEST(RunTest, HelpCommandReturnsOk) {
 
 TEST(RunTest, RunFromInputFileReturnsOkAndWritesOutput) {
     const auto input  = test_input("run_valid.json");
-    const auto workspace = data_generator::test::workspace_path("data-generator-test-workspace");
-    const auto output = workspace / "data-generator-test-output.csv";
+    const auto workspace = datagen::test::workspace_path("datagen-test-workspace");
+    const auto output = workspace / "datagen-test-output.csv";
 
-    data_generator::test::reset_path(output);
+    datagen::test::reset_path(output);
     std::error_code ec;
     std::filesystem::create_directories(workspace, ec);
 
@@ -143,8 +143,8 @@ TEST(RunTest, CheckMissingFieldsReturnsRuntimeFailure) {
 }
 
 TEST(RunTest, RunSQLiteDatabaseOutput) {
-    const auto db_path = data_generator::test::artifact_path("dg_sqlite_test.db");
-    data_generator::test::reset_path(db_path);
+    const auto db_path = datagen::test::artifact_path("dg_sqlite_test.db");
+    datagen::test::reset_path(db_path);
 
     std::string error;
     ASSERT_TRUE(create_sqlite_table(db_path, &error)) << error;
@@ -170,7 +170,7 @@ TEST(RunTest, RunSQLiteDatabaseOutput) {
         {{"name", "uid"}, {"generator", "uuid"}, {"config", {{"include_hyphens", true}}}}
     });
 
-    const auto config_path = data_generator::test::artifact_path("dg_cli_sqlite_config.json");
+    const auto config_path = datagen::test::artifact_path("dg_cli_sqlite_config.json");
     {
         std::ofstream out(config_path, std::ios::trunc);
         out << root.dump(2);

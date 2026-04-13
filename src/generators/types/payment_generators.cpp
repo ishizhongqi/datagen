@@ -21,7 +21,7 @@
 #include "generators/core/linkage_helper.h"
 #include "generators/core/override_rules.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 namespace {
 
@@ -366,4 +366,4 @@ void register_payment_generators(GeneratorRegistry& registry) {
     });
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

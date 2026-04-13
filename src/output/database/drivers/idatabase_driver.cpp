@@ -9,7 +9,7 @@
 #include "output/database/drivers/odbc_driver.h"
 #include "output/database/drivers/sqlite_driver.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 std::unique_ptr<IDatabaseDriver> make_database_driver(const DbType type) {
     switch (type) {
@@ -22,4 +22,4 @@ std::unique_ptr<IDatabaseDriver> make_database_driver(const DbType type) {
     }
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

@@ -15,7 +15,7 @@
 #include "cli/exit_codes.h"
 #include "config/generator_catalog.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 namespace {
 
@@ -83,8 +83,8 @@ Json build_generator_constraint(const config::GeneratorMetadata& meta) {
         restriction_rules.push_back(Json{{"not", Json{{"required", Json::array({"supports_unique"})}}}});
     }
     if (!meta.supports_data_linkage) {
-        restriction_rules.push_back(Json{{"not", Json{{"required", Json::array({"data_linkage"})}}}});
-        restriction_rules.push_back(Json{{"not", Json{{"required", Json::array({"supports_data_linkage"})}}}});
+        restriction_rules.push_back(Json{{"not", Json{{"required", Json::array({"group"})}}}});
+        restriction_rules.push_back(Json{{"not", Json{{"required", Json::array({"supports_group"})}}}});
     }
     if (!restriction_rules.empty()) { then_schema["allOf"] = std::move(restriction_rules); }
 
@@ -109,9 +109,9 @@ Json build_json_schema() {
                   {"generator", Json{{"type", "string"}, {"enum", generator_names}}},
                   {"config", Json{{"type", "object"}}},
                   {"unique", Json{{"type", "boolean"}}},
-                  {"data_linkage", Json{{"type", "string"}}},
+                  {"group", Json{{"type", "string"}}},
                   {"supports_unique", Json{{"type", "boolean"}}},
-                  {"supports_data_linkage", Json{{"type", "boolean"}}},
+                  {"supports_group", Json{{"type", "boolean"}}},
                   {"null_value", Json{{"type", "object"}}},
                   {"default_value", Json{{"type", "object"}}},
     };
@@ -218,14 +218,23 @@ Json build_json_schema() {
     database_schema["properties"]           = Json{
                   {"connection", Json{{"type", "string"}, {"minLength", 1}}},
                   {"table", Json{{"type", "string"}, {"minLength", 1}}},
-                  {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"auto", "insert", "bulk", "load"})}}},
-                  {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
-                  {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
-                  {"threads", Json{{"type", "integer"}, {"minimum", 1}}},
+                  {"mode", Json{{"type", "string"}, {"enum", Json::array({"fast", "balanced", "safe"})}}},
+                  {"write_mode", Json{{"type", "string"}, {"enum", Json::array({"append", "truncate", "upsert"})}}},
                   {"transaction_mode", Json{{"type", "string"}, {"enum", Json::array({"per-batch", "per-run", "none"})}}},
-                  {"error_policy",
-                   Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback-batch", "rollback-all"})}}},
-                  {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 1}}},
+                  {"error_policy", Json{{"type", "string"}, {"enum", Json::array({"stop", "continue", "rollback"})}}},
+                  {"advanced",
+                   Json{
+                       {"type", "object"},
+                       {"additionalProperties", false},
+                       {"properties",
+                        Json{
+                            {"insert_mode", Json{{"type", "string"}, {"enum", Json::array({"insert", "load"})}}},
+                            {"batch_size", Json{{"type", "integer"}, {"minimum", 1}}},
+                            {"queue_size", Json{{"type", "integer"}, {"minimum", 1}}},
+                            {"threads", Json{{"type", "integer"}, {"minimum", 1}}},
+                            {"rate_limit_rows_per_sec", Json{{"type", "integer"}, {"minimum", 0}}},
+                        }},
+                   }},
     };
     database_schema["required"] = Json::array({"connection", "table"});
 
@@ -267,7 +276,7 @@ Json build_json_schema() {
 }  // namespace
 
 int CommandSchema::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator schema", "Generate JSON Schema from generator metadata.");
+    cxxopts::Options options(program_display_name() + " schema", "Generate JSON Schema from generator metadata.");
     options.add_options()("output", "Output schema file path", cxxopts::value<std::string>())("h,help", "Show help");
     options.parse_positional({"output"});
 
@@ -302,4 +311,4 @@ int CommandSchema::run(const std::vector<std::string>& args) {
     return exit_codes::kOk;
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

@@ -4,14 +4,14 @@
 
 /// @file workspace.h
 
-#ifndef DATA_GENERATOR_WORKSPACE_H
-#define DATA_GENERATOR_WORKSPACE_H
+#ifndef DATAGEN_WORKSPACE_H
+#define DATAGEN_WORKSPACE_H
 
 #include <filesystem>
 #include <optional>
 #include <string>
 
-namespace data_generator::utils {
+namespace datagen::utils {
 
 struct WorkspaceLayout {
     std::filesystem::path root;
@@ -30,6 +30,6 @@ bool is_workspace_local_filename(const std::string& filename);
 WorkspaceLayout
     ensure_workspace_layout(const std::optional<std::string>& configured_workspace, std::string* error_message);
 
-}  // namespace data_generator::utils
+}  // namespace datagen::utils
 
 #endif

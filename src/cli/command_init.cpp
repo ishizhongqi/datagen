@@ -23,7 +23,7 @@
 #include "output/database/db_url_parser.h"
 #include "output/database/drivers/idatabase_driver.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 namespace {
 
@@ -443,10 +443,8 @@ void apply_supported_field_attributes(
     }
 
     if (meta.supports_data_linkage) {
-        const std::string module       = meta.linkage_module.empty() ? meta.module : meta.linkage_module;
-        const std::string group_module = module.empty() ? meta.name : module;
         const int         group_id     = ++linkage_counter_by_generator[meta.name];
-        field["data_linkage"]          = group_module + ":Group" + std::to_string(group_id);
+        field["group"]                 = "Group" + std::to_string(group_id);
     }
 
     field["default_value"] = make_default_value_defaults();
@@ -555,7 +553,7 @@ OrderedJson build_fields_from_template(const Json& root) {
 }  // namespace
 
 int CommandInit::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator init", "Generate JSON configuration template.");
+    cxxopts::Options options(program_display_name() + " init", "Generate JSON configuration template.");
     options.add_options()
         ("config", "Output JSON file path", cxxopts::value<std::string>())
         ("template", "Template type (file|database)", cxxopts::value<std::string>()->default_value("file"))
@@ -649,7 +647,7 @@ int CommandInit::run(const std::vector<std::string>& args) {
     const std::string output_table      = has_table ? table_name : default_table;
 
     OrderedJson output = OrderedJson::object();
-    output["$schema"]  = "./schema/data-generator.schema.json";
+    output["$schema"]  = "./schema/datagen.schema.json";
     output["rows"]     = rows;
 
     OrderedJson output_section = OrderedJson::object();
@@ -661,13 +659,17 @@ int CommandInit::run(const std::vector<std::string>& args) {
         OrderedJson database                = OrderedJson::object();
         database["connection"]              = output_connection;
         database["table"]                   = output_table;
-        database["insert_mode"]             = "auto";
-        database["batch_size"]              = 1000;
-        database["queue_size"]              = 1024;
-        database["threads"]                 = 2;
+        database["mode"]                    = "balanced";
+        database["write_mode"]              = "append";
         database["transaction_mode"]        = "per-batch";
         database["error_policy"]            = "stop";
-        database["rate_limit_rows_per_sec"] = 20000;
+        database["advanced"]                = OrderedJson{
+                           {"insert_mode", "insert"},
+                           {"batch_size", 2000},
+                           {"queue_size", 2048},
+                           {"threads", 2},
+                           {"rate_limit_rows_per_sec", 20000},
+        };
         output_section["database"]          = std::move(database);
 
         if (should_infer) {
@@ -748,4 +750,4 @@ int CommandInit::run(const std::vector<std::string>& args) {
     return exit_codes::kOk;
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

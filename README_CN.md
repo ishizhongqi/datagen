@@ -1,8 +1,8 @@
-# Data Generator
+# Datagen
 
-[![codecov](https://codecov.io/gh/ishizhongqi/data-generator/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/data-generator)
+[![codecov](https://codecov.io/gh/ishizhongqi/datagen/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/datagen)
 
-Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
+Datagen 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
 
 > 说明：本项目中的多数代码由 AI 辅助生成。
 
@@ -10,13 +10,13 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 
 **CLI**
 
-`data-generator <command> [options]`
+`datagen <command> [options]`
 
 命令概览：
 
 - `help`：展示全部命令帮助。
 - `init`：生成 JSON 配置模板。
-- `preview`：生成单行预览。
+- `preview`：生成预览行。
 - `run`：根据 JSON 配置生成完整数据集。
 - `info`：列出或查看生成器说明。
 - `drivers`：列出已安装的 ODBC 驱动。
@@ -44,6 +44,7 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 参数：
 
 - `<json>`：输入 JSON 配置文件。必填。
+- `--rows <N>`：预览行数。整数 `>= 1`。默认 `1`。
 - `--field <name>`：预览字段名。可选。
 - `-h, --help`：显示帮助。
 
@@ -108,41 +109,47 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 - `database`：object。`type=database` 时必填。
   - `connection`：string。必填。使用 `odbc://...` 或 `sqlite://...`。
   - `table`：string。必填。
-  - `insert_mode`：string。`auto`、`insert`、`bulk`、`load`。
-  - `batch_size`：integer。`>= 1`。
-  - `queue_size`：integer。`>= 1`。
-  - `threads`：integer。`>= 1`。
+  - `mode`：string。`fast`、`balanced` 或 `safe`。默认 `balanced`。
+  - `write_mode`：string。`append`、`truncate` 或 `upsert`。默认 `append`。
   - `transaction_mode`：string。`per-batch`、`per-run`、`none`。
-  - `error_policy`：string。`stop`、`continue`、`rollback-batch`、`rollback-all`。
-  - `rate_limit_rows_per_sec`：integer。`>= 1`。
+  - `error_policy`：string。`stop`、`continue` 或 `rollback`。默认 `stop`。
+  - `advanced`：object。可选。用于覆盖 `mode` 隐含的默认值。
+    - `insert_mode`：string。`insert` 或 `load`。
+    - `batch_size`：integer。`>= 1`。
+    - `queue_size`：integer。`>= 1`。
+    - `threads`：integer。`>= 1`。
+    - `rate_limit_rows_per_sec`：integer。`>= 0`。`0` 表示不限速。
 
 `output.database` 详细说明：
 
-- `insert_mode`：控制写入数据库的方式。
-  - `auto`：当驱动支持 `load` 且 `rows >= 50000` 时选择 `load`；否则若 `batch_size > 1` 则选择 `bulk`；再否则选择 `insert`。
-  - `insert`：每一行执行一条 `INSERT INTO ... VALUES (...)`。
-  - `bulk`：按批写入。
-    - MySQL/PostgreSQL/SQLite：`INSERT INTO ... VALUES (...), (...), ...`
-    - Oracle：`INSERT ALL ... INTO ... VALUES (...) ... SELECT 1 FROM DUAL`
-    - 如果当前数据库不支持多行 `VALUES`，后端会自动退回到逐行 `insert`。
-  - `load`：先在 `<workspace>/tmp/` 下生成临时数据文件，再让数据库执行导入。
-    - MySQL：`LOAD DATA LOCAL INFILE`
-    - PostgreSQL：`COPY ... FROM`
-    - SQLite：当前不支持
-    - Oracle：当前后端未实现
-  - 说明：
-    - SQLite 只适合 `insert` 或 `bulk`；显式使用 `load` 时会在运行时报不支持。
-    - MySQL 的 `load` 模式如果被驱动或服务端禁用了 `LOAD DATA LOCAL INFILE`，当前实现会回退到 `bulk`。
-- `batch_size`：每批写入的行数。默认 `1000`。
-  - 对 `bulk` 和 `load` 直接生效，也会在 `transaction_mode=per-batch` 时决定每个事务包含多少行。
-  - 即使是 `insert`，程序也会先按批缓存行，只是批内每一行仍分别发送单条 `INSERT`。
-- `queue_size`：生成线程与数据库写线程之间的内存队列容量。默认 `1024`。
-  - 值更大时，生产和写入速度不一致时会更平滑。
-  - 值更小时，内存占用更低，也会更早对生成端施加背压。
-- `threads`：数据库写线程数量。默认 `2`。
+- `mode`：高级参数的快捷预设。
+  - `fast`：`load`、`5000`、`5120`、`8`、`0`
+  - `balanced`：`insert`、`2000`、`2048`、`2`、`20000`
+  - `safe`：`insert`、`1000`、`1024`、`1`、`5000`
+  - 上面这组值按顺序分别对应：`insert_mode`、`batch_size`、`queue_size`、`threads`、`rate_limit_rows_per_sec`。
+- `advanced`：用于显式覆盖 `mode` 提供的默认值。
+  - 不写 `advanced` 时，直接使用当前 `mode` 的默认组合。
+  - 只写其中某几个键时，也只覆盖这些键。
+- `write_mode`：控制写入前对目标表的处理方式。
+  - `append`：直接追加数据。
+  - `truncate`：生成前先清空目标表。
+  - `upsert`：如果生成出的主键或唯一键已存在则更新，不存在则插入。
+- `insert_mode`：控制数据如何进入数据库。
+  - `insert`：批量 SQL 插入。这就是旧版 `bulk` 的行为。
+  - `load`：先在 `<workspace>/tmp/` 下生成临时文件，再让数据库执行导入。
+  - 如果当前数据库或当前 `write_mode` 不支持 `load`，后端会自动回退到 `insert`，并在日志里说明原因。
+- `batch_size`：每次写入数据库的批大小。
+  - 它会影响 SQL 批量写入大小，也会在 `transaction_mode=per-batch` 时决定每个事务包含多少行。
+- `queue_size`：生成端和数据库写入端之间的内存队列容量。
+  - 队列里存放的是“已经生成、等待导入”的行。
+  - 队列满了以后，生成端会阻塞等待写入端追上。因此它是“吞吐量和内存占用”的调参项，不是“正确性开关”。
+  - 作为使用者，建议先用 `mode` 的默认值。如果生成明显快于导入，希望整体更平滑，可以增大它；如果更在意内存占用，可以减小它。
+  - 一般把 `queue_size` 放在 `batch_size` 的 `1x` 到 `4x` 左右，是一个比较稳妥的起点。
+- `threads`：数据库写线程数，不是生成器线程数。
+  - 它是会生效的，前提是当前数据库类型和事务模式允许多写线程。
   - SQLite 会被强制降为 `1`，因为当前后端只支持单写者。
-  - `transaction_mode=per-run` 也会被强制降为 `1`，因为当前实现不会把同一个运行级事务跨多个写线程共享。
-  - 这个 JSON 字段在内部配置中对应 `db_threads`。
+  - `transaction_mode=per-run` 也会被强制降为 `1`，因为当前实现不会把一个运行级事务分给多个写线程共享。
+  - 所以即使你配置了 `threads=8`，日志里也可能看到 `Threads: 1 (...)`，这表示运行时为了安全自动降级了。
 - `transaction_mode`：控制事务边界。
   - `per-batch`：每个批次开启一个事务，批次成功后 `COMMIT`，失败时 `ROLLBACK` 当前批次。
   - `per-run`：整个运行只开启一个事务，结束时统一 `COMMIT` 或 `ROLLBACK`。
@@ -154,13 +161,13 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 - `error_policy`：控制写入出错后的处理方式。
   - `stop`：立即停止，并报告首个错误。
   - `continue`：记录警告后继续处理后续行或批次。
-  - `rollback-batch`：如果当前存在批次级事务，则回滚当前批次，然后继续。
-  - `rollback-all`：停止后续处理；如果当前存在运行级事务，则回滚整个运行。
+  - `rollback`：只在 `insert_mode=insert` 时有意义。
+  - 当 `transaction_mode=per-batch` 时，`rollback` 会回滚当前批次并继续。
+  - 当 `transaction_mode=per-run` 时，`rollback` 会回滚整个运行并停止。
   - 说明：
-    - `rollback-batch` 最适合搭配 `transaction_mode=per-batch`。
-    - `rollback-all` 最适合搭配 `transaction_mode=per-run`。
-    - 如果 `transaction_mode=none`，则没有显式事务可回滚，此时 rollback 类策略主要体现为“停止还是继续”。
-- `rate_limit_rows_per_sec`：成功写入后的目标限速，单位为每秒行数。默认 `20000`。
+    - 如果 `insert_mode` 不是 `insert`，`rollback` 会自动降级为 `stop`。
+    - 如果 `transaction_mode=none`，则没有显式事务可回滚。
+- `rate_limit_rows_per_sec`：成功写入后的目标限速，单位为每秒行数。
   - 后端会在每个成功批次后适当休眠，使整体导入速率接近这个值。
   - 它限制的是数据库写入吞吐，不只是数据生成速度。
 
@@ -176,9 +183,10 @@ Data Generator 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入
 
 - `name`：string。字段/列名。
 - `generator`：string。见下方生成器列表。
-- `config`：object。生成器配置，使用 `data-generator info <name>` 查看。
+- `config`：object。生成器配置，使用 `datagen info <name>` 查看。
 - `unique`：boolean。仅对支持唯一的生成器有效。
-- `data_linkage`：string。格式 `module:Group1`。
+- `group`：string。任意非空字符串都可以。
+  - 组关联在内部仍然按生成器模块隔离，所以不同模块即使写了同一个 group 值，也不会串组。
 - `default_value`：object。按比例使用固定默认值。
 - `null_value`：object。按比例输出空值。
 
@@ -206,7 +214,7 @@ social_network_id, product_name, product_category, color, size, barcode, enum_it
 boolean, sequence, regular_expression
 ```
 
-使用 `data-generator info <name>` 可查看每个生成器的配置字段与支持的值。
+使用 `datagen info <name>` 可查看每个生成器的配置字段与支持的值。
 
 `boolean` 生成器：
 
@@ -255,16 +263,16 @@ JSON 配置示例：
 
 ```sh
 # 校验配置
-data-generator check example_mysql_db.json
+datagen check example_mysql_db.json
 
-# 预览单行（格式来自 JSON 配置）
-data-generator preview example_file.json
+# 预览 5 行（file 输出保持配置中的文件格式，database 输出使用 CSV）
+datagen preview example_file.json --rows 5
 
 # 生成 CSV 文件
-data-generator run example_file.json --output out.csv
+datagen run example_file.json --output out.csv
 
 # 通过 ODBC 写入 MySQL
-data-generator run example_mysql_db.json
+datagen run example_mysql_db.json
 ```
 
 **许可证**

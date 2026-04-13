@@ -11,7 +11,7 @@
 #include <nlohmann/json.hpp>
 #include <cctype>
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 namespace {
 
@@ -99,4 +99,4 @@ void write_json(
     }
 }
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file

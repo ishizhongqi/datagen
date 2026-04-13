@@ -4,17 +4,17 @@
 
 /// @file db_url_parser.h
 
-#ifndef DATA_GENERATOR_DB_URL_PARSER_H
-#define DATA_GENERATOR_DB_URL_PARSER_H
+#ifndef DATAGEN_DB_URL_PARSER_H
+#define DATAGEN_DB_URL_PARSER_H
 
 #include <string>
 
 #include "output/database/db_metadata.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 bool parse_db_connection(const std::string& connection, DbUrl* parsed, std::string* error_message);
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

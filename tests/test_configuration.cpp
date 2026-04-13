@@ -9,7 +9,7 @@
 
 #include "config/configuration.h"
 
-using namespace data_generator;
+using namespace datagen;
 
 namespace {
 

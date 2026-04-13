@@ -4,22 +4,21 @@
 
 /// @file linkage_helper.cpp
 
-#include "linkage_helper.h"
+#include "generators/core/linkage_helper.h"
 
 #include <stdexcept>
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
-std::optional<std::string> parse_linkage_key(const Json& filed) {
-    if (!filed.contains("data_linkage")) { return std::nullopt; }
-    const auto& value = filed.at("data_linkage");
-    if (value.is_boolean()) { return value.get<bool>() ? std::optional<std::string>("default") : std::nullopt; }
+std::optional<std::string> parse_linkage_key(const Json& field) {
+    if (!field.contains("group")) { return std::nullopt; }
+    const auto& value = field.at("group");
     if (value.is_string()) {
         auto key = value.get<std::string>();
         if (key.empty()) { return std::nullopt; }
         return key;
     }
-    throw std::invalid_argument("data_linkage must be a boolean or a string");
+    throw std::invalid_argument("group must be a string");
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

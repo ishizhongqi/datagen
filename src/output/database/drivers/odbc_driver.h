@@ -4,8 +4,8 @@
 
 /// @file odbc_driver.h
 
-#ifndef DATA_GENERATOR_ODBC_DRIVER_H
-#define DATA_GENERATOR_ODBC_DRIVER_H
+#ifndef DATAGEN_ODBC_DRIVER_H
+#define DATAGEN_ODBC_DRIVER_H
 
 #include <string>
 #include <vector>
@@ -25,7 +25,7 @@
 
 #include "output/database/drivers/idatabase_driver.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 class OdbcDriver final : public IDatabaseDriver {
 public:
@@ -76,6 +76,6 @@ private:
     SQLHDBC     dbc_       = SQL_NULL_HDBC;
 };
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

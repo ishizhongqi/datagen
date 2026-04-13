@@ -10,7 +10,7 @@
 #include "generators/core/generator_registry.h"
 #include "generators/core/linkage_helper.h"
 
-using namespace data_generator::generator;
+using namespace datagen::generator;
 
 namespace {
 
@@ -25,20 +25,15 @@ public:
     std::string generate() override { return "x"; }
 };
 
-TEST(LinkageHelperTest, ParsesBooleanAndStringForms) {
+TEST(LinkageHelperTest, ParsesStringForm) {
     EXPECT_FALSE(parse_linkage_key(Json::object()).has_value());
-    EXPECT_FALSE(parse_linkage_key(Json::parse(R"json({"data_linkage":false})json")).has_value());
 
-    const auto default_key = parse_linkage_key(Json::parse(R"json({"data_linkage":true})json"));
-    ASSERT_TRUE(default_key.has_value());
-    EXPECT_EQ(*default_key, "default");
-
-    const auto custom_key = parse_linkage_key(Json::parse(R"json({"data_linkage":"mod:group"})json"));
+    const auto custom_key = parse_linkage_key(Json::parse(R"json({"group":"mod:group"})json"));
     ASSERT_TRUE(custom_key.has_value());
     EXPECT_EQ(*custom_key, "mod:group");
 
-    EXPECT_FALSE(parse_linkage_key(Json::parse(R"json({"data_linkage":""})json")).has_value());
-    EXPECT_THROW((void)parse_linkage_key(Json::parse(R"json({"data_linkage":123})json")), std::invalid_argument);
+    EXPECT_FALSE(parse_linkage_key(Json::parse(R"json({"group":""})json")).has_value());
+    EXPECT_THROW((void)parse_linkage_key(Json::parse(R"json({"group":123})json")), std::invalid_argument);
 }
 
 TEST(GeneratorRegistryTest, RegisterAndCreateAndUnknown) {

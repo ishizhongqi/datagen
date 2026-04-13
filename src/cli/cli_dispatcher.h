@@ -4,19 +4,19 @@
 
 /// @file cli_dispatcher.h
 
-#ifndef DATA_GENERATOR_CLI_DISPATCHER_H
-#define DATA_GENERATOR_CLI_DISPATCHER_H
+#ifndef DATAGEN_CLI_DISPATCHER_H
+#define DATAGEN_CLI_DISPATCHER_H
 
 #include <string>
 #include <vector>
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 class CliDispatcher {
 public:
     static int dispatch(const std::string& command, const std::vector<std::string>& args);
 };
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli
 
-#endif  // DATA_GENERATOR_CLI_DISPATCHER_H
+#endif  // DATAGEN_CLI_DISPATCHER_H

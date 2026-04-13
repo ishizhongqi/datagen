@@ -10,7 +10,7 @@
 #include <cctype>
 #include <optional>
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 namespace {
 
@@ -85,4 +85,4 @@ void write_sql(
     for (const auto& row : rows) { write_sql_row(columns, boolean_columns, row, table_name, out); }
 }
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file

@@ -4,8 +4,8 @@
 
 /// @file executor.h
 
-#ifndef DATA_GENERATOR_EXECUTOR_H
-#define DATA_GENERATOR_EXECUTOR_H
+#ifndef DATAGEN_EXECUTOR_H
+#define DATAGEN_EXECUTOR_H
 
 #include <cstdint>
 #include <functional>
@@ -16,7 +16,7 @@
 
 #include "config/configuration.h"
 
-namespace data_generator::engine {
+namespace datagen::engine {
 
 struct ExecutionOptions {
     std::size_t requested_threads = 1;
@@ -46,7 +46,8 @@ GenerateResult generate_with_consumer(
 GenerateResult generate_to_stream(const config::GenerationConfig& cfg, const ExecutionOptions& opts, std::ostream& out);
 
 std::vector<std::optional<std::string>> preview_row(const config::GenerationConfig& cfg);
+std::vector<Row>                        preview_rows(const config::GenerationConfig& cfg, std::size_t rows);
 
-}  // namespace data_generator::engine
+}  // namespace datagen::engine
 
 #endif

@@ -9,17 +9,17 @@
 
 #include "utils/workspace.h"
 
-using data_generator::utils::default_workspace_root;
-using data_generator::utils::ensure_workspace_layout;
-using data_generator::utils::is_workspace_local_filename;
-using data_generator::utils::resolve_workspace_root;
+using datagen::utils::default_workspace_root;
+using datagen::utils::ensure_workspace_layout;
+using datagen::utils::is_workspace_local_filename;
+using datagen::utils::resolve_workspace_root;
 
 TEST(WorkspaceTest, ResolvesWorkspacePaths) {
     const auto root = default_workspace_root();
     EXPECT_FALSE(root.empty());
 
 #if !defined(_WIN32)
-    EXPECT_NE(root.string().find(".data_generator"), std::string::npos);
+    EXPECT_NE(root.string().find(".datagen"), std::string::npos);
 #endif
 
     const std::optional<std::string> empty;

@@ -11,10 +11,10 @@
 #include <unordered_set>
 #include <utility>
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
-#ifndef DATA_GENERATOR_VERSION
-#define DATA_GENERATOR_VERSION "0.0.0"
+#ifndef DATAGEN_VERSION
+#define DATAGEN_VERSION "0.0.0"
 #endif
 
 Json load_json_from_file(const std::string& path) {
@@ -82,11 +82,19 @@ void print_validation_issues(const std::vector<config::ValidationIssue>& issues,
 }
 
 std::string version_string() {
-    return DATA_GENERATOR_VERSION;
+    return DATAGEN_VERSION;
+}
+
+std::string program_display_name() {
+    return "datagen";
+}
+
+std::string github_url() {
+    return "https://github.com/ishizhongqi/datagen";
 }
 
 void print_version(std::ostream& output) {
-    output << "data-generator " << DATA_GENERATOR_VERSION << "\n";
+    output << program_display_name() << " " << DATAGEN_VERSION << "\n";
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

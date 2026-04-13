@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace data_generator::config {
+namespace datagen::config {
 
 namespace {
 
@@ -859,7 +859,7 @@ Json build_project_template(const int rows, const std::string& file_format) {
             {"name", "company_name"},
             {"generator", "company_name"},
             {"config", Json{{"languages", Json::array({"English"})}, {"use_translation", false}}},
-            {"data_linkage", "company:group_1"},
+            {"group", "company:group_1"},
         }
     );
     fields.push_back(
@@ -867,7 +867,7 @@ Json build_project_template(const int rows, const std::string& file_format) {
             {"name", "industry"},
             {"generator", "industry"},
             {"config", Json{{"languages", Json::array({"English"})}}},
-            {"data_linkage", "company:group_1"},
+            {"group", "company:group_1"},
         }
     );
     fields.push_back(
@@ -882,4 +882,4 @@ Json build_project_template(const int rows, const std::string& file_format) {
     return root;
 }
 
-}  // namespace data_generator::config
+}  // namespace datagen::config

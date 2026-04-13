@@ -13,7 +13,7 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(data-generator-tests
+add_executable(datagen-tests
     test_configuration.cpp
     test_configuration_edge.cpp
     test_executor.cpp
@@ -42,18 +42,18 @@ add_executable(data-generator-tests
     test_run.cpp
 )
 
-target_link_libraries(data-generator-tests
+target_link_libraries(datagen-tests
     PRIVATE
-    data-generator-lib
+    datagen-lib
     GTest::gtest_main
 )
 
-target_compile_features(data-generator-tests PRIVATE cxx_std_20)
+target_compile_features(datagen-tests PRIVATE cxx_std_20)
 
-target_compile_definitions(data-generator-tests
+target_compile_definitions(datagen-tests
     PRIVATE
-    DATA_GENERATOR_TEST_INPUT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/inputs"
+    DATAGEN_TEST_INPUT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/inputs"
 )
 
 include(GoogleTest)
-gtest_discover_tests(data-generator-tests)
+gtest_discover_tests(datagen-tests)

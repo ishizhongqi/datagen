@@ -11,7 +11,7 @@
 
 #include "utils/env_utils.h"
 
-namespace data_generator::utils {
+namespace datagen::utils {
 
 namespace {
 
@@ -33,7 +33,7 @@ std::filesystem::path default_workspace_root() {
 #if defined(_WIN32)
     return home_directory() / "Documents" / "DataGenerator";
 #else
-    return home_directory() / ".data_generator";
+    return home_directory() / ".datagen";
 #endif
 }
 
@@ -78,4 +78,4 @@ WorkspaceLayout
     return layout;
 }
 
-}  // namespace data_generator::utils
+}  // namespace datagen::utils

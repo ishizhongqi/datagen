@@ -4,8 +4,8 @@
 
 /// @file idatabase_driver.h
 
-#ifndef DATA_GENERATOR_IDATABASE_DRIVER_H
-#define DATA_GENERATOR_IDATABASE_DRIVER_H
+#ifndef DATAGEN_IDATABASE_DRIVER_H
+#define DATAGEN_IDATABASE_DRIVER_H
 
 #include <memory>
 #include <string>
@@ -13,7 +13,7 @@
 
 #include "output/database/db_metadata.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 class IDatabaseDriver {
 public:
@@ -41,6 +41,6 @@ public:
 
 std::unique_ptr<IDatabaseDriver> make_database_driver(DbType type);
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

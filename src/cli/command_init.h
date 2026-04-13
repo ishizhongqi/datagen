@@ -4,19 +4,19 @@
 
 /// @file command_init.h
 
-#ifndef DATA_GENERATOR_COMMAND_INIT_H
-#define DATA_GENERATOR_COMMAND_INIT_H
+#ifndef DATAGEN_COMMAND_INIT_H
+#define DATAGEN_COMMAND_INIT_H
 
 #include <string>
 #include <vector>
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 class CommandInit {
 public:
     static int run(const std::vector<std::string>& args);
 };
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli
 
-#endif  // DATA_GENERATOR_COMMAND_INIT_H
+#endif  // DATAGEN_COMMAND_INIT_H

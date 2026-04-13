@@ -1,5 +1,5 @@
 {
-    "$schema": "../schema/data-generator.schema.json",
+    "$schema": "../schema/datagen.schema.json",
     "rows": 10,
     "output": {
         "type": "file",
@@ -38,7 +38,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "business:Group1",
+            "group": "business:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -76,7 +76,7 @@
                     "Simplified Chinese"
                 ]
             },
-            "data_linkage": "business:Group1",
+            "group": "business:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -148,7 +148,7 @@
                     "csv"
                 ]
             },
-            "data_linkage": "computer:Group1",
+            "group": "computer:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -167,7 +167,7 @@
                     "Windows"
                 ]
             },
-            "data_linkage": "computer:Group1",
+            "group": "computer:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -187,7 +187,7 @@
                     "csv"
                 ]
             },
-            "data_linkage": "computer:Group1",
+            "group": "computer:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -207,7 +207,7 @@
                     "csv"
                 ]
             },
-            "data_linkage": "computer:Group1",
+            "group": "computer:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -346,7 +346,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -366,7 +366,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -385,7 +385,7 @@
                     "United States"
                 ]
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -405,7 +405,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -425,7 +425,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -445,7 +445,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -465,7 +465,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -485,7 +485,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "location:Group1",
+            "group": "location:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -541,7 +541,7 @@
                     "Apple Pay"
                 ]
             },
-            "data_linkage": "payment:Group1",
+            "group": "payment:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -567,7 +567,7 @@
                     "Visa"
                 ]
             },
-            "data_linkage": "payment:Group1",
+            "group": "payment:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -590,7 +590,7 @@
                     "Visa"
                 ]
             },
-            "data_linkage": "payment:Group1",
+            "group": "payment:Group1",
             "unique": true,
             "default_value": {
                 "enabled": false,
@@ -615,7 +615,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -635,7 +635,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -659,7 +659,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -678,7 +678,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -701,7 +701,7 @@
                     "F"
                 ]
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -720,7 +720,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -741,7 +741,7 @@
                 "is_international": false,
                 "include_delimiters": true
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "unique": true,
             "default_value": {
                 "enabled": false,
@@ -765,7 +765,7 @@
                     "outlook.com"
                 ]
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "unique": true,
             "default_value": {
                 "enabled": false,
@@ -785,7 +785,7 @@
                     "English"
                 ]
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "default_value": {
                 "enabled": false,
                 "value": "",
@@ -805,7 +805,7 @@
                 ],
                 "use_translation": false
             },
-            "data_linkage": "person:Group1",
+            "group": "person:Group1",
             "unique": true,
             "default_value": {
                 "enabled": false,

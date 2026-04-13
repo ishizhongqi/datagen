@@ -11,7 +11,7 @@
 #include <optional>
 #include <sstream>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -329,4 +329,4 @@ bool SqliteDriver::load_table_metadata(
     return true;
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

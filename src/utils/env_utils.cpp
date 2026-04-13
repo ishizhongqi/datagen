@@ -8,7 +8,7 @@
 
 #include <cstdlib>
 
-namespace data_generator::utils {
+namespace datagen::utils {
 
 std::optional<std::string> get_env_value(const char* key) {
     if (!key || *key == '\0') { return std::nullopt; }
@@ -34,4 +34,4 @@ std::string get_env_or_default(const char* key, const char* default_value) {
     return default_value ? default_value : "";
 }
 
-}  // namespace data_generator::utils
+}  // namespace datagen::utils

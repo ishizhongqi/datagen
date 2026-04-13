@@ -12,12 +12,12 @@
 #include "cli/cli_shared.h"
 #include "test_paths.h"
 
-using namespace data_generator::cli;
+using namespace datagen::cli;
 
 namespace {
 
 TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
-    const auto good = data_generator::test::artifact_path("dg_cli_shared_good.json");
+    const auto good = datagen::test::artifact_path("dg_cli_shared_good.json");
     {
         std::ofstream out(good, std::ios::trunc);
         out << "{\"a\":1}";
@@ -25,13 +25,13 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
     const auto j = load_json_from_file(good.string());
     EXPECT_TRUE(j.contains("a"));
 
-    const auto bad = data_generator::test::artifact_path("dg_cli_shared_bad.json");
+    const auto bad = datagen::test::artifact_path("dg_cli_shared_bad.json");
     {
         std::ofstream out(bad, std::ios::trunc);
         out << "{";
     }
     EXPECT_THROW((void)load_json_from_file(bad.string()), std::runtime_error);
-    const auto missing = data_generator::test::artifact_path("dg_cli_shared_missing_1234567.json");
+    const auto missing = datagen::test::artifact_path("dg_cli_shared_missing_1234567.json");
     EXPECT_THROW((void)load_json_from_file(missing.string()), std::runtime_error);
 
     cxxopts::Options options("prog", "desc");
@@ -52,13 +52,13 @@ TEST(CliSharedTest, LoadJsonAndParseOptionsAndValidationOutput) {
 }
 
 TEST(CliSharedTest, OrderedConfigTemplateUsesParamOrderAndPreservesExtraKeys) {
-    data_generator::config::GeneratorMetadata meta;
+    datagen::config::GeneratorMetadata meta;
     meta.config_template = Json::object();
     meta.config_template["z_last"] = 9;
     meta.config_template["flag"] = true;
     meta.config_template["count"] = 5;
-    meta.config_params.push_back(data_generator::config::ConfigParam{"flag", "boolean", "desc", false, {}});
-    meta.config_params.push_back(data_generator::config::ConfigParam{"count", "number", "desc", false, {}});
+    meta.config_params.push_back(datagen::config::ConfigParam{"flag", "boolean", "desc", false, {}});
+    meta.config_params.push_back(datagen::config::ConfigParam{"count", "number", "desc", false, {}});
 
     const OrderedJson ordered = build_ordered_config_template(meta);
     auto it = ordered.begin();
@@ -73,7 +73,7 @@ TEST(CliSharedTest, OrderedConfigTemplateUsesParamOrderAndPreservesExtraKeys) {
 }
 
 TEST(CliSharedTest, RequiredFlagsOnlyUseTranslationCanBeFalse) {
-    for (const auto& meta : data_generator::config::get_generator_catalog()) {
+    for (const auto& meta : datagen::config::get_generator_catalog()) {
         for (const auto& param : meta.config_params) {
             if (param.name == "use_translation") {
                 EXPECT_FALSE(param.required);

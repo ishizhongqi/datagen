@@ -4,19 +4,19 @@
 
 /// @file linkage_helper.h
 
-#ifndef DATA_GENERATOR_LINKAGE_HELPER_H
-#define DATA_GENERATOR_LINKAGE_HELPER_H
+#ifndef DATAGEN_LINKAGE_HELPER_H
+#define DATAGEN_LINKAGE_HELPER_H
 
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 using Json = nlohmann::json;
 
-std::optional<std::string> parse_linkage_key(const Json& filed);
+std::optional<std::string> parse_linkage_key(const Json& field);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_LINKAGE_HELPER_H
+#endif  // DATAGEN_LINKAGE_HELPER_H

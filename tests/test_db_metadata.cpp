@@ -4,11 +4,11 @@
 
 #include "output/database/db_metadata.h"
 
-using data_generator::database::ColumnMetadata;
-using data_generator::database::ColumnTypeFamily;
-using data_generator::database::DbType;
-using data_generator::database::classify_column_type;
-using data_generator::database::db_type_to_string;
+using datagen::database::ColumnMetadata;
+using datagen::database::ColumnTypeFamily;
+using datagen::database::DbType;
+using datagen::database::classify_column_type;
+using datagen::database::db_type_to_string;
 
 TEST(DbMetadataTest, TypeToString) {
     EXPECT_EQ(db_type_to_string(DbType::Mysql), "mysql");

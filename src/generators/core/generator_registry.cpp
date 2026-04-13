@@ -11,7 +11,7 @@
 
 #include "generator_base.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 void GeneratorRegistry::register_generator(const std::string& name, GeneratorCreator creator) {
     creators_[name] = std::move(creator);
@@ -23,4 +23,4 @@ std::unique_ptr<IGenerator> GeneratorRegistry::create(const std::string& name, c
     return it->second(filed);
 }
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator

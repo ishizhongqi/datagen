@@ -8,12 +8,12 @@
 #include "config/configuration.h"
 #include "output/database/db_schema_validator.h"
 
-using data_generator::config::FieldSpec;
-using data_generator::config::GenerationConfig;
-using data_generator::database::ColumnMetadata;
-using data_generator::database::TableMetadata;
-using data_generator::database::ValidationLevel;
-using data_generator::database::validate_table_schema;
+using datagen::config::FieldSpec;
+using datagen::config::GenerationConfig;
+using datagen::database::ColumnMetadata;
+using datagen::database::TableMetadata;
+using datagen::database::ValidationLevel;
+using datagen::database::validate_table_schema;
 
 namespace {
 
@@ -21,11 +21,11 @@ FieldSpec make_field(const std::string& name, const std::string& generator) {
     FieldSpec field;
     field.name = name;
     field.generator = generator;
-    field.raw = data_generator::config::Json::object();
+    field.raw = datagen::config::Json::object();
     return field;
 }
 
-bool has_message(const std::vector<data_generator::database::ValidationMessage>& messages,
+bool has_message(const std::vector<datagen::database::ValidationMessage>& messages,
                  const std::string& needle) {
     return std::any_of(messages.begin(), messages.end(), [&](const auto& message) {
         return message.message.find(needle) != std::string::npos;
@@ -92,11 +92,11 @@ TEST(DbSchemaValidatorTest, ReportsErrorsWarningsAndInfo) {
 }
 
 TEST(DbSchemaValidatorTest, ValidationLevelToStringCoversAllBranches) {
-    EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Info), "INFO");
-    EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Warn), "WARN");
-    EXPECT_EQ(data_generator::database::validation_level_to_string(ValidationLevel::Error), "ERROR");
+    EXPECT_EQ(datagen::database::validation_level_to_string(ValidationLevel::Info), "INFO");
+    EXPECT_EQ(datagen::database::validation_level_to_string(ValidationLevel::Warn), "WARN");
+    EXPECT_EQ(datagen::database::validation_level_to_string(ValidationLevel::Error), "ERROR");
     EXPECT_EQ(
-        data_generator::database::validation_level_to_string(static_cast<ValidationLevel>(99)),
+        datagen::database::validation_level_to_string(static_cast<ValidationLevel>(99)),
         "INFO"
     );
 }

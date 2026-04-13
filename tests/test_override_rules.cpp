@@ -9,7 +9,7 @@
 
 #include "generators/core/override_rules.h"
 
-using namespace data_generator::generator;
+using namespace datagen::generator;
 
 namespace {
 

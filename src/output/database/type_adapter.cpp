@@ -10,7 +10,7 @@
 #include <cctype>
 #include <charconv>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -149,4 +149,4 @@ AdaptedValue
     return make_error("type_conversion", "unhandled type conversion");
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

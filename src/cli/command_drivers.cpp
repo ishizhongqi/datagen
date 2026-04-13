@@ -13,10 +13,10 @@
 #include "cli/exit_codes.h"
 #include "output/database/odbc_registry.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 int CommandDrivers::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator drivers", "List installed ODBC drivers.");
+    cxxopts::Options options(program_display_name() + " drivers", "List installed ODBC drivers.");
     options.add_options()("json", "Output in JSON format")("h,help", "Show help");
 
     cxxopts::ParseResult result;
@@ -58,4 +58,4 @@ int CommandDrivers::run(const std::vector<std::string>& args) {
     return exit_codes::kOk;
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

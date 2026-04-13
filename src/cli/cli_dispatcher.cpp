@@ -19,7 +19,7 @@
 #include "cli/command_schema.h"
 #include "cli/exit_codes.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 int CliDispatcher::dispatch(const std::string& command, const std::vector<std::string>& args) {
     try {
@@ -40,4 +40,4 @@ int CliDispatcher::dispatch(const std::string& command, const std::vector<std::s
     }
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

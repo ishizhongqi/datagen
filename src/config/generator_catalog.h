@@ -4,15 +4,15 @@
 
 /// @file generator_catalog.h
 
-#ifndef DATA_GENERATOR_GENERATOR_CATALOG_H
-#define DATA_GENERATOR_GENERATOR_CATALOG_H
+#ifndef DATAGEN_GENERATOR_CATALOG_H
+#define DATAGEN_GENERATOR_CATALOG_H
 
 #include <nlohmann/json.hpp>
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace data_generator::config {
+namespace datagen::config {
 
 using Json = nlohmann::json;
 
@@ -60,6 +60,6 @@ const GeneratorMetadata* find_generator_metadata(const std::string& name);
 /// @brief Build a default project template.
 Json build_project_template(int rows, const std::string& file_format);
 
-}  // namespace data_generator::config
+}  // namespace datagen::config
 
-#endif  // DATA_GENERATOR_GENERATOR_CATALOG_H
+#endif  // DATAGEN_GENERATOR_CATALOG_H

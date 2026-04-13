@@ -4,14 +4,14 @@
 
 /// @file array_parser.h
 
-#ifndef DATA_GENERATOR_ARRAY_PARSER_H
-#define DATA_GENERATOR_ARRAY_PARSER_H
+#ifndef DATAGEN_ARRAY_PARSER_H
+#define DATAGEN_ARRAY_PARSER_H
 
 #include <faker/faker.h>
 
 #include "generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 std::vector<std::string> parse_string_array(const std::string& key, const Json& config);
 
@@ -33,6 +33,6 @@ faker::CountryCodesStandard parse_country_codes_standard(const Json& config);
 
 bool parse_use_translation(const Json& config);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_ARRAY_PARSER_H
+#endif  // DATAGEN_ARRAY_PARSER_H

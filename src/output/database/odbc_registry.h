@@ -4,13 +4,13 @@
 
 /// @file odbc_registry.h
 
-#ifndef DATA_GENERATOR_ODBC_REGISTRY_H
-#define DATA_GENERATOR_ODBC_REGISTRY_H
+#ifndef DATAGEN_ODBC_REGISTRY_H
+#define DATAGEN_ODBC_REGISTRY_H
 
 #include <string>
 #include <vector>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 struct OdbcDriverInfo {
     std::string name;
@@ -19,6 +19,6 @@ struct OdbcDriverInfo {
 
 bool list_odbc_drivers(std::vector<OdbcDriverInfo>* drivers, std::string* error_message);
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

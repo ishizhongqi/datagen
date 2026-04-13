@@ -12,37 +12,28 @@
 #include <iostream>
 #include <sstream>
 
-namespace data_generator::logging {
-
-namespace {
-
-std::string now_string() {
-    const auto now = std::chrono::system_clock::now();
-    const auto tt  = std::chrono::system_clock::to_time_t(now);
-
-    std::tm tm{};
-#if defined(_WIN32)
-    localtime_s(&tm, &tt);
-#else
-    localtime_r(&tt, &tm);
-#endif
-
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return oss.str();
-}
-
-bool should_log(const LogLevel level, const LogLevel minimum_level) {
-    return static_cast<int>(level) >= static_cast<int>(minimum_level);
-}
-
-}  // namespace
+namespace datagen::logging {
 
 struct LoggerHolder {
     Logger instance;
 };
 
 LoggerHolder logger_holder;
+
+std::string current_timestamp() {
+    const auto     now         = std::chrono::system_clock::now();
+    const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm         local_time{};
+#if defined(_WIN32)
+    localtime_s(&local_time, &now_time);
+#else
+    localtime_r(&now_time, &local_time);
+#endif
+
+    std::ostringstream oss;
+    oss << std::put_time(&local_time, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
+}
 
 Logger& Logger::instance() {
     return logger_holder.instance;
@@ -62,12 +53,21 @@ void Logger::configure_generate_logs(const std::string& generate_log_path, const
     std::lock_guard lock(mutex_);
     generate_log_output_.emplace(generate_log_path, std::ios::trunc);
     error_log_output_.emplace(error_log_path, std::ios::trunc);
+    error_emitted_ = false;
 }
 
 void Logger::disable_file_logging() {
     std::lock_guard lock(mutex_);
     generate_log_output_.reset();
     error_log_output_.reset();
+    error_emitted_ = false;
+}
+
+bool Logger::consume_error_emitted() {
+    std::lock_guard lock(mutex_);
+    const bool emitted = error_emitted_;
+    error_emitted_     = false;
+    return emitted;
 }
 
 void Logger::info(const std::string& message) {
@@ -84,13 +84,15 @@ void Logger::error(const std::string& message) {
 
 void Logger::write(const LogLevel level, const std::string& message) {
     std::lock_guard lock(mutex_);
-    if (!should_log(level, minimum_level_)) { return; }
-
-    const std::string line = "[" + now_string() + "] [" + log_level_to_string(level) + "] " + message;
+    if (static_cast<int>(level) < static_cast<int>(minimum_level_)) { return; }
+    if (level == LogLevel::Error) { error_emitted_ = true; }
+    const std::string line = "[" + current_timestamp() + "] " + message;
 
     if (echo_to_stderr_) { std::cerr << line << "\n"; }
 
-    if (generate_log_output_.has_value() && generate_log_output_->is_open()) { *generate_log_output_ << line << "\n"; }
+    if (generate_log_output_.has_value() && generate_log_output_->is_open()) {
+        *generate_log_output_ << line << "\n";
+    }
 
     if (level == LogLevel::Error && error_log_output_.has_value() && error_log_output_->is_open()) {
         *error_log_output_ << line << "\n";
@@ -120,4 +122,4 @@ std::string format_progress_bar(const std::uint64_t done, const std::uint64_t to
     return oss.str();
 }
 
-}  // namespace data_generator::logging
+}  // namespace datagen::logging

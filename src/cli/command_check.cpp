@@ -18,7 +18,7 @@
 #include "output/database/db_url_parser.h"
 #include "output/database/drivers/idatabase_driver.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 namespace {
 
@@ -41,7 +41,7 @@ bool validate_database_connection(const config::GenerationConfig& cfg, std::stri
 }  // namespace
 
 int CommandCheck::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator check", "Validate JSON configuration.");
+    cxxopts::Options options("datagen check", "Validate JSON configuration.");
     options.add_options()("config", "Input JSON file", cxxopts::value<std::string>())("h,help", "Show help");
     options.parse_positional({"config"});
 
@@ -127,4 +127,4 @@ int CommandCheck::run(const std::vector<std::string>& args) {
     }
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

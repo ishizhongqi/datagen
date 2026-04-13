@@ -4,8 +4,8 @@
 
 /// @file sqlite_driver.h
 
-#ifndef DATA_GENERATOR_SQLITE_DRIVER_H
-#define DATA_GENERATOR_SQLITE_DRIVER_H
+#ifndef DATAGEN_SQLITE_DRIVER_H
+#define DATAGEN_SQLITE_DRIVER_H
 
 #include <sqlite3.h>
 
@@ -14,7 +14,7 @@
 
 #include "output/database/drivers/idatabase_driver.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 class SqliteDriver final : public IDatabaseDriver {
 public:
@@ -54,6 +54,6 @@ private:
     std::string db_path_;
 };
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

@@ -4,16 +4,16 @@
 
 /// @file exit_codes.h
 
-#ifndef DATA_GENERATOR_EXIT_CODES_H
-#define DATA_GENERATOR_EXIT_CODES_H
+#ifndef DATAGEN_EXIT_CODES_H
+#define DATAGEN_EXIT_CODES_H
 
-namespace data_generator::cli::exit_codes {
+namespace datagen::cli::exit_codes {
 
 constexpr int kOk             = 0;
 constexpr int kCliError       = 1;
 constexpr int kUsage          = 2;
 constexpr int kRuntimeFailure = 3;
 
-}  // namespace data_generator::cli::exit_codes
+}  // namespace datagen::cli::exit_codes
 
 #endif

@@ -1,18 +1,22 @@
 {
-  "$schema": "../schema/data-generator.schema.json",
+  "$schema": "../schema/datagen.schema.json",
   "rows": 1000,
   "output": {
     "type": "database",
     "database": {
       "connection": "odbc://DRIVER={MySQL ODBC 8.0 Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=example_db;UID=user;PWD=password;",
       "table": "customer_profile",
-      "insert_mode": "auto",
-      "batch_size": 1000,
-      "queue_size": 1024,
-      "threads": 2,
+      "mode": "balanced",
+      "write_mode": "append",
       "transaction_mode": "per-batch",
       "error_policy": "stop",
-      "rate_limit_rows_per_sec": 20000
+      "advanced": {
+        "insert_mode": "insert",
+        "batch_size": 2000,
+        "queue_size": 2048,
+        "threads": 2,
+        "rate_limit_rows_per_sec": 20000
+      }
     }
   },
   "fields": [
@@ -23,7 +27,7 @@
         "languages": ["English"],
         "domains": ["example.com"]
       },
-      "data_linkage": "person:Group1",
+      "group": "person:Group1",
       "unique": true
     },
     {
@@ -51,7 +55,7 @@
         "genders": ["M", "F"],
         "use_translation": false
       },
-      "data_linkage": "person:Group1"
+      "group": "person:Group1"
     },
     {
       "name": "last_name",
@@ -60,7 +64,7 @@
         "languages": ["English"],
         "use_translation": false
       },
-      "data_linkage": "person:Group1"
+      "group": "person:Group1"
     },
     {
       "name": "age",
@@ -76,7 +80,7 @@
       "config": {
         "languages": ["English"]
       },
-      "data_linkage": "person:Group1"
+      "group": "person:Group1"
     },
     {
       "name": "phone_number",
@@ -86,7 +90,7 @@
         "is_international": false,
         "include_delimiters": true
       },
-      "data_linkage": "person:Group1"
+      "group": "person:Group1"
     },
     {
       "name": "notes",

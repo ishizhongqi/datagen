@@ -4,8 +4,8 @@
 
 /// @file logger.h
 
-#ifndef DATA_GENERATOR_LOGGER_H
-#define DATA_GENERATOR_LOGGER_H
+#ifndef DATAGEN_LOGGER_H
+#define DATAGEN_LOGGER_H
 
 #include <cstdint>
 #include <fstream>
@@ -13,7 +13,7 @@
 #include <optional>
 #include <string>
 
-namespace data_generator::logging {
+namespace datagen::logging {
 
 enum class LogLevel {
     Info,
@@ -29,6 +29,7 @@ public:
     void set_echo_to_stderr(bool enabled);
     void configure_generate_logs(const std::string& generate_log_path, const std::string& error_log_path);
     void disable_file_logging();
+    bool consume_error_emitted();
 
     void info(const std::string& message);
     void warn(const std::string& message);
@@ -46,11 +47,12 @@ private:
     std::mutex                   mutex_;
     std::optional<std::ofstream> generate_log_output_;
     std::optional<std::ofstream> error_log_output_;
+    bool                         error_emitted_ = false;
 };
 
 std::string log_level_to_string(LogLevel level);
 std::string format_progress_bar(std::uint64_t done, std::uint64_t total);
 
-}  // namespace data_generator::logging
+}  // namespace datagen::logging
 
 #endif

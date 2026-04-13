@@ -4,15 +4,15 @@
 
 /// @file type_adapter.h
 
-#ifndef DATA_GENERATOR_TYPE_ADAPTER_H
-#define DATA_GENERATOR_TYPE_ADAPTER_H
+#ifndef DATAGEN_TYPE_ADAPTER_H
+#define DATAGEN_TYPE_ADAPTER_H
 
 #include <optional>
 #include <string>
 
 #include "output/database/db_metadata.h"
 
-namespace data_generator::database {
+namespace datagen::database {
 
 struct AdaptedValue {
     bool        ok      = false;
@@ -37,6 +37,6 @@ public:
         adapt(const ColumnMetadata& column, const std::optional<std::string>& raw_value) const override;
 };
 
-}  // namespace data_generator::database
+}  // namespace datagen::database
 
 #endif

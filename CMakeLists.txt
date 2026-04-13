@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(data-generator VERSION 1.0.0 LANGUAGES CXX)
+project(datagen VERSION 1.0.0 LANGUAGES CXX)
 
-option(DATA_GENERATOR_ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
+option(DATAGEN_ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
 
 set(FAKER_BUILD_SHARED OFF CACHE BOOL "faker shared build" FORCE)
 set(FAKER_BUILD_EXAMPLE OFF CACHE BOOL "faker example build" FORCE)
@@ -29,7 +29,7 @@ add_subdirectory(src)
 find_package(ODBC REQUIRED)
 find_package(SQLite3 REQUIRED)
 
-target_link_libraries(data-generator-lib
+target_link_libraries(datagen-lib
         PUBLIC
         faker
         nlohmann_json
@@ -38,36 +38,36 @@ target_link_libraries(data-generator-lib
         SQLite::SQLite3
 )
 
-target_compile_definitions(data-generator-lib
+target_compile_definitions(datagen-lib
         PUBLIC
-        DATA_GENERATOR_VERSION="${PROJECT_VERSION}"
+        DATAGEN_VERSION="${PROJECT_VERSION}"
 )
 
-target_compile_features(data-generator-lib PUBLIC cxx_std_20)
+target_compile_features(datagen-lib PUBLIC cxx_std_20)
 
-set(DATA_GENERATOR_SCHEMA_DIR "${CMAKE_SOURCE_DIR}/schema")
-set(DATA_GENERATOR_SCHEMA_FILE "${DATA_GENERATOR_SCHEMA_DIR}/data-generator.schema.json")
+set(DATAGEN_SCHEMA_DIR "${CMAKE_SOURCE_DIR}/schema")
+set(DATAGEN_SCHEMA_FILE "${DATAGEN_SCHEMA_DIR}/datagen.schema.json")
 
 add_custom_command(
-    OUTPUT "${DATA_GENERATOR_SCHEMA_FILE}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${DATA_GENERATOR_SCHEMA_DIR}"
-    COMMAND $<TARGET_FILE:data-generator> schema "${DATA_GENERATOR_SCHEMA_FILE}"
-    DEPENDS data-generator
-    COMMENT "Generating JSON Schema: ${DATA_GENERATOR_SCHEMA_FILE}"
+    OUTPUT "${DATAGEN_SCHEMA_FILE}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${DATAGEN_SCHEMA_DIR}"
+    COMMAND $<TARGET_FILE:datagen> schema "${DATAGEN_SCHEMA_FILE}"
+    DEPENDS datagen
+    COMMENT "Generating JSON Schema: ${DATAGEN_SCHEMA_FILE}"
     VERBATIM
 )
 
-add_custom_target(generate-schema ALL DEPENDS "${DATA_GENERATOR_SCHEMA_FILE}")
+add_custom_target(generate-schema ALL DEPENDS "${DATAGEN_SCHEMA_FILE}")
 
-if(DATA_GENERATOR_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(data-generator-lib
+if(DATAGEN_ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(datagen-lib
             PUBLIC
             -O0
             -g
             -fprofile-instr-generate
             -fcoverage-mapping
     )
-    target_link_options(data-generator-lib
+    target_link_options(datagen-lib
             PUBLIC
             -fprofile-instr-generate
             -fcoverage-mapping

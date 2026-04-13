@@ -4,17 +4,17 @@
 
 /// @file env_utils.h
 
-#ifndef DATA_GENERATOR_ENV_UTILS_H
-#define DATA_GENERATOR_ENV_UTILS_H
+#ifndef DATAGEN_ENV_UTILS_H
+#define DATAGEN_ENV_UTILS_H
 
 #include <optional>
 #include <string>
 
-namespace data_generator::utils {
+namespace datagen::utils {
 
 std::optional<std::string> get_env_value(const char* key);
 std::string                get_env_or_default(const char* key, const char* default_value);
 
-}  // namespace data_generator::utils
+}  // namespace datagen::utils
 
 #endif

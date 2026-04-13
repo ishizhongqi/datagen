@@ -4,16 +4,16 @@
 
 /// @file product_generators.h
 
-#ifndef DATA_GENERATOR_PRODUCT_GENERATORS_H
-#define DATA_GENERATOR_PRODUCT_GENERATORS_H
+#ifndef DATAGEN_PRODUCT_GENERATORS_H
+#define DATAGEN_PRODUCT_GENERATORS_H
 
 #include "generators/core/generator_registry.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 /// @brief Register product-related generators.
 void register_product_generators(GeneratorRegistry& registry);
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_PRODUCT_GENERATORS_H
+#endif  // DATAGEN_PRODUCT_GENERATORS_H

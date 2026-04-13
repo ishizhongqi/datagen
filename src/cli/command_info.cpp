@@ -18,7 +18,7 @@
 #include "cli/exit_codes.h"
 #include "config/generator_catalog.h"
 
-namespace data_generator::cli {
+namespace datagen::cli {
 
 namespace {
 
@@ -61,7 +61,7 @@ void print_generator_detail_json(const config::GeneratorMetadata& meta) {
     OrderedJson output  = OrderedJson::object();
     output["generator"] = meta.name;
     output["module"]    = meta.module.empty() ? OrderedJson(nullptr) : OrderedJson(meta.module);
-    output["supports"]  = OrderedJson{{"unique", meta.supports_unique}, {"data_linkage", meta.supports_data_linkage}};
+    output["supports"]  = OrderedJson{{"unique", meta.supports_unique}, {"group", meta.supports_data_linkage}};
 
     OrderedJson fields = OrderedJson::array();
     for (const auto& param : meta.config_params) {
@@ -114,9 +114,7 @@ std::vector<std::string> build_describe_text_lines(const config::GeneratorMetada
     lines.emplace_back("Advanced Settings:");
     if (meta.supports_unique) { lines.emplace_back("* unique (type=boolean)"); }
     if (meta.supports_data_linkage) {
-        const std::string module_hint =
-            meta.linkage_module.empty() ? (meta.module.empty() ? "module" : meta.module) : meta.linkage_module;
-        lines.emplace_back("* data_linkage (type=string, format: " + module_hint + ":Group1)");
+        lines.emplace_back("* group (type=string, module isolation is automatic)");
     }
     lines.emplace_back("* null_value (type=object)");
     lines.emplace_back("* default_value (type=object)");
@@ -133,11 +131,7 @@ std::vector<std::string> build_describe_text_lines(const config::GeneratorMetada
     example["generator"] = meta.name;
     example["config"]    = build_ordered_config_template(meta);
     if (meta.supports_unique) { example["unique"] = false; }
-    if (meta.supports_data_linkage) {
-        const std::string module_hint =
-            meta.linkage_module.empty() ? (meta.module.empty() ? "module" : meta.module) : meta.linkage_module;
-        example["data_linkage"] = module_hint + ":Group1";
-    }
+    if (meta.supports_data_linkage) { example["group"] = "Group1"; }
     example["null_value"]    = OrderedJson{{"enabled", false}, {"percentage", 0}};
     example["default_value"] = OrderedJson{{"enabled", false}, {"percentage", 0}, {"value", ""}};
 
@@ -151,7 +145,7 @@ std::vector<std::string> build_describe_text_lines(const config::GeneratorMetada
 }  // namespace
 
 int CommandInfo::run(const std::vector<std::string>& args) {
-    cxxopts::Options options("data-generator info", "List or describe generator metadata.");
+    cxxopts::Options options(program_display_name() + " info", "List or describe generator metadata.");
     options.add_options()("name", "Generator name", cxxopts::value<std::string>())("json", "Output JSON")(
         "h,help",
         "Show help"
@@ -200,4 +194,4 @@ int CommandInfo::run(const std::vector<std::string>& args) {
     return exit_codes::kOk;
 }
 
-}  // namespace data_generator::cli
+}  // namespace datagen::cli

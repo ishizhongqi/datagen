@@ -4,8 +4,8 @@
 
 /// @file generator_registry.h
 
-#ifndef DATA_GENERATOR_GENERATOR_REGISTRY_H
-#define DATA_GENERATOR_GENERATOR_REGISTRY_H
+#ifndef DATAGEN_GENERATOR_REGISTRY_H
+#define DATAGEN_GENERATOR_REGISTRY_H
 
 #include <functional>
 #include <memory>
@@ -15,7 +15,7 @@
 
 #include "generator_base.h"
 
-namespace data_generator::generator {
+namespace datagen::generator {
 
 using Json = nlohmann::json;
 
@@ -35,6 +35,6 @@ private:
     std::unordered_map<std::string, GeneratorCreator> creators_;
 };
 
-}  // namespace data_generator::generator
+}  // namespace datagen::generator
 
-#endif  // DATA_GENERATOR_GENERATOR_REGISTRY_H
+#endif  // DATAGEN_GENERATOR_REGISTRY_H

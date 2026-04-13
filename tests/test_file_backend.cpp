@@ -16,16 +16,16 @@
 #include "output/file_backend.h"
 #include "test_paths.h"
 
-using data_generator::config::GenerationConfig;
-using data_generator::config::ParseMode;
-using data_generator::config::ValidationIssue;
+using datagen::config::GenerationConfig;
+using datagen::config::ParseMode;
+using datagen::config::ValidationIssue;
 
 namespace {
 
 GenerationConfig parse_or_fail(const nlohmann::json& root) {
     GenerationConfig cfg;
     std::vector<ValidationIssue> issues;
-    const bool ok = data_generator::config::parse_generation_config(
+    const bool ok = datagen::config::parse_generation_config(
         root,
         ParseMode::RequireOutputSettings,
         &cfg,
@@ -52,8 +52,8 @@ nlohmann::json base_fields() {
 }
 
 void write_small_file(const GenerationConfig& cfg, const std::filesystem::path& path) {
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
 
     GenerationConfig with_path = cfg;
     with_path.output.file.path = path.string();
@@ -67,7 +67,7 @@ void write_small_file(const GenerationConfig& cfg, const std::filesystem::path& 
 }  // namespace
 
 TEST(FileBackendTest, WritesCsvJsonSqlAndDelimitedFormats) {
-    const auto temp_dir = data_generator::test::ensure_test_root();
+    const auto temp_dir = datagen::test::ensure_test_root();
 
     nlohmann::json csv_root = {
         {"rows", 3},
@@ -127,13 +127,13 @@ TEST(FileBackendTest, CancelsLargeOutputPrompt) {
     };
 
     auto cfg = parse_or_fail(root);
-    cfg.output.file.path = data_generator::test::artifact_path("dg_large.csv").string();
+    cfg.output.file.path = datagen::test::artifact_path("dg_large.csv").string();
 
     std::istringstream input("n\n");
     auto* old = std::cin.rdbuf(input.rdbuf());
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
 
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 
@@ -141,7 +141,7 @@ TEST(FileBackendTest, CancelsLargeOutputPrompt) {
 }
 
 TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
-    const auto base_dir = data_generator::test::artifact_path("dg_unwritable_dir");
+    const auto base_dir = datagen::test::artifact_path("dg_unwritable_dir");
     std::error_code ec;
     std::filesystem::create_directories(base_dir, ec);
 
@@ -167,8 +167,8 @@ TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
     auto cfg = parse_or_fail(root);
     cfg.output.file.path = (base_dir / "output.csv").string();
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
 
     EXPECT_THROW(backend.generate(cfg, options), std::runtime_error);
 
@@ -182,7 +182,7 @@ TEST(FileBackendTest, FailsWhenOutputPathIsNotWritable) {
 }
 
 TEST(FileBackendTest, UsesGeneratedDefaultOutputPathWhenEmpty) {
-    const auto base_dir = data_generator::test::artifact_path("dg_file_backend_default");
+    const auto base_dir = datagen::test::artifact_path("dg_file_backend_default");
     std::error_code ec;
     std::filesystem::remove_all(base_dir, ec);
     std::filesystem::create_directories(base_dir, ec);
@@ -206,8 +206,8 @@ TEST(FileBackendTest, UsesGeneratedDefaultOutputPathWhenEmpty) {
     std::filesystem::current_path(base_dir, ec);
     ASSERT_FALSE(ec);
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
 
     const auto stats = backend.generate(cfg, options);
     EXPECT_EQ(stats.rows_generated, 1U);
@@ -243,13 +243,13 @@ TEST(FileBackendTest, UsesExpectedDefaultExtensionForEachOutputFormat) {
         {"Custom", {{"delimiter", "|"}, {"quote", "'"}, {"header", true}, {"line_ending", "LF"}}, ".txt"},
     };
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
     const auto original_cwd = std::filesystem::current_path();
 
     for (const auto& format_case : cases) {
         const auto base_dir =
-            data_generator::test::artifact_path("dg_default_ext_" + format_case.expected_extension.substr(1));
+            datagen::test::artifact_path("dg_default_ext_" + format_case.expected_extension.substr(1));
         std::error_code ec;
         std::filesystem::remove_all(base_dir, ec);
         std::filesystem::create_directories(base_dir, ec);
@@ -293,7 +293,7 @@ TEST(FileBackendTest, UsesExpectedDefaultExtensionForEachOutputFormat) {
 }
 
 TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
-    const auto output_path = data_generator::test::artifact_path("dg_null_row_estimate.json");
+    const auto output_path = datagen::test::artifact_path("dg_null_row_estimate.json");
     std::error_code ec;
     std::filesystem::remove(output_path, ec);
 
@@ -319,8 +319,8 @@ TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
     auto cfg = parse_or_fail(root);
     cfg.output.file.path = output_path.string();
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
 
     const auto stats = backend.generate(cfg, options);
     EXPECT_EQ(stats.rows_generated, 1U);
@@ -335,7 +335,7 @@ TEST(FileBackendTest, EstimatesNullValuesWhenSizingRows) {
 }
 
 TEST(FileBackendTest, PrintsProgressWhenGeneratedRowsReachTwoThousand) {
-    const auto output_path = data_generator::test::artifact_path("dg_progress_rows.csv");
+    const auto output_path = datagen::test::artifact_path("dg_progress_rows.csv");
     std::error_code ec;
     std::filesystem::remove(output_path, ec);
 
@@ -363,8 +363,8 @@ TEST(FileBackendTest, PrintsProgressWhenGeneratedRowsReachTwoThousand) {
     std::ostringstream captured_output;
     auto* old_buffer = std::cout.rdbuf(captured_output.rdbuf());
 
-    data_generator::output::FileBackend backend;
-    data_generator::engine::ExecutionOptions options;
+    datagen::output::FileBackend backend;
+    datagen::engine::ExecutionOptions options;
     const auto stats = backend.generate(cfg, options);
 
     std::cout.rdbuf(old_buffer);

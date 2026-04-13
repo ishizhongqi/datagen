@@ -15,21 +15,21 @@
 #include "output/file/json_writer.h"
 #include "output/file/sql_writer.h"
 
-using data_generator::config::JsonOptions;
-using data_generator::config::LineEnding;
-using data_generator::engine::Row;
-using data_generator::output::file::DelimitedWriterOptions;
-using data_generator::output::file::escape_delimited_value;
-using data_generator::output::file::sql_escape;
-using data_generator::output::file::write_delimited;
-using data_generator::output::file::write_delimited_header;
-using data_generator::output::file::write_delimited_row;
-using data_generator::output::file::write_json;
-using data_generator::output::file::write_json_array_end;
-using data_generator::output::file::write_json_array_start;
-using data_generator::output::file::write_json_row;
-using data_generator::output::file::write_sql;
-using data_generator::output::file::write_sql_row;
+using datagen::config::JsonOptions;
+using datagen::config::LineEnding;
+using datagen::engine::Row;
+using datagen::output::file::DelimitedWriterOptions;
+using datagen::output::file::escape_delimited_value;
+using datagen::output::file::sql_escape;
+using datagen::output::file::write_delimited;
+using datagen::output::file::write_delimited_header;
+using datagen::output::file::write_delimited_row;
+using datagen::output::file::write_json;
+using datagen::output::file::write_json_array_end;
+using datagen::output::file::write_json_array_start;
+using datagen::output::file::write_json_row;
+using datagen::output::file::write_sql;
+using datagen::output::file::write_sql_row;
 
 TEST(FileWriterTest, CsvEscapesAndLineEndings) {
     const std::vector<std::string> columns = {"name", "note"};

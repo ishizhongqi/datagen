@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace data_generator::database {
+namespace datagen::database {
 
 namespace {
 
@@ -58,4 +58,4 @@ ColumnTypeFamily classify_column_type(const ColumnMetadata& column) {
     return ColumnTypeFamily::Unknown;
 }
 
-}  // namespace data_generator::database
+}  // namespace datagen::database

@@ -4,8 +4,8 @@
 
 /// @file sql_writer.h
 
-#ifndef DATA_GENERATOR_SQL_WRITER_H
-#define DATA_GENERATOR_SQL_WRITER_H
+#ifndef DATAGEN_SQL_WRITER_H
+#define DATAGEN_SQL_WRITER_H
 
 #include <ostream>
 #include <string>
@@ -13,7 +13,7 @@
 
 #include "engine/executor.h"
 
-namespace data_generator::output::file {
+namespace datagen::output::file {
 
 std::string sql_escape(const std::string& value);
 
@@ -34,6 +34,6 @@ void write_sql(
     std::ostream&                   out
 );
 
-}  // namespace data_generator::output::file
+}  // namespace datagen::output::file
 
 #endif
