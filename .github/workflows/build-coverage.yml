@@ -65,12 +65,12 @@ jobs:
             -DDATA_GENERATOR_ENABLE_COVERAGE=ON
 
       - name: Build tests
-        run: cmake --build build --target data-generator-tests
+        run: cmake --build build --target datagen-tests
 
       - name: Run tests
         run: |
           DATA_GENERATOR_TEST_PG_URL='odbc:postgresql:DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;PORT=5432;DATABASE=dgdb;UID=dg;PWD=dgpass;' \
-          LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/data-generator-tests
+          LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/datagen-tests
 
       - name: Export LCOV
         run: |
@@ -79,7 +79,7 @@ jobs:
           llvm-cov-18 export \
             -format=lcov \
             -instr-profile=build/coverage.profdata \
-            build/tests/data-generator-tests \
+            build/tests/datagen-tests \
             -ignore-filename-regex='.*(third_party|_deps|/usr/).*' \
             > coverage.info
 

@@ -58,7 +58,7 @@ jobs:
 
       - name: Smoke test
         run: |
-          ./build/src/data-generator help >/dev/null
-          ./build/src/data-generator run docs/input_example.json \
+          ./build/src/datagen help >/dev/null
+          ./build/src/datagen run docs/input_example.json \
             --rows 5 \
             --output build/output.csv
