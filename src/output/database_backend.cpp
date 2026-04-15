@@ -475,10 +475,6 @@ void rollback_transaction(database::IDatabaseDriver* driver, std::string* error_
     (void)driver->execute("ROLLBACK", error_message);
 }
 
-bool supports_multi_row_values(const database::DbType db_type) {
-    return db_type != database::DbType::Oracle;
-}
-
 std::string build_oracle_temporal_literal(const database::ColumnTypeFamily family, const std::string& converted_value) {
     if (family == database::ColumnTypeFamily::DateTime) {
         return "TO_TIMESTAMP('" + sql_escape_single_quote(converted_value) + "', 'YYYY-MM-DD HH24:MI:SS')";
