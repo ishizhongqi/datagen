@@ -62,14 +62,14 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-18 \
             -DCMAKE_BUILD_TYPE=Debug \
             -DBUILD_TESTING=ON \
-            -DDATA_GENERATOR_ENABLE_COVERAGE=ON
+            -DDATAGEN_ENABLE_COVERAGE=ON
 
       - name: Build tests
         run: cmake --build build --target datagen-tests
 
       - name: Run tests
         run: |
-          DATA_GENERATOR_TEST_PG_URL='odbc:postgresql:DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;PORT=5432;DATABASE=dgdb;UID=dg;PWD=dgpass;' \
+          DATAGEN_TEST_PG_URL='odbc:postgresql:DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;PORT=5432;DATABASE=dgdb;UID=dg;PWD=dgpass;' \
           LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/datagen-tests
 
       - name: Export LCOV
