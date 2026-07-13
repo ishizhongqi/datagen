@@ -1,0 +1,935 @@
+// Copyright (c) 2026 Shizhongqi
+// Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+/// @file configuration.cpp
+
+#include "config/configuration.h"
+
+#include <set>
+#include <string>
+#include <unordered_set>
+
+#include "config/generator_catalog.h"
+#include "generators/core/linkage_helper.h"
+#include "utils/workspace.h"
+
+namespace datagen::config {
+
+namespace {
+
+constexpr auto kKeyRows = "rows";
+
+constexpr auto kKeyOutput         = "output";
+constexpr auto kKeyOutputType     = "type";
+constexpr auto kKeyOutputFile     = "file";
+constexpr auto kKeyOutputDatabase = "database";
+constexpr auto kKeyOutputFormat   = "format";
+constexpr auto kKeyOutputOptions  = "options";
+
+constexpr auto kKeyFields = "fields";
+
+constexpr auto kKeyFileOptionHeader      = "header";
+constexpr auto kKeyFileOptionLineEnding  = "line_ending";
+constexpr auto kKeyFileOptionArray       = "array";
+constexpr auto kKeyFileOptionIncludeNull = "include_null";
+constexpr auto kKeyFileOptionTable       = "table";
+constexpr auto kKeyFileOptionCreateTable = "create_table";
+constexpr auto kKeyFileOptionDelimiter   = "delimiter";
+constexpr auto kKeyFileOptionQuote       = "quote";
+
+constexpr auto kKeyDatabaseConnection      = "connection";
+constexpr auto kKeyDatabaseTable           = "table";
+constexpr auto kKeyDatabaseMode            = "mode";
+constexpr auto kKeyDatabaseWriteMode       = "write_mode";
+constexpr auto kKeyDatabaseAdvanced        = "advanced";
+constexpr auto kKeyDatabaseInsertMode      = "insert_mode";
+constexpr auto kKeyDatabaseBatchSize       = "batch_size";
+constexpr auto kKeyDatabaseQueueSize       = "queue_size";
+constexpr auto kKeyDatabaseThreads         = "threads";
+constexpr auto kKeyDatabaseTransactionMode = "transaction_mode";
+constexpr auto kKeyDatabaseErrorPolicy     = "error_policy";
+constexpr auto kKeyDatabaseRateLimit       = "rate_limit_rows_per_sec";
+
+const std::unordered_set<std::string> kKnownRootKeys = {
+    "$schema",
+    kKeyRows,
+    kKeyOutput,
+    kKeyFields,
+};
+
+const std::unordered_set<std::string> kKnownFieldKeys = {
+    "name",
+    "generator",
+    "config",
+    "unique",
+    "group",
+    "null_value",
+    "default_value",
+};
+
+const std::unordered_set<std::string> kKnownOutputKeys = {
+    kKeyOutputType,
+    kKeyOutputFile,
+    kKeyOutputDatabase,
+};
+
+const std::unordered_set<std::string> kKnownFileKeys = {
+    kKeyOutputFormat,
+    kKeyOutputOptions,
+};
+
+const std::unordered_set<std::string> kKnownDatabaseKeys = {
+    kKeyDatabaseConnection,
+    kKeyDatabaseTable,
+    kKeyDatabaseMode,
+    kKeyDatabaseWriteMode,
+    kKeyDatabaseAdvanced,
+    kKeyDatabaseInsertMode,
+    kKeyDatabaseBatchSize,
+    kKeyDatabaseQueueSize,
+    kKeyDatabaseThreads,
+    kKeyDatabaseTransactionMode,
+    kKeyDatabaseErrorPolicy,
+    kKeyDatabaseRateLimit,
+};
+
+const std::unordered_set<std::string> kKnownDatabaseAdvancedKeys = {
+    kKeyDatabaseInsertMode,
+    kKeyDatabaseBatchSize,
+    kKeyDatabaseQueueSize,
+    kKeyDatabaseThreads,
+    kKeyDatabaseRateLimit,
+};
+
+const std::unordered_set<std::string> kKnownCsvOptionKeys = {
+    kKeyFileOptionHeader,
+    kKeyFileOptionLineEnding,
+};
+
+const std::unordered_set<std::string> kKnownJsonOptionKeys = {
+    kKeyFileOptionArray,
+    kKeyFileOptionIncludeNull,
+};
+
+const std::unordered_set<std::string> kKnownSqlOptionKeys = {
+    kKeyFileOptionTable,
+    kKeyFileOptionCreateTable,
+};
+
+const std::unordered_set<std::string> kKnownCustomOptionKeys = {
+    kKeyFileOptionDelimiter,
+    kKeyFileOptionQuote,
+    kKeyFileOptionHeader,
+    kKeyFileOptionLineEnding,
+};
+
+void add_issue(std::vector<ValidationIssue>& issues, std::string path, std::string message, const bool warning = false) {
+    issues.emplace_back(ValidationIssue{.warning = warning, .path = std::move(path), .message = std::move(message)});
+}
+
+void validate_known_root_keys(const Json& root, std::vector<ValidationIssue>& issues) {
+    for (auto it = root.begin(); it != root.end(); ++it) {
+        if (!kKnownRootKeys.contains(it.key())) { add_issue(issues, "$." + it.key(), "unknown root key"); }
+    }
+}
+
+void validate_known_object_keys(
+    const Json&                            object,
+    const std::unordered_set<std::string>& known,
+    const std::string&                     path,
+    std::vector<ValidationIssue>&          issues
+) {
+    if (!object.is_object()) { return; }
+    for (auto it = object.begin(); it != object.end(); ++it) {
+        if (!known.contains(it.key())) { add_issue(issues, path + "." + it.key(), "unknown key"); }
+    }
+}
+
+bool parse_optional_bool(
+    const Json&                   object,
+    const char*                   key,
+    bool*                         out,
+    std::vector<ValidationIssue>& issues,
+    const std::string&            path
+) {
+    if (!object.contains(key)) { return true; }
+    if (!object.at(key).is_boolean()) {
+        add_issue(issues, path + "." + key, "must be a boolean");
+        return false;
+    }
+    *out = object.at(key).get<bool>();
+    return true;
+}
+
+bool parse_optional_string(
+    const Json&                   object,
+    const char*                   key,
+    std::string*                  out,
+    std::vector<ValidationIssue>& issues,
+    const std::string&            path,
+    const bool                    require_non_empty
+) {
+    if (!object.contains(key)) { return true; }
+    if (!object.at(key).is_string()) {
+        add_issue(issues, path + "." + key, "must be a string");
+        return false;
+    }
+
+    const std::string value = object.at(key).get<std::string>();
+    if (require_non_empty && value.empty()) {
+        add_issue(issues, path + "." + key, "must be a non-empty string");
+        return false;
+    }
+
+    *out = value;
+    return true;
+}
+
+bool parse_positive_int_at(
+    const Json&                   root,
+    const char*                   key,
+    int*                          out,
+    std::vector<ValidationIssue>& issues,
+    const int                     min_value,
+    const bool                    required,
+    const std::string&            path,
+    const bool                    warning_if_missing = false
+) {
+    if (!root.contains(key)) {
+        if (required) {
+            add_issue(issues, path + "." + key, "missing required integer");
+            return false;
+        }
+        if (warning_if_missing) {
+            add_issue(issues, path + "." + key, "not specified, default will be used", true);
+        }
+        return true;
+    }
+
+    if (!root.at(key).is_number_integer()) {
+        add_issue(issues, path + "." + key, "must be an integer");
+        return false;
+    }
+
+    const int value = root.at(key).get<int>();
+    if (value < min_value) {
+        add_issue(issues, path + "." + key, "must be >= " + std::to_string(min_value));
+        return false;
+    }
+
+    *out = value;
+    return true;
+}
+
+bool parse_rows(const Json& root, const ParseMode mode, int* rows, std::vector<ValidationIssue>& issues) {
+    const bool required = mode == ParseMode::RequireOutputSettings;
+    return parse_positive_int_at(root, kKeyRows, rows, issues, 1, required, "$", !required);
+}
+
+bool parse_line_ending_value(
+    const Json&                   value,
+    LineEnding*                   ending,
+    std::vector<ValidationIssue>& issues,
+    const std::string&            path
+) {
+    if (!value.is_string()) {
+        add_issue(issues, path, "must be a string (LF|CRLF)");
+        return false;
+    }
+    const std::string text = value.get<std::string>();
+    if (text == "LF") {
+        *ending = LineEnding::LF;
+        return true;
+    }
+    if (text == "CRLF") {
+        *ending = LineEnding::CRLF;
+        return true;
+    }
+    add_issue(issues, path, "must be one of: LF, CRLF");
+    return false;
+}
+
+void apply_database_mode_defaults(const DatabaseMode mode, DatabaseOutputConfig* cfg) {
+    if (!cfg) { return; }
+
+    switch (mode) {
+    case DatabaseMode::Fast:
+        cfg->insert_mode             = InsertMode::Load;
+        cfg->batch_size              = 5000;
+        cfg->queue_size              = 5120;
+        cfg->db_threads              = 8;
+        cfg->rate_limit_rows_per_sec = 0;
+        break;
+    case DatabaseMode::Balanced:
+        cfg->insert_mode             = InsertMode::Insert;
+        cfg->batch_size              = 2000;
+        cfg->queue_size              = 2048;
+        cfg->db_threads              = 2;
+        cfg->rate_limit_rows_per_sec = 20000;
+        break;
+    case DatabaseMode::Safe:
+        cfg->insert_mode             = InsertMode::Insert;
+        cfg->batch_size              = 1000;
+        cfg->queue_size              = 1024;
+        cfg->db_threads              = 1;
+        cfg->rate_limit_rows_per_sec = 5000;
+        break;
+    }
+}
+
+bool parse_file_options(
+    const Json&                   options,
+    const OutputFormat            format,
+    FileOutputConfig*             file_cfg,
+    std::vector<ValidationIssue>& issues,
+    const std::string&            path
+) {
+    if (!options.is_object()) {
+        add_issue(issues, path, "must be an object");
+        return false;
+    }
+
+    switch (format) {
+    case OutputFormat::Csv: {
+        validate_known_object_keys(options, kKnownCsvOptionKeys, path, issues);
+        (void)parse_optional_bool(options, kKeyFileOptionHeader, &file_cfg->csv.header, issues, path);
+        if (options.contains(kKeyFileOptionLineEnding)) {
+            (void)parse_line_ending_value(
+                options.at(kKeyFileOptionLineEnding),
+                &file_cfg->csv.line_ending,
+                issues,
+                path + "." + kKeyFileOptionLineEnding
+            );
+        }
+        return true;
+    }
+    case OutputFormat::TabDelimited: {
+        validate_known_object_keys(options, kKnownCsvOptionKeys, path, issues);
+        (void)parse_optional_bool(options, kKeyFileOptionHeader, &file_cfg->tab_delimited.header, issues, path);
+        if (options.contains(kKeyFileOptionLineEnding)) {
+            (void)parse_line_ending_value(
+                options.at(kKeyFileOptionLineEnding),
+                &file_cfg->tab_delimited.line_ending,
+                issues,
+                path + "." + kKeyFileOptionLineEnding
+            );
+        }
+        return true;
+    }
+    case OutputFormat::JsonFormat: {
+        validate_known_object_keys(options, kKnownJsonOptionKeys, path, issues);
+        (void)parse_optional_bool(options, kKeyFileOptionArray, &file_cfg->json.array, issues, path);
+        (void)parse_optional_bool(options, kKeyFileOptionIncludeNull, &file_cfg->json.include_null, issues, path);
+        return true;
+    }
+    case OutputFormat::Sql: {
+        validate_known_object_keys(options, kKnownSqlOptionKeys, path, issues);
+        (void)parse_optional_string(options, kKeyFileOptionTable, &file_cfg->sql.table, issues, path, true);
+        (void)parse_optional_bool(options, kKeyFileOptionCreateTable, &file_cfg->sql.create_table, issues, path);
+        return true;
+    }
+    case OutputFormat::Custom: {
+        validate_known_object_keys(options, kKnownCustomOptionKeys, path, issues);
+        (void)parse_optional_string(options, kKeyFileOptionDelimiter, &file_cfg->custom.delimiter, issues, path, true);
+        (void)parse_optional_string(options, kKeyFileOptionQuote, &file_cfg->custom.quote, issues, path, false);
+        (void)parse_optional_bool(options, kKeyFileOptionHeader, &file_cfg->custom.header, issues, path);
+        if (options.contains(kKeyFileOptionLineEnding)) {
+            (void)parse_line_ending_value(
+                options.at(kKeyFileOptionLineEnding),
+                &file_cfg->custom.line_ending,
+                issues,
+                path + "." + kKeyFileOptionLineEnding
+            );
+        }
+        return true;
+    }
+    }
+
+    return true;
+}
+
+bool parse_file_output(
+    const Json&                   output,
+    const ParseMode               mode,
+    GenerationConfig*             cfg,
+    std::vector<ValidationIssue>& issues
+) {
+    const std::string base_path = "$.output.file";
+    if (!output.contains(kKeyOutputFile)) {
+        add_issue(
+            issues,
+            base_path,
+            "missing required object for file output",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
+        return mode == ParseMode::AllowMissingOutputSettings;
+    }
+    if (!output.at(kKeyOutputFile).is_object()) {
+        add_issue(issues, base_path, "must be an object");
+        return false;
+    }
+
+    const Json& file = output.at(kKeyOutputFile);
+    validate_known_object_keys(file, kKnownFileKeys, base_path, issues);
+
+    if (file.contains(kKeyOutputFormat)) {
+        if (!file.at(kKeyOutputFormat).is_string()) {
+            add_issue(issues, base_path + ".format", "must be a string");
+        } else {
+            const auto parsed = parse_output_format(file.at(kKeyOutputFormat).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".format", "must be one of: csv, json, sql, Tab-Delimited, Custom");
+            } else {
+                cfg->output.file.format = *parsed;
+            }
+        }
+    } else if (mode == ParseMode::RequireOutputSettings) {
+        add_issue(issues, base_path + ".format", "missing required format");
+    }
+
+    if (file.contains(kKeyOutputOptions)) {
+        (void)parse_file_options(
+            file.at(kKeyOutputOptions),
+            cfg->output.file.format,
+            &cfg->output.file,
+            issues,
+            base_path + ".options"
+        );
+    }
+
+    return true;
+}
+
+bool parse_database_output(
+    const Json&                   output,
+    const ParseMode               mode,
+    GenerationConfig*             cfg,
+    std::vector<ValidationIssue>& issues
+) {
+    const std::string base_path = "$.output.database";
+    if (!output.contains(kKeyOutputDatabase)) {
+        add_issue(
+            issues,
+            base_path,
+            "missing required object for database output",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
+        return mode == ParseMode::AllowMissingOutputSettings;
+    }
+    if (!output.at(kKeyOutputDatabase).is_object()) {
+        add_issue(issues, base_path, "must be an object");
+        return false;
+    }
+
+    const Json& database = output.at(kKeyOutputDatabase);
+    validate_known_object_keys(database, kKnownDatabaseKeys, base_path, issues);
+
+    DatabaseOutputConfig parsed_cfg = cfg->output.database;
+
+    if (database.contains(kKeyDatabaseMode)) {
+        if (!database.at(kKeyDatabaseMode).is_string()) {
+            add_issue(issues, base_path + ".mode", "must be a string (fast|balanced|safe)");
+        } else {
+            const auto parsed = parse_database_mode(database.at(kKeyDatabaseMode).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".mode", "must be one of: fast, balanced, safe");
+            } else {
+                parsed_cfg.mode = *parsed;
+            }
+        }
+    }
+
+    apply_database_mode_defaults(parsed_cfg.mode, &parsed_cfg);
+
+    (void)parse_optional_string(database, kKeyDatabaseConnection, &parsed_cfg.connection, issues, base_path, true);
+    (void)parse_optional_string(database, kKeyDatabaseTable, &parsed_cfg.table, issues, base_path, true);
+
+    if (database.contains(kKeyDatabaseWriteMode)) {
+        if (!database.at(kKeyDatabaseWriteMode).is_string()) {
+            add_issue(issues, base_path + ".write_mode", "must be a string (append|truncate|upsert)");
+        } else {
+            const auto parsed = parse_write_mode(database.at(kKeyDatabaseWriteMode).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".write_mode", "must be one of: append, truncate, upsert");
+            } else {
+                parsed_cfg.write_mode = *parsed;
+            }
+        }
+    }
+
+    if (database.contains(kKeyDatabaseTransactionMode)) {
+        if (!database.at(kKeyDatabaseTransactionMode).is_string()) {
+            add_issue(issues, base_path + ".transaction_mode", "must be a string (per-batch|per-run|none)");
+        } else {
+            const auto parsed = parse_transaction_mode(database.at(kKeyDatabaseTransactionMode).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".transaction_mode", "must be one of: per-batch, per-run, none");
+            } else {
+                parsed_cfg.transaction_mode = *parsed;
+            }
+        }
+    }
+
+    if (database.contains(kKeyDatabaseErrorPolicy)) {
+        if (!database.at(kKeyDatabaseErrorPolicy).is_string()) {
+            add_issue(issues, base_path + ".error_policy", "must be a string (stop|continue|rollback)");
+        } else {
+            const auto parsed = parse_error_policy(database.at(kKeyDatabaseErrorPolicy).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".error_policy", "must be one of: stop, continue, rollback");
+            } else {
+                parsed_cfg.error_policy = *parsed;
+            }
+        }
+    }
+
+    if (database.contains(kKeyDatabaseInsertMode)) {
+        if (!database.at(kKeyDatabaseInsertMode).is_string()) {
+            add_issue(issues, base_path + ".insert_mode", "must be a string (insert|load)");
+        } else {
+            const auto parsed = parse_insert_mode(database.at(kKeyDatabaseInsertMode).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, base_path + ".insert_mode", "must be one of: insert, load");
+            } else {
+                parsed_cfg.insert_mode = *parsed;
+            }
+        }
+    }
+    (void)parse_positive_int_at(
+        database,
+        kKeyDatabaseBatchSize,
+        &parsed_cfg.batch_size,
+        issues,
+        1,
+        false,
+        base_path
+    );
+    (void)parse_positive_int_at(
+        database,
+        kKeyDatabaseQueueSize,
+        &parsed_cfg.queue_size,
+        issues,
+        1,
+        false,
+        base_path
+    );
+    (void)parse_positive_int_at(
+        database,
+        kKeyDatabaseThreads,
+        &parsed_cfg.db_threads,
+        issues,
+        1,
+        false,
+        base_path
+    );
+    (void)parse_positive_int_at(
+        database,
+        kKeyDatabaseRateLimit,
+        &parsed_cfg.rate_limit_rows_per_sec,
+        issues,
+        0,
+        false,
+        base_path
+    );
+
+    if (database.contains(kKeyDatabaseAdvanced)) {
+        if (!database.at(kKeyDatabaseAdvanced).is_object()) {
+            add_issue(issues, base_path + ".advanced", "must be an object");
+        } else {
+            const Json& advanced = database.at(kKeyDatabaseAdvanced);
+            validate_known_object_keys(advanced, kKnownDatabaseAdvancedKeys, base_path + ".advanced", issues);
+
+            if (advanced.contains(kKeyDatabaseInsertMode)) {
+                if (!advanced.at(kKeyDatabaseInsertMode).is_string()) {
+                    add_issue(issues, base_path + ".advanced.insert_mode", "must be a string (insert|load)");
+                } else {
+                    const auto parsed = parse_insert_mode(advanced.at(kKeyDatabaseInsertMode).get<std::string>());
+                    if (!parsed.has_value()) {
+                        add_issue(issues, base_path + ".advanced.insert_mode", "must be one of: insert, load");
+                    } else {
+                        parsed_cfg.insert_mode = *parsed;
+                    }
+                }
+            }
+
+            (void)parse_positive_int_at(
+                advanced,
+                kKeyDatabaseBatchSize,
+                &parsed_cfg.batch_size,
+                issues,
+                1,
+                false,
+                base_path + ".advanced"
+            );
+            (void)parse_positive_int_at(
+                advanced,
+                kKeyDatabaseQueueSize,
+                &parsed_cfg.queue_size,
+                issues,
+                1,
+                false,
+                base_path + ".advanced"
+            );
+            (void)parse_positive_int_at(
+                advanced,
+                kKeyDatabaseThreads,
+                &parsed_cfg.db_threads,
+                issues,
+                1,
+                false,
+                base_path + ".advanced"
+            );
+            (void)parse_positive_int_at(
+                advanced,
+                kKeyDatabaseRateLimit,
+                &parsed_cfg.rate_limit_rows_per_sec,
+                issues,
+                0,
+                false,
+                base_path + ".advanced"
+            );
+        }
+    }
+
+    if (parsed_cfg.connection.empty()) {
+        add_issue(
+            issues,
+            base_path + ".connection",
+            "database output requires connection in odbc://... or sqlite://... format",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
+    }
+    if (parsed_cfg.table.empty()) {
+        add_issue(
+            issues,
+            base_path + ".table",
+            "database output requires table name",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
+    }
+
+    cfg->output.database = std::move(parsed_cfg);
+    return true;
+}
+
+bool parse_output_settings(
+    const Json&                   root,
+    const ParseMode               mode,
+    GenerationConfig*             cfg,
+    std::vector<ValidationIssue>& issues
+) {
+    if (!root.contains(kKeyOutput)) {
+        add_issue(
+            issues,
+            "$.output",
+            "missing required output configuration",
+            mode == ParseMode::AllowMissingOutputSettings
+        );
+        return mode == ParseMode::AllowMissingOutputSettings;
+    }
+    if (!root.at(kKeyOutput).is_object()) {
+        add_issue(issues, "$.output", "must be an object");
+        return false;
+    }
+
+    const Json& output = root.at(kKeyOutput);
+    validate_known_object_keys(output, kKnownOutputKeys, "$.output", issues);
+
+    if (output.contains(kKeyOutputType)) {
+        if (!output.at(kKeyOutputType).is_string()) {
+            add_issue(issues, "$.output.type", "must be string (file|database)");
+        } else {
+            const auto parsed = parse_output_type(output.at(kKeyOutputType).get<std::string>());
+            if (!parsed.has_value()) {
+                add_issue(issues, "$.output.type", "must be one of: file, database");
+            } else {
+                cfg->output.type = *parsed;
+            }
+        }
+    } else if (mode == ParseMode::RequireOutputSettings) {
+        add_issue(issues, "$.output.type", "missing required output type");
+    }
+
+    if (cfg->output.type == OutputType::Database) { return parse_database_output(output, mode, cfg, issues); }
+
+    return parse_file_output(output, mode, cfg, issues);
+}
+
+void validate_and_collect_fields(
+    const Json&                   root,
+    std::vector<FieldSpec>*       fields,
+    std::vector<ValidationIssue>& issues
+) {
+    if (!root.contains(kKeyFields)) {
+        add_issue(issues, "$.fields", "missing required array");
+        return;
+    }
+    if (!root.at(kKeyFields).is_array()) {
+        add_issue(issues, "$.fields", "must be an array");
+        return;
+    }
+
+    for (std::string::size_type i = 0; i < root.at(kKeyFields).size(); ++i) {
+        const std::string path  = "$.fields[" + std::to_string(i) + "]";
+        const Json&       field = root.at(kKeyFields).at(i);
+        if (!field.is_object()) {
+            add_issue(issues, path, "must be an object");
+            continue;
+        }
+
+        if (!field.contains("name") || !field.at("name").is_string()) {
+            add_issue(issues, path + ".name", "must be a string");
+        }
+        if (!field.contains("generator") || !field.at("generator").is_string()) {
+            add_issue(issues, path + ".generator", "must be a string");
+        }
+        if (!field.contains("config") || !field.at("config").is_object()) {
+            add_issue(issues, path + ".config", "must be an object");
+        }
+
+        if (!field.contains("name") ||
+            !field.at("name").is_string() ||
+            !field.contains("generator") ||
+            !field.at("generator").is_string() ||
+            !field.contains("config") ||
+            !field.at("config").is_object()) {
+            continue;
+        }
+
+        const std::string generator_name = field.at("generator").get<std::string>();
+        const auto*       meta           = find_generator_metadata(generator_name);
+        if (!meta) {
+            add_issue(issues, path + ".generator", "unknown generator: " + generator_name);
+            continue;
+        }
+
+        for (auto it = field.begin(); it != field.end(); ++it) {
+            if (!kKnownFieldKeys.contains(it.key())) { add_issue(issues, path + "." + it.key(), "unknown field key"); }
+        }
+
+        if (field.contains("unique")) {
+            if (!field.at("unique").is_boolean()) {
+                add_issue(issues, path + ".unique", "must be a boolean");
+            } else if (!meta->supports_unique) {
+                add_issue(issues, path + ".unique", "generator does not support unique");
+            }
+        }
+
+        std::optional<std::string> group;
+        if (field.contains("group")) {
+            try {
+                group = generator::parse_linkage_key(field);
+            } catch (const std::exception& ex) { add_issue(issues, path + ".group", ex.what()); }
+            if (!meta->supports_data_linkage) { add_issue(issues, path + ".group", "generator does not support group"); }
+        }
+
+        std::set<std::string> allowed;
+        for (const auto& param : meta->config_params) { allowed.insert(param.name); }
+
+        const Json& config = field.at("config");
+        for (auto it = config.begin(); it != config.end(); ++it) {
+            if (!allowed.contains(it.key())) { add_issue(issues, path + ".config." + it.key(), "unknown config key"); }
+        }
+
+        for (const auto& param : meta->config_params) {
+            const bool has_default = meta->config_template.contains(param.name);
+            if (param.required && !config.contains(param.name) && !has_default) {
+                add_issue(issues, path + ".config." + param.name, "missing required config key");
+            }
+        }
+
+        if (field.contains("default_value") && !field.at("default_value").is_object()) {
+            add_issue(issues, path + ".default_value", "must be an object");
+        }
+
+        FieldSpec spec;
+        spec.name      = field.at("name").get<std::string>();
+        spec.generator = generator_name;
+        spec.raw       = field;
+        spec.group     = group;
+        spec.unique = field.contains("unique") && field.at("unique").is_boolean() && field.at("unique").get<bool>();
+        fields->push_back(std::move(spec));
+    }
+}
+
+}  // namespace
+
+std::optional<OutputFormat> parse_output_format(const std::string& value) {
+    if (value == "csv") { return OutputFormat::Csv; }
+    if (value == "json") { return OutputFormat::JsonFormat; }
+    if (value == "sql") { return OutputFormat::Sql; }
+    if (value == "Tab-Delimited") { return OutputFormat::TabDelimited; }
+    if (value == "Custom") { return OutputFormat::Custom; }
+    return std::nullopt;
+}
+
+std::string output_format_to_string(const OutputFormat format) {
+    switch (format) {
+    case OutputFormat::Csv         : return "csv";
+    case OutputFormat::JsonFormat  : return "json";
+    case OutputFormat::Sql         : return "sql";
+    case OutputFormat::TabDelimited: return "Tab-Delimited";
+    case OutputFormat::Custom      : return "Custom";
+    default                        : return "csv";
+    }
+}
+
+std::optional<OutputType> parse_output_type(const std::string& value) {
+    if (value == "file") { return OutputType::File; }
+    if (value == "database") { return OutputType::Database; }
+    return std::nullopt;
+}
+
+std::string output_type_to_string(const OutputType type) {
+    switch (type) {
+    case OutputType::File    : return "file";
+    case OutputType::Database: return "database";
+    default                  : return "file";
+    }
+}
+
+std::optional<LineEnding> parse_line_ending(const std::string& value) {
+    if (value == "LF") { return LineEnding::LF; }
+    if (value == "CRLF") { return LineEnding::CRLF; }
+    return std::nullopt;
+}
+
+std::string line_ending_to_string(const LineEnding ending) {
+    switch (ending) {
+    case LineEnding::LF  : return "LF";
+    case LineEnding::CRLF: return "CRLF";
+    default              : return "LF";
+    }
+}
+
+std::optional<DatabaseMode> parse_database_mode(const std::string& value) {
+    if (value == "fast") { return DatabaseMode::Fast; }
+    if (value == "balanced") { return DatabaseMode::Balanced; }
+    if (value == "safe") { return DatabaseMode::Safe; }
+    return std::nullopt;
+}
+
+std::string database_mode_to_string(const DatabaseMode mode) {
+    switch (mode) {
+    case DatabaseMode::Fast    : return "fast";
+    case DatabaseMode::Balanced: return "balanced";
+    case DatabaseMode::Safe    : return "safe";
+    default                    : return "balanced";
+    }
+}
+
+std::optional<WriteMode> parse_write_mode(const std::string& value) {
+    if (value == "append") { return WriteMode::Append; }
+    if (value == "truncate") { return WriteMode::Truncate; }
+    if (value == "upsert") { return WriteMode::Upsert; }
+    return std::nullopt;
+}
+
+std::string write_mode_to_string(const WriteMode mode) {
+    switch (mode) {
+    case WriteMode::Append  : return "append";
+    case WriteMode::Truncate: return "truncate";
+    case WriteMode::Upsert  : return "upsert";
+    default                 : return "append";
+    }
+}
+
+std::optional<InsertMode> parse_insert_mode(const std::string& value) {
+    if (value == "insert") { return InsertMode::Insert; }
+    if (value == "load") { return InsertMode::Load; }
+    return std::nullopt;
+}
+
+std::string insert_mode_to_string(const InsertMode mode) {
+    switch (mode) {
+    case InsertMode::Insert: return "insert";
+    case InsertMode::Load  : return "load";
+    default                : return "insert";
+    }
+}
+
+std::optional<TransactionMode> parse_transaction_mode(const std::string& value) {
+    if (value == "per-batch") { return TransactionMode::PerBatch; }
+    if (value == "per-run") { return TransactionMode::PerRun; }
+    if (value == "none") { return TransactionMode::None; }
+    return std::nullopt;
+}
+
+std::string transaction_mode_to_string(const TransactionMode mode) {
+    switch (mode) {
+    case TransactionMode::PerBatch: return "per-batch";
+    case TransactionMode::PerRun  : return "per-run";
+    case TransactionMode::None    : return "none";
+    default                       : return "per-batch";
+    }
+}
+
+std::optional<ErrorPolicy> parse_error_policy(const std::string& value) {
+    if (value == "stop") { return ErrorPolicy::Stop; }
+    if (value == "continue") { return ErrorPolicy::Continue; }
+    if (value == "rollback") { return ErrorPolicy::Rollback; }
+    return std::nullopt;
+}
+
+std::string error_policy_to_string(const ErrorPolicy policy) {
+    switch (policy) {
+    case ErrorPolicy::Stop    : return "stop";
+    case ErrorPolicy::Continue: return "continue";
+    case ErrorPolicy::Rollback: return "rollback";
+    default                   : return "stop";
+    }
+}
+
+bool parse_generation_config(
+    const Json&                   root,
+    const ParseMode               mode,
+    GenerationConfig*             out,
+    std::vector<ValidationIssue>* issues
+) {
+    if (!out || !issues) { return false; }
+    issues->clear();
+
+    if (!root.is_object()) {
+        add_issue(*issues, "$", "root must be a JSON object");
+        return false;
+    }
+
+    GenerationConfig cfg;
+    cfg.root      = root;
+    cfg.workspace = utils::default_workspace_root().string();
+
+    validate_known_root_keys(root, *issues);
+    (void)parse_rows(root, mode, &cfg.rows, *issues);
+    (void)parse_output_settings(root, mode, &cfg, *issues);
+    validate_and_collect_fields(root, &cfg.fields, *issues);
+
+    if (cfg.fields.empty()) { add_issue(*issues, "$.fields", "must contain at least one field"); }
+
+    bool has_error = false;
+    for (const auto& issue : *issues) {
+        if (!issue.warning) {
+            has_error = true;
+            break;
+        }
+    }
+    if (has_error) { return false; }
+
+    *out = std::move(cfg);
+    return true;
+}
+
+void apply_cli_overrides(GenerationConfig* cfg, const CliOverrides& overrides) {
+    if (!cfg) { return; }
+    if (overrides.rows.has_value()) { cfg->rows = *overrides.rows; }
+    if (overrides.format.has_value()) { cfg->output.file.format = *overrides.format; }
+    if (overrides.table_name.has_value()) {
+        cfg->output.database.table = *overrides.table_name;
+        cfg->output.file.sql.table = *overrides.table_name;
+    }
+    if (overrides.type.has_value()) { cfg->output.type = *overrides.type; }
+    if (overrides.output_path.has_value()) { cfg->output.file.path = *overrides.output_path; }
+    if (overrides.database_connection.has_value()) { cfg->output.database.connection = *overrides.database_connection; }
+}
+
+}  // namespace datagen::config

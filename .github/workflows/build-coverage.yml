@@ -1,0 +1,101 @@
+name: coverage
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - "docs/**"
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - "docs/**"
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    name: ci_ubuntu-24.04_clang-18_coverage
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: dg
+          POSTGRES_PASSWORD: dgpass
+          POSTGRES_DB: dgdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U dg -d dgdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            clang-18 \
+            llvm-18 \
+            unixodbc-dev \
+            odbc-postgresql \
+            libsqlite3-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_C_COMPILER=clang-18 \
+            -DCMAKE_CXX_COMPILER=clang++-18 \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DDATAGEN_ENABLE_COVERAGE=ON
+
+      - name: Build tests
+        run: cmake --build build --target datagen-tests
+
+      - name: Run tests
+        run: |
+          DATAGEN_TEST_PG_URL='odbc:postgresql:DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;PORT=5432;DATABASE=dgdb;UID=dg;PWD=dgpass;' \
+          LLVM_PROFILE_FILE=build/coverage.profraw ./build/tests/datagen-tests
+
+      - name: Export LCOV
+        run: |
+          test -f build/coverage.profraw
+          llvm-profdata-18 merge -sparse build/coverage.profraw -o build/coverage.profdata
+          llvm-cov-18 export \
+            -format=lcov \
+            -instr-profile=build/coverage.profdata \
+            build/tests/datagen-tests \
+            -ignore-filename-regex='.*(third_party|_deps|/usr/).*' \
+            > coverage.info
+
+      - name: Verify LCOV includes src
+        run: |
+          grep '^SF:' coverage.info | head -n 80
+          grep -Eq '^SF:.*src/' coverage.info
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage.info
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.info
+          fail_ci_if_error: false

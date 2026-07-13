@@ -1,0 +1,83 @@
+/// @file test_odbc_driver.cpp
+
+#include <gtest/gtest.h>
+
+#include <cstdlib>
+#include <string>
+#include <vector>
+
+#include "output/database/db_url_parser.h"
+#include "output/database/drivers/odbc_driver.h"
+
+using datagen::database::DbUrl;
+using datagen::database::OdbcDriver;
+using datagen::database::parse_db_connection;
+
+TEST(OdbcDriverTest, ConnectQueryAndMetadataForPostgres) {
+    const char* pg_url = std::getenv("DATAGEN_TEST_PG_URL");
+    if (!pg_url || std::string(pg_url).empty()) {
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL not set.";
+    }
+
+    DbUrl parsed;
+    std::string error;
+    if (!parse_db_connection(pg_url, &parsed, &error)) {
+        GTEST_SKIP() << "DATAGEN_TEST_PG_URL is not in the new connection format: " << error;
+    }
+
+    OdbcDriver driver;
+    EXPECT_FALSE(driver.test_connection(&error));
+
+    ASSERT_TRUE(driver.connect(parsed, &error)) << error;
+    EXPECT_EQ(driver.type(), datagen::database::DbType::Postgresql);
+    EXPECT_FALSE(driver.dbms_name().empty());
+    EXPECT_FALSE(driver.dbms_version().empty());
+    EXPECT_TRUE(driver.test_connection(&error));
+    EXPECT_TRUE(driver.supports_load_mode());
+
+    ASSERT_TRUE(driver.execute("CREATE TABLE IF NOT EXISTS odbc_test (id INT, name TEXT);", &error)) << error;
+    ASSERT_TRUE(driver.execute("TRUNCATE TABLE odbc_test;", &error)) << error;
+    ASSERT_TRUE(driver.execute("INSERT INTO odbc_test (id, name) VALUES (1, 'alpha');", &error)) << error;
+
+    ASSERT_TRUE(driver.execute("CREATE TABLE IF NOT EXISTS odbc_parent (id INT PRIMARY KEY);", &error)) << error;
+    ASSERT_TRUE(driver.execute(
+        "CREATE TABLE IF NOT EXISTS odbc_child ("
+        "id INT PRIMARY KEY, parent_id INT REFERENCES odbc_parent(id), name TEXT);",
+        &error
+    )) << error;
+    ASSERT_TRUE(driver.execute("CREATE INDEX IF NOT EXISTS idx_child_name ON odbc_child(name);", &error)) << error;
+
+    std::vector<std::vector<std::string>> rows;
+    ASSERT_TRUE(driver.query("SELECT id, name FROM odbc_test ORDER BY id;", &rows, &error)) << error;
+    ASSERT_FALSE(rows.empty());
+    EXPECT_EQ(rows[0][0], "1");
+
+    datagen::database::TableMetadata metadata;
+    ASSERT_TRUE(driver.get_table_metadata("odbc_test", &metadata, &error)) << error;
+    EXPECT_EQ(metadata.table_name, "odbc_test");
+    EXPECT_FALSE(metadata.columns.empty());
+
+    datagen::database::TableMetadata child_meta;
+    ASSERT_TRUE(driver.get_table_metadata("public.odbc_child", &child_meta, &error)) << error;
+    EXPECT_FALSE(child_meta.columns.empty());
+    EXPECT_FALSE(child_meta.indexes.empty());
+
+    EXPECT_FALSE(driver.query("SELECT 1", nullptr, &error));
+    EXPECT_FALSE(error.empty());
+
+    driver.disconnect();
+}
+
+TEST(OdbcDriverTest, ReturnsErrorsWhenDisconnected) {
+    OdbcDriver driver(datagen::database::DbType::Postgresql);
+    std::string error;
+    std::vector<std::vector<std::string>> rows;
+    datagen::database::TableMetadata metadata;
+
+    EXPECT_FALSE(driver.test_connection(&error));
+    EXPECT_FALSE(driver.execute("SELECT 1;", &error));
+    EXPECT_FALSE(driver.query("SELECT 1;", &rows, &error));
+    EXPECT_FALSE(driver.get_table_metadata("t", &metadata, &error));
+    EXPECT_FALSE(driver.query("SELECT 1;", nullptr, &error));
+    EXPECT_FALSE(driver.get_table_metadata("t", nullptr, &error));
+}

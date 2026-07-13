@@ -1,0 +1,9 @@
+{
+  "rows": 3,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv"
+    }
+  }
+}

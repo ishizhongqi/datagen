@@ -1,0 +1,30 @@
+{
+  "rows": 8,
+  "output": {
+    "type": "file",
+    "file": {
+      "format": "csv",
+      "options": {
+        "header": true,
+        "line_ending": "LF"
+      }
+    }
+  },
+  "fields": [
+    {
+      "name": "id",
+      "generator": "integer",
+      "config": {
+        "start": 1,
+        "end": 1000
+      }
+    },
+    {
+      "name": "address_line2",
+      "generator": "regular_expression",
+      "config": {
+        "pattern": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,3113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^\\$schema$": {
+      "type": "string"
+    }
+  },
+  "properties": {
+    "fields": {
+      "items": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "company_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "department"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "industry"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "ip_address"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ip_address_type": {
+                      "enum": [
+                        "IPv4",
+                        "IPv6"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ip_address_type"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "mac_address"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "file_path"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "extensions": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "operating_systems": {
+                      "items": {
+                        "enum": [
+                          "Windows",
+                          "macOS",
+                          "Linux"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "operating_systems",
+                    "extensions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "file_directory"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "operating_systems": {
+                      "items": {
+                        "enum": [
+                          "Windows",
+                          "macOS",
+                          "Linux"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "operating_systems"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "file_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "extensions": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "extensions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "file_extension"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "extensions": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "extensions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "url"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "subdomains": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tlds": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "subdomains",
+                    "tlds"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "hostname"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "subdomains": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tlds": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "subdomains",
+                    "tlds"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "date"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "days_of_week": {
+                      "items": {
+                        "enum": [
+                          "Sunday",
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "end_date": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "start_date",
+                    "end_date",
+                    "days_of_week"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "time"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "end_time": {
+                      "type": "string"
+                    },
+                    "start_time": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "start_time",
+                    "end_time"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "datetime"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "days_of_week": {
+                      "items": {
+                        "enum": [
+                          "Sunday",
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "end_date": {
+                      "type": "string"
+                    },
+                    "end_time": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string"
+                    },
+                    "start_time": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "start_date",
+                    "end_date",
+                    "start_time",
+                    "end_time",
+                    "days_of_week"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "address_line1"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "regions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "address_line2"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "regions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "postcode"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "regions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "full_address"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "regions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "city"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "regions"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "region"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "country_codes_standard": {
+                      "enum": [
+                        "None",
+                        "ISO_3166_1_alpha_2",
+                        "ISO_3166_1_alpha_3"
+                      ],
+                      "type": "string"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "country_codes_standard",
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "integer"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "end": {
+                      "type": "number"
+                    },
+                    "start": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "start",
+                    "end"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "decimal"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "decimal_places": {
+                      "type": "number"
+                    },
+                    "end": {
+                      "type": "number"
+                    },
+                    "start": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "start",
+                    "end",
+                    "decimal_places"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "payment_method"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "payment_methods": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "payment_methods"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "card_type"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "card_types": {
+                      "items": {
+                        "enum": [
+                          "AmericanExpress",
+                          "JCB",
+                          "MasterCard",
+                          "UnionPay",
+                          "Visa"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "card_types"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "card_number"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "card_types": {
+                      "items": {
+                        "enum": [
+                          "AmericanExpress",
+                          "JCB",
+                          "MasterCard",
+                          "UnionPay",
+                          "Visa"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "card_types"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "card_date"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "end_month": {
+                      "type": "string"
+                    },
+                    "start_month": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "start_month",
+                    "end_month"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "first_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "genders": {
+                      "items": {
+                        "enum": [
+                          "M",
+                          "F"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "genders"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "last_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "full_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "genders": {
+                      "items": {
+                        "enum": [
+                          "M",
+                          "F"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "genders"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "gender"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "title"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "genders": {
+                      "items": {
+                        "enum": [
+                          "M",
+                          "F"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "genders"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "marital_status"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "phone_number"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "include_delimiters": {
+                      "type": "boolean"
+                    },
+                    "is_international": {
+                      "type": "boolean"
+                    },
+                    "regions": {
+                      "items": {
+                        "enum": [
+                          "United States",
+                          "United Kingdom",
+                          "China",
+                          "Japan"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "regions",
+                    "is_international",
+                    "include_delimiters"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "email"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "domains": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "domains"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "job_title"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "social_network_id"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "use_translation": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "product_name"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "keywords": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages",
+                    "keywords"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "product_category"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "color"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "languages": {
+                      "items": {
+                        "enum": [
+                          "English",
+                          "Simplified Chinese",
+                          "Traditional Chinese",
+                          "Japanese"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "languages"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "size"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "barcode"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "barcode_types": {
+                      "items": {
+                        "enum": [
+                          "EAN8",
+                          "EAN13",
+                          "UPCA",
+                          "UPCE",
+                          "ISBN"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "barcode_types"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "enum_item"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "enums": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "enums"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "text"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "number_of_chars_end": {
+                      "type": "number"
+                    },
+                    "number_of_chars_start": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "number_of_chars_start",
+                    "number_of_chars_end"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "uuid"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "include_hyphens": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "include_hyphens"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "boolean"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "true_percentage": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "true_percentage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "sequence"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "circle": {
+                      "type": "boolean"
+                    },
+                    "end": {
+                      "type": "number"
+                    },
+                    "start": {
+                      "type": "number"
+                    },
+                    "step": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "start",
+                    "end",
+                    "step",
+                    "circle"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "generator": {
+                  "const": "regular_expression"
+                }
+              },
+              "required": [
+                "generator"
+              ]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_unique"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "group"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "supports_group"
+                    ]
+                  }
+                }
+              ],
+              "properties": {
+                "config": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "pattern": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pattern"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "config": {
+            "type": "object"
+          },
+          "default_value": {
+            "type": "object"
+          },
+          "generator": {
+            "enum": [
+              "company_name",
+              "department",
+              "industry",
+              "ip_address",
+              "mac_address",
+              "file_path",
+              "file_directory",
+              "file_name",
+              "file_extension",
+              "url",
+              "hostname",
+              "date",
+              "time",
+              "datetime",
+              "address_line1",
+              "address_line2",
+              "postcode",
+              "full_address",
+              "city",
+              "region",
+              "integer",
+              "decimal",
+              "payment_method",
+              "card_type",
+              "card_number",
+              "card_date",
+              "first_name",
+              "last_name",
+              "full_name",
+              "gender",
+              "title",
+              "marital_status",
+              "phone_number",
+              "email",
+              "job_title",
+              "social_network_id",
+              "product_name",
+              "product_category",
+              "color",
+              "size",
+              "barcode",
+              "enum_item",
+              "text",
+              "uuid",
+              "boolean",
+              "sequence",
+              "regular_expression"
+            ],
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "null_value": {
+            "type": "object"
+          },
+          "supports_group": {
+            "type": "boolean"
+          },
+          "supports_unique": {
+            "type": "boolean"
+          },
+          "unique": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "generator",
+          "config"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "output": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "file"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "file"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "database"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "database"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "database": {
+          "additionalProperties": false,
+          "properties": {
+            "advanced": {
+              "additionalProperties": false,
+              "properties": {
+                "batch_size": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "insert_mode": {
+                  "enum": [
+                    "insert",
+                    "load"
+                  ],
+                  "type": "string"
+                },
+                "queue_size": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "rate_limit_rows_per_sec": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "threads": {
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "connection": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "error_policy": {
+              "enum": [
+                "stop",
+                "continue",
+                "rollback"
+              ],
+              "type": "string"
+            },
+            "mode": {
+              "enum": [
+                "fast",
+                "balanced",
+                "safe"
+              ],
+              "type": "string"
+            },
+            "table": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "transaction_mode": {
+              "enum": [
+                "per-batch",
+                "per-run",
+                "none"
+              ],
+              "type": "string"
+            },
+            "write_mode": {
+              "enum": [
+                "append",
+                "truncate",
+                "upsert"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "connection",
+            "table"
+          ],
+          "type": "object"
+        },
+        "file": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "csv"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "Tab-Delimited"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "json"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "array": {
+                        "type": "boolean"
+                      },
+                      "include_null": {
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "sql"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "create_table": {
+                        "type": "boolean"
+                      },
+                      "table": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "format": {
+                    "const": "Custom"
+                  }
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "options": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "delimiter": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "header": {
+                        "type": "boolean"
+                      },
+                      "line_ending": {
+                        "enum": [
+                          "LF",
+                          "CRLF"
+                        ],
+                        "type": "string"
+                      },
+                      "quote": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "format": {
+              "enum": [
+                "csv",
+                "json",
+                "sql",
+                "Tab-Delimited",
+                "Custom"
+              ],
+              "type": "string"
+            },
+            "options": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "format"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "database"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "rows": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "fields"
+  ],
+  "type": "object"
+}

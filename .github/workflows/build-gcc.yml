@@ -1,0 +1,63 @@
+name: gcc
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - "docs/**"
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - "docs/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ci_ubuntu-24.04_gcc-13
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gcc-13 \
+            g++-13 \
+            unixodbc-dev \
+            libsqlite3-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Smoke test
+        run: |
+          ./build/src/datagen help >/dev/null
+          ./build/src/datagen run docs/input_example.json \
+            --rows 5 \
+            --output build/output.csv

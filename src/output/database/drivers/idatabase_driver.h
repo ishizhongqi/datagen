@@ -1,0 +1,46 @@
+// Copyright (c) 2026 Shizhongqi
+// Licensed under the MIT License.
+// See the LICENSE file in the project root for more information.
+
+/// @file idatabase_driver.h
+
+#ifndef DATAGEN_IDATABASE_DRIVER_H
+#define DATAGEN_IDATABASE_DRIVER_H
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "output/database/db_metadata.h"
+
+namespace datagen::database {
+
+class IDatabaseDriver {
+public:
+    virtual ~IDatabaseDriver() = default;
+
+    [[nodiscard]] virtual DbType      type() const         = 0;
+    [[nodiscard]] virtual std::string dbms_name() const    = 0;
+    [[nodiscard]] virtual std::string dbms_version() const = 0;
+
+    virtual bool connect(const DbUrl& url, std::string* error_message) = 0;
+    virtual void disconnect()                                          = 0;
+
+    virtual bool test_connection(std::string* error_message) = 0;
+
+    virtual bool execute(const std::string& sql, std::string* error_message) = 0;
+
+    virtual bool
+        query(const std::string& sql, std::vector<std::vector<std::string>>* rows, std::string* error_message) = 0;
+
+    virtual bool
+        get_table_metadata(const std::string& table_name, TableMetadata* metadata, std::string* error_message) = 0;
+
+    [[nodiscard]] virtual bool supports_load_mode() const = 0;
+};
+
+std::unique_ptr<IDatabaseDriver> make_database_driver(DbType type);
+
+}  // namespace datagen::database
+
+#endif
