@@ -14,7 +14,7 @@
 namespace datagen::cli {
 
 #ifndef DATAGEN_VERSION
-#define DATAGEN_VERSION "0.0.0"
+#define DATAGEN_VERSION "1.0.0"
 #endif
 
 Json load_json_from_file(const std::string& path) {
