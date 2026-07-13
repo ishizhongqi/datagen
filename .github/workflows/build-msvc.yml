@@ -19,8 +19,8 @@ on:
 
 jobs:
   build:
-    name: ci_windows-latest_msvc
-    runs-on: windows-latest
+    name: ci_windows-2022_msvc
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
