@@ -1,14 +1,16 @@
 # Datagen
 
-[![codecov](https://codecov.io/gh/ishizhongqi/datagen/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/datagen)
+<p hidden>[![codecov](https://codecov.io/gh/ishizhongqi/datagen/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/datagen)</p>
+
+## Introduction
 
 Datagen is a C++ CLI that generates synthetic datasets from a JSON configuration. It can write CSV/JSON/SQL files or insert rows into databases via ODBC or SQLite.
 
 > Note: Most of the code in this project was generated with AI assistance.
 
-**Usage**
+## Usage
 
-**CLI**
+### CLI
 
 `datagen <command> [options]`
 
@@ -86,7 +88,7 @@ Options:
 - `<file>`: Output schema file path. Required.
 - `-h, --help`: Show help.
 
-**JSON Configuration**
+### JSON Configuration
 
 Root keys:
 
@@ -242,7 +244,7 @@ Example field:
 }
 ```
 
-**Examples**
+### Examples
 
 Database schemas:
 
@@ -275,6 +277,6 @@ datagen run example_file.json --output out.csv
 datagen run example_mysql_db.json
 ```
 
-**License**
+## License
 
 MIT. See `LICENSE`.

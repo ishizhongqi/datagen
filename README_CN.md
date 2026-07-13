@@ -1,14 +1,14 @@
 # Datagen
 
-[![codecov](https://codecov.io/gh/ishizhongqi/datagen/branch/develop/graph/badge.svg?token=TJZIICPRO1)](https://codecov.io/gh/ishizhongqi/datagen)
+## 简介
 
 Datagen 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JSON/SQL 文件或通过 ODBC/SQLite 导入数据库。
 
 > 说明：本项目中的多数代码由 AI 辅助生成。
 
-**使用方法**
+## 使用方法
 
-**CLI**
+### CLI
 
 `datagen <command> [options]`
 
@@ -86,7 +86,7 @@ Datagen 是一个 C++ CLI，用 JSON 配置生成模拟数据，可写入 CSV/JS
 - `<file>`：输出 Schema 文件路径。必填。
 - `-h, --help`：显示帮助。
 
-**JSON 配置**
+### JSON 配置
 
 根级键：
 
@@ -242,7 +242,7 @@ boolean, sequence, regular_expression
 }
 ```
 
-**示例**
+### 示例
 
 数据库建表示例：
 
@@ -275,6 +275,6 @@ datagen run example_file.json --output out.csv
 datagen run example_mysql_db.json
 ```
 
-**许可证**
+## 许可证
 
 MIT，详见 `LICENSE`。
