@@ -246,18 +246,18 @@ boolean, sequence, regular_expression
 
 数据库建表示例：
 
-- `docs/schema_mysql.sql`
-- `docs/schema_oracle.sql`
-- `docs/schema_postgresql.sql`
-- `docs/schema_sqlite.sql`
+- `examples/schema_mysql.sql`
+- `examples/schema_oracle.sql`
+- `examples/schema_postgresql.sql`
+- `examples/schema_sqlite.sql`
 
 JSON 配置示例：
 
-- `docs/example_mysql_db.json`
-- `docs/example_postgresql_db.json`
-- `docs/example_oracle_db.json`
-- `docs/example_sqlite_db.json`
-- `docs/example_file.json`
+- `examples/example_mysql_db.json`
+- `examples/example_postgresql_db.json`
+- `examples/example_oracle_db.json`
+- `examples/example_sqlite_db.json`
+- `examples/example_file.json`
 
 示例命令：
 
