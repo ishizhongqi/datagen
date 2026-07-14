@@ -56,4 +56,4 @@ jobs:
         shell: pwsh
         run: |
           .\build\src\Release\datagen.exe help | Out-Null
-          .\build\src\Release\datagen.exe run docs\input_example.json --rows 5 --output build\output.csv
+          .\build\src\Release\datagen.exe run examples\input_example.json --rows 5 --output build\output.csv
