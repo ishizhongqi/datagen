@@ -1,5 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishizhongqi.github.io/datagen/schema/latest/datagen.schema.json",
+  "title": "Data Generator Configuration",
+  "description": "Configuration schema for Data Generator.",
+  "type": "object",
   "additionalProperties": false,
   "patternProperties": {
     "^\\$schema$": {
@@ -3108,6 +3112,5 @@
   },
   "required": [
     "fields"
-  ],
-  "type": "object"
+  ]
 }

@@ -1,21 +1,13 @@
 {
-  "$schema": "../schema/datagen.schema.json",
-  "rows": 1000,
+  "$schema": "https://ishizhongqi.github.io/datagen/schema/latest/datagen.schema.json",
+  "rows": 200,
   "output": {
-    "type": "database",
-    "database": {
-      "connection": "sqlite:///absolute/path/to/customer_profile.db",
-      "table": "customer_profile",
-      "mode": "balanced",
-      "write_mode": "append",
-      "transaction_mode": "per-batch",
-      "error_policy": "stop",
-      "advanced": {
-        "insert_mode": "insert",
-        "batch_size": 2000,
-        "queue_size": 2048,
-        "threads": 1,
-        "rate_limit_rows_per_sec": 20000
+    "type": "file",
+    "file": {
+      "format": "csv",
+      "options": {
+        "header": true,
+        "line_ending": "LF"
       }
     }
   },
@@ -161,10 +153,9 @@
     },
     {
       "name": "is_active",
-      "generator": "integer",
+      "generator": "boolean",
       "config": {
-        "start": 0,
-        "end": 1
+        "true_percentage": 80
       }
     }
   ]

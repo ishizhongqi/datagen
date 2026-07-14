@@ -1,11 +1,11 @@
 {
-  "$schema": "../schema/datagen.schema.json",
+  "$schema": "https://ishizhongqi.github.io/datagen/schema/latest/datagen.schema.json",
   "rows": 1000,
   "output": {
     "type": "database",
     "database": {
-      "connection": "odbc://DRIVER={Oracle 23 ODBC driver};ServerName=//localhost:1521/FREEPDB1;UserID=user;Password=password;",
-      "table": "CUSTOMER_PROFILE",
+      "connection": "sqlite:///absolute/path/to/customer_profile.db",
+      "table": "customer_profile",
       "mode": "balanced",
       "write_mode": "append",
       "transaction_mode": "per-batch",
@@ -14,14 +14,14 @@
         "insert_mode": "insert",
         "batch_size": 2000,
         "queue_size": 2048,
-        "threads": 2,
+        "threads": 1,
         "rate_limit_rows_per_sec": 20000
       }
     }
   },
   "fields": [
     {
-      "name": "EMAIL",
+      "name": "email",
       "generator": "email",
       "config": {
         "languages": ["English"],
@@ -31,7 +31,7 @@
       "unique": true
     },
     {
-      "name": "ID",
+      "name": "id",
       "generator": "sequence",
       "config": {
         "start": 1,
@@ -41,14 +41,14 @@
       }
     },
     {
-      "name": "UUID",
+      "name": "uuid",
       "generator": "uuid",
       "config": {
         "include_hyphens": true
       }
     },
     {
-      "name": "FIRST_NAME",
+      "name": "first_name",
       "generator": "first_name",
       "config": {
         "languages": ["English"],
@@ -58,7 +58,7 @@
       "group": "person:Group1"
     },
     {
-      "name": "LAST_NAME",
+      "name": "last_name",
       "generator": "last_name",
       "config": {
         "languages": ["English"],
@@ -67,7 +67,7 @@
       "group": "person:Group1"
     },
     {
-      "name": "AGE",
+      "name": "age",
       "generator": "integer",
       "config": {
         "start": 18,
@@ -75,7 +75,7 @@
       }
     },
     {
-      "name": "GENDER",
+      "name": "gender",
       "generator": "gender",
       "config": {
         "languages": ["English"]
@@ -83,7 +83,7 @@
       "group": "person:Group1"
     },
     {
-      "name": "PHONE_NUMBER",
+      "name": "phone_number",
       "generator": "phone_number",
       "config": {
         "regions": ["United States"],
@@ -93,7 +93,7 @@
       "group": "person:Group1"
     },
     {
-      "name": "NOTES",
+      "name": "notes",
       "generator": "text",
       "config": {
         "number_of_chars_start": 20,
@@ -110,7 +110,7 @@
       }
     },
     {
-      "name": "CREATED_AT",
+      "name": "created_at",
       "generator": "datetime",
       "config": {
         "start_date": "2015-01-01",
@@ -129,7 +129,7 @@
       }
     },
     {
-      "name": "SALARY",
+      "name": "salary",
       "generator": "decimal",
       "config": {
         "start": 30000,
@@ -138,21 +138,21 @@
       }
     },
     {
-      "name": "DEPARTMENT",
+      "name": "department",
       "generator": "department",
       "config": {
         "languages": ["English"]
       }
     },
     {
-      "name": "STATUS",
+      "name": "status",
       "generator": "enum_item",
       "config": {
         "enums": ["active", "inactive", "on_leave"]
       }
     },
     {
-      "name": "COUNTRY",
+      "name": "country",
       "generator": "region",
       "config": {
         "country_codes_standard": "None",
@@ -160,7 +160,7 @@
       }
     },
     {
-      "name": "IS_ACTIVE",
+      "name": "is_active",
       "generator": "integer",
       "config": {
         "start": 0,

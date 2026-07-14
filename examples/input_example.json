@@ -1,5 +1,5 @@
 {
-    "$schema": "../schema/datagen.schema.json",
+    "$schema": "https://ishizhongqi.github.io/datagen/schema/latest/datagen.schema.json",
     "rows": 10,
     "output": {
         "type": "file",
